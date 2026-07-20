@@ -1,7 +1,9 @@
+import { requireUser } from '~/server/utils/auth'
 import { saveUserDocument, type DocumentType } from '../../utils/documents'
 import { replaceEmDashes } from '../../../shared/samples/professionalDocuments'
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
   const body = await readBody<{
     type?: DocumentType
     contentText?: string
@@ -30,6 +32,7 @@ export default defineEventHandler(async (event) => {
 
   const buffer = Buffer.from(contentText, 'utf8')
   const document = await saveUserDocument({
+    userId: user.id,
     docType,
     originalName,
     mimeType: 'text/markdown',

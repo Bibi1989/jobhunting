@@ -1,3 +1,4 @@
+import { requireUser } from '~/server/utils/auth'
 import {
   assertAllowedUpload,
   extractTextFromUpload,
@@ -6,6 +7,8 @@ import {
 } from '../utils/documents'
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
+
   try {
     const form = await readMultipartFormData(event)
     if (!form?.length) {
@@ -41,6 +44,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const document = await saveUserDocument({
+      userId: user.id,
       docType,
       originalName: filePart.filename,
       mimeType,

@@ -1,6 +1,8 @@
+import { requireUser } from '~/server/utils/auth'
 import { deleteUserDocument, type DocumentType } from '../utils/documents'
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
   const queryParams = getQuery(event)
   const body = (await readBody<{ type?: DocumentType }>(event).catch(() => null)) || {}
 
@@ -12,6 +14,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const result = await deleteUserDocument(docType)
-  return result
+  return deleteUserDocument(user.id, docType)
 })

@@ -73,12 +73,14 @@ function buildCoverLetterPreview(data: BuilderResumeData): BuilderDocumentPrevie
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUser(event)
+  const user = await requireUser(event)
   const result = await query(
     `SELECT id, doc_type, original_name, updated_at, content_text
      FROM user_documents
      WHERE mime_type = 'application/json'
+       AND user_id = $1
      ORDER BY updated_at DESC`,
+    [user.id],
   )
 
   const documents: Array<{

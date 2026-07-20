@@ -35,7 +35,11 @@ export default withCredits(
 
     let target: JobScrapeTarget | null = null
     if (body?.useResume || body?.useCoverLetter || jobTitle) {
-      const docs = await getLatestDocuments()
+      const user = event.context.user
+      if (!user?.id) {
+        throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+      }
+      const docs = await getLatestDocuments(user.id)
       if (body.useResume && !docs.resume?.contentText?.trim()) {
         throw createError({
           statusCode: 400,

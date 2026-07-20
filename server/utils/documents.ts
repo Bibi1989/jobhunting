@@ -7,6 +7,7 @@ export type DocumentType = 'resume' | 'cover_letter'
 
 export interface UserDocument {
   id: string
+  userId?: string
   docType: DocumentType
   originalName: string
   mimeType: string
@@ -23,8 +24,27 @@ const ALLOWED_MIME = new Set([
   'text/markdown',
 ])
 
-const DATA_DIR = path.join(process.cwd(), '.data')
-const DOCS_META_PATH = path.join(DATA_DIR, 'documents.json')
+const MAX_CONTENT_CHARS = 200_000
+
+/** Netlify / Lambda: only /tmp is writable; app dirs under /var/task are read-only. */
+function isServerlessReadonlyFs(): boolean {
+  return Boolean(
+    process.env.NETLIFY ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.cwd().startsWith('/var/task'),
+  )
+}
+
+function localDataDir(): string | null {
+  if (isServerlessReadonlyFs()) return null
+  return path.join(process.cwd(), '.data')
+}
+
+function docsMetaPath(): string | null {
+  const dir = localDataDir()
+  return dir ? path.join(dir, 'documents.json') : null
+}
 
 export async function extractTextFromUpload(
   buffer: Buffer,
@@ -78,38 +98,58 @@ export function assertAllowedUpload(mimeType: string, filename: string) {
   }
 }
 
+/**
+ * Save uploaded resume/cover-letter text for a user.
+ * Replaces any previous *upload* of the same type (builder JSON docs are untouched).
+ * Binary files are not kept on Netlify; text lives in Postgres only.
+ */
 export async function saveUserDocument(input: {
+  userId: string
   docType: DocumentType
   originalName: string
   mimeType: string
   contentText: string
   buffer: Buffer
 }) {
-  const uploadsDir = path.join(process.cwd(), 'uploads', input.docType)
-  await mkdir(uploadsDir, { recursive: true })
-  await mkdir(DATA_DIR, { recursive: true })
-
-  const safeName = input.originalName.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const storagePath = path.join(uploadsDir, `${Date.now()}-${safeName}`)
-  await writeFile(storagePath, input.buffer)
+  const contentText = input.contentText.slice(0, MAX_CONTENT_CHARS)
+  // Never treat builder JSON as an "upload" replace target.
+  const mimeType =
+    input.mimeType === 'application/json' ? 'text/plain' : input.mimeType
 
   const now = new Date().toISOString()
   const localDoc: UserDocument = {
     id: crypto.randomUUID(),
+    userId: input.userId,
     docType: input.docType,
     originalName: input.originalName,
-    mimeType: input.mimeType,
-    contentText: input.contentText,
-    storagePath,
+    mimeType,
+    contentText,
     createdAt: now,
     updatedAt: now,
   }
 
-  await saveLocalDocument(localDoc)
+  if (!isServerlessReadonlyFs()) {
+    await saveLocalDocument(localDoc).catch((error) => {
+      console.warn(
+        '[documents] Local meta write skipped:',
+        error instanceof Error ? error.message : error,
+      )
+    })
+  }
 
   try {
+    // Replace previous upload for this user + type (builder JSON docs untouched).
+    await query(
+      `DELETE FROM user_documents
+       WHERE user_id = $1
+         AND doc_type = $2
+         AND mime_type IS DISTINCT FROM 'application/json'`,
+      [input.userId, input.docType],
+    )
+
     const result = await query<{
       id: string
+      user_id: string | null
       doc_type: DocumentType
       original_name: string
       mime_type: string
@@ -118,32 +158,40 @@ export async function saveUserDocument(input: {
       created_at: Date
       updated_at: Date
     }>(
-      `INSERT INTO user_documents (doc_type, original_name, mime_type, content_text, storage_path)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO user_documents (user_id, doc_type, original_name, mime_type, content_text, storage_path)
+       VALUES ($1, $2, $3, $4, $5, NULL)
        RETURNING *`,
-      [
-        input.docType,
-        input.originalName,
-        input.mimeType,
-        input.contentText,
-        storagePath,
-      ],
+      [input.userId, input.docType, input.originalName, mimeType, contentText],
     )
 
     return mapDocument(result.rows[0])
   } catch (error) {
-    console.warn(
-      'Postgres unavailable — document saved locally only:',
-      error instanceof Error ? error.message : error,
-    )
-    return localDoc
+    return failSave(error, localDoc)
   }
 }
 
-export async function getLatestDocuments() {
+function failSave(error: unknown, localDoc: UserDocument): UserDocument {
+  if (isServerlessReadonlyFs()) {
+    console.error('[documents] Postgres required on serverless:', error)
+    throw createError({
+      statusCode: 503,
+      statusMessage:
+        'Could not save document to the database. Check DATABASE_URL on Netlify.',
+    })
+  }
+  console.warn(
+    'Postgres unavailable — document saved locally only:',
+    error instanceof Error ? error.message : error,
+  )
+  return localDoc
+}
+
+/** Latest uploaded (non-builder) resume + cover letter for this user. */
+export async function getLatestDocuments(userId: string) {
   try {
     const result = await query<{
       id: string
+      user_id: string | null
       doc_type: DocumentType
       original_name: string
       mime_type: string
@@ -154,7 +202,10 @@ export async function getLatestDocuments() {
     }>(
       `SELECT DISTINCT ON (doc_type) *
        FROM user_documents
+       WHERE user_id = $1
+         AND mime_type IS DISTINCT FROM 'application/json'
        ORDER BY doc_type, updated_at DESC`,
+      [userId],
     )
 
     const docs = result.rows.map(mapDocument)
@@ -163,6 +214,12 @@ export async function getLatestDocuments() {
       coverLetter: docs.find((d) => d.docType === 'cover_letter') || null,
     }
   } catch (error) {
+    if (isServerlessReadonlyFs()) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Could not load documents from the database.',
+      })
+    }
     console.warn(
       'Postgres unavailable — loading documents from local store:',
       error instanceof Error ? error.message : error,
@@ -172,28 +229,53 @@ export async function getLatestDocuments() {
 }
 
 async function saveLocalDocument(doc: UserDocument) {
+  const metaPath = docsMetaPath()
+  const dataDir = localDataDir()
+  if (!metaPath || !dataDir) return
+
   const current = await loadLocalDocuments()
   const next = {
     resume: doc.docType === 'resume' ? doc : current.resume,
     coverLetter: doc.docType === 'cover_letter' ? doc : current.coverLetter,
   }
-  await writeFile(DOCS_META_PATH, JSON.stringify(next, null, 2), 'utf8')
+  await mkdir(dataDir, { recursive: true })
+  await writeFile(metaPath, JSON.stringify(next, null, 2), 'utf8')
 }
 
-export async function deleteUserDocument(docType: DocumentType) {
+export async function deleteUserDocument(userId: string, docType: DocumentType) {
   const current = await loadLocalDocuments()
   const existing = docType === 'resume' ? current.resume : current.coverLetter
 
-  const next = {
-    resume: docType === 'resume' ? null : current.resume,
-    coverLetter: docType === 'cover_letter' ? null : current.coverLetter,
+  if (!isServerlessReadonlyFs()) {
+    const metaPath = docsMetaPath()
+    const dataDir = localDataDir()
+    if (metaPath && dataDir) {
+      const next = {
+        resume: docType === 'resume' ? null : current.resume,
+        coverLetter: docType === 'cover_letter' ? null : current.coverLetter,
+      }
+      await mkdir(dataDir, { recursive: true })
+      await writeFile(metaPath, JSON.stringify(next, null, 2), 'utf8')
+    }
   }
-  await mkdir(DATA_DIR, { recursive: true })
-  await writeFile(DOCS_META_PATH, JSON.stringify(next, null, 2), 'utf8')
 
   try {
-    await query(`DELETE FROM user_documents WHERE doc_type = $1`, [docType])
+    const result = await query(
+      `DELETE FROM user_documents
+       WHERE user_id = $1
+         AND doc_type = $2
+         AND mime_type IS DISTINCT FROM 'application/json'
+       RETURNING id`,
+      [userId, docType],
+    )
+    return { removed: (result.rowCount || 0) > 0 || Boolean(existing), docType }
   } catch (error) {
+    if (isServerlessReadonlyFs()) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Could not delete document from the database.',
+      })
+    }
     console.warn(
       'Postgres unavailable — document removed from local store only:',
       error instanceof Error ? error.message : error,
@@ -207,8 +289,11 @@ async function loadLocalDocuments(): Promise<{
   resume: UserDocument | null
   coverLetter: UserDocument | null
 }> {
+  const metaPath = docsMetaPath()
+  if (!metaPath) return { resume: null, coverLetter: null }
+
   try {
-    const raw = await readFile(DOCS_META_PATH, 'utf8')
+    const raw = await readFile(metaPath, 'utf8')
     const parsed = JSON.parse(raw) as {
       resume?: UserDocument | null
       coverLetter?: UserDocument | null
@@ -223,7 +308,6 @@ async function loadLocalDocuments(): Promise<{
 }
 
 async function loadPdfParse() {
-  // pdf-parse is CJS; default import can break under Nitro ESM.
   const mod = await import('pdf-parse')
   const pdfParse = (mod as { default?: (buf: Buffer) => Promise<{ text: string }> }).default || mod
   return pdfParse as (buf: Buffer) => Promise<{ text: string }>
@@ -231,6 +315,7 @@ async function loadPdfParse() {
 
 function mapDocument(row: {
   id: string
+  user_id?: string | null
   doc_type: DocumentType
   original_name: string
   mime_type: string
@@ -241,6 +326,7 @@ function mapDocument(row: {
 }): UserDocument {
   return {
     id: row.id,
+    userId: row.user_id || undefined,
     docType: row.doc_type,
     originalName: row.original_name,
     mimeType: row.mime_type,

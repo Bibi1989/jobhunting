@@ -9,7 +9,7 @@ import type { BuilderResumeData } from '~/shared/types/builder'
  * - type=cover_letter on a cover_letter row → delete the row
  */
 export default defineEventHandler(async (event) => {
-  await requireUser(event)
+  const user = await requireUser(event)
   const id = getRouterParam(event, 'id')
   const type = String(getQuery(event).type || '').trim()
 
@@ -27,7 +27,10 @@ export default defineEventHandler(async (event) => {
     id: string
     doc_type: string
     content_text: string
-  }>(`SELECT id, doc_type, content_text FROM user_documents WHERE id = $1`, [id])
+  }>(`SELECT id, doc_type, content_text FROM user_documents WHERE id = $1 AND user_id = $2`, [
+    id,
+    user.id,
+  ])
 
   const row = result.rows[0]
   if (!row) {
@@ -45,8 +48,8 @@ export default defineEventHandler(async (event) => {
     await query(
       `UPDATE user_documents
        SET content_text = $2, updated_at = NOW()
-       WHERE id = $1`,
-      [id, JSON.stringify(parsed)],
+       WHERE id = $1 AND user_id = $3`,
+      [id, JSON.stringify(parsed), user.id],
     )
     return { deleted: 'cover_letter', id }
   }
@@ -54,7 +57,7 @@ export default defineEventHandler(async (event) => {
   // Deleting a resume (or a standalone cover letter document) removes the row.
   // If deleting cover_letter but the row is a cover_letter type, delete the row.
   if (type === 'resume' || row.doc_type === 'cover_letter' || type === 'cover_letter') {
-    await query(`DELETE FROM user_documents WHERE id = $1`, [id])
+    await query(`DELETE FROM user_documents WHERE id = $1 AND user_id = $2`, [id, user.id])
     return { deleted: type, id }
   }
 

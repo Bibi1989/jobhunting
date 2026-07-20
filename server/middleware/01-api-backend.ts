@@ -12,11 +12,18 @@ import {
 /**
  * When NUXT_PUBLIC_API_BACKEND=fastapi, forward selected /api routes to FastAPI.
  * PDF + nuxt-auth-utils session routes stay on Nitro.
+ * Documents are proxied when listed in FASTAPI_PREFIXES (parity with Nuxt uploads).
  *
  * Uses a manual proxy (not proxyRequest) so Set-Cookie from FastAPI login/register
  * reliably reaches the browser — required for session persistence across reloads.
  */
-const FASTAPI_PREFIXES = ['/api/health', '/api/auth', '/api/jobs', '/api/saas'] as const
+const FASTAPI_PREFIXES = [
+  '/api/health',
+  '/api/auth',
+  '/api/jobs',
+  '/api/saas',
+  '/api/documents',
+] as const
 
 function shouldProxyToFastapi(pathname: string): boolean {
   if (!pathname.startsWith('/api/')) return false

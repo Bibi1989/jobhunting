@@ -46,7 +46,11 @@ export default withCredits(
       let coverLetterText = body.coverLetterText?.trim() || ''
 
       if (!resumeText || !coverLetterText) {
-        const docs = await getLatestDocuments()
+        const user = event.context.user
+        if (!user?.id) {
+          throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+        }
+        const docs = await getLatestDocuments(user.id)
         if (!resumeText && docs.resume) resumeText = docs.resume.contentText
         if (!coverLetterText && docs.coverLetter) coverLetterText = docs.coverLetter.contentText
       }
