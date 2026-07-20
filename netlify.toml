@@ -2,7 +2,7 @@
 # If the site uses the web-only jobhunting repo, use web/netlify.toml instead (no base).
 [build]
   command = "npm run build"
-  publish = ".output/public"
+  publish = "dist/"
 
 [build.environment]
   NODE_VERSION = "22"
