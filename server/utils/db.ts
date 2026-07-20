@@ -30,20 +30,31 @@ export function getPool() {
     const config = useRuntimeConfig()
     // Neon + some managed Postgres URLs append channel_binding=require, which
     // breaks node-pg. Strip it; sslmode=require is enough.
-    const connectionString = String(config.databaseUrl || '')
-      .replace(/([?&])channel_binding=require&?/g, '$1')
+    let connectionString = String(config.databaseUrl || process.env.DATABASE_URL || '')
+      .replace(/([?&])channel_binding=require&?/gi, '$1')
       .replace(/[?&]$/, '')
+
+    if (!connectionString) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'DATABASE_URL is not configured',
+      })
+    }
+
+    const needsSsl =
+      /sslmode=require/i.test(connectionString) ||
+      /neon\.tech/i.test(connectionString) ||
+      process.env.NETLIFY === 'true'
+
     pool = new Pool({
       connectionString,
-      connectionTimeoutMillis: 3000,
-      // Avoid holding idle connections (reduces Postgres connection bleed / cost).
-      max: 10,
+      // Neon cold start from Netlify can exceed 3s
+      connectionTimeoutMillis: 15_000,
+      max: 3,
       min: 0,
-      idleTimeoutMillis: 60_000,
+      idleTimeoutMillis: 5_000,
       allowExitOnIdle: true,
-      ssl: connectionString.includes('sslmode=require')
-        ? { rejectUnauthorized: false }
-        : undefined,
+      ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
     })
   }
   return pool
@@ -57,6 +68,15 @@ export async function ensureSchema() {
   try {
     await migrate(client)
     schemaReady = true
+  } catch (error) {
+    console.error('[ensureSchema] migration failed:', error)
+    throw createError({
+      statusCode: 503,
+      statusMessage:
+        error instanceof Error
+          ? `Database schema unavailable: ${error.message}`
+          : 'Database schema unavailable',
+    })
   } finally {
     client.release()
   }

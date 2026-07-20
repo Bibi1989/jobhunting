@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { createUser, getUserByEmail, FREE_CREDITS } from '~/server/utils/db'
+import { createUser, getUserByEmail, FREE_CREDITS, isDatabaseError } from '~/server/utils/db'
 import { setAuthSession } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -23,13 +23,28 @@ export default defineEventHandler(async (event) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
-  const user = await createUser({
-    email,
-    passwordHash,
-    creditsRemaining: FREE_CREDITS,
-  })
+  try {
+    const user = await createUser({
+      email,
+      passwordHash,
+      creditsRemaining: FREE_CREDITS,
+    })
 
-  return {
-    user: await setAuthSession(event, user),
+    return {
+      user: await setAuthSession(event, user),
+    }
+  } catch (error: unknown) {
+    console.error('[auth/register] failed:', error)
+    if (isDatabaseError(error)) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Database unavailable. Check DATABASE_URL on the host.',
+      })
+    }
+    const message = error instanceof Error ? error.message : 'Registration failed'
+    throw createError({
+      statusCode: 500,
+      statusMessage: message.slice(0, 200),
+    })
   }
 })

@@ -3,28 +3,43 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
-const { fetchSession, refreshCredits, applySessionUser } = useSaaS()
+  const { fetchSession, refreshCredits, applySessionUser } = useSaaS()
 
 async function onSubmit() {
   loading.value = true
   error.value = null
   try {
-    await $fetch<{ user: { id: string; email: string; planTier?: SaasPlanTier; role?: SaasUserRole; creditsRemaining?: number } }>(
-      '/api/auth/register',
-      {
-        method: 'POST',
-        body: { email: email.value, password: password.value },
-        credentials: 'include',
-      },
-    ).then((res) => {
+    await $fetch<{
+      user: {
+        id: string
+        email: string
+        planTier?: 'free' | 'pro'
+        role?: 'admin' | 'user'
+        creditsRemaining?: number
+      }
+    }>('/api/auth/register', {
+      method: 'POST',
+      body: { email: email.value, password: password.value },
+      credentials: 'include',
+    }).then((res) => {
       if (res?.user) applySessionUser(res.user)
     })
     await fetchSession()
     await refreshCredits()
     await navigateTo('/')
   } catch (err: unknown) {
-    const e = err as { data?: { statusMessage?: string; detail?: string }; statusMessage?: string }
-    error.value = e.data?.statusMessage || e.data?.detail || e.statusMessage || 'Registration failed'
+    const e = err as {
+      data?: { statusMessage?: string; detail?: string; message?: string }
+      statusMessage?: string
+      message?: string
+    }
+    error.value =
+      e.data?.statusMessage ||
+      e.data?.detail ||
+      e.data?.message ||
+      e.statusMessage ||
+      e.message ||
+      'Registration failed'
   } finally {
     loading.value = false
   }

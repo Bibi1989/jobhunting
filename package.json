@@ -9,6 +9,8 @@
     "preview": "nuxt preview",
     "lint": "nuxt typecheck",
     "postinstall": "nuxt prepare",
+    "migrations:embed": "node scripts/embed-migrations.cjs",
+    "prebuild": "node scripts/embed-migrations.cjs",
     "db:up": "docker compose -f ../docker-compose.yml up -d",
     "db:down": "docker compose -f ../docker-compose.yml down",
     "db:logs": "docker compose -f ../docker-compose.yml logs -f db"

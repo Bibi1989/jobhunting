@@ -1,0 +1,9 @@
+# Deploy from the web/ package as the site root (set Base directory = web in Netlify UI,
+# or use the repo-root netlify.toml).
+[build]
+  command = "npm run build"
+  publish = ".output/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NUXT_PUBLIC_API_BACKEND = "nuxt"

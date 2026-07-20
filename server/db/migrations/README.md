@@ -2,6 +2,8 @@
 
 Applied automatically on first DB use via `ensureSchema()` → `migrate()`.
 
-Add numbered files (`003_….sql`). Do not edit already-applied files.
+- Edit / add numbered `*.sql` files here
+- Run `npm run migrations:embed` (also runs on `prebuild`) so `registry.ts` stays in sync
+- Netlify/serverless uses the embedded `registry.ts` (no filesystem reads)
 
-Override path with `MIGRATIONS_DIR` (Docker sets this to `/app/migrations`).
+Do not edit already-applied files — add `003_….sql` instead.
