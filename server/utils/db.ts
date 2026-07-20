@@ -28,14 +28,22 @@ let schemaReady = false
 export function getPool() {
   if (!pool) {
     const config = useRuntimeConfig()
+    // Neon + some managed Postgres URLs append channel_binding=require, which
+    // breaks node-pg. Strip it; sslmode=require is enough.
+    const connectionString = String(config.databaseUrl || '')
+      .replace(/([?&])channel_binding=require&?/g, '$1')
+      .replace(/[?&]$/, '')
     pool = new Pool({
-      connectionString: config.databaseUrl,
+      connectionString,
       connectionTimeoutMillis: 3000,
       // Avoid holding idle connections (reduces Postgres connection bleed / cost).
       max: 10,
       min: 0,
       idleTimeoutMillis: 60_000,
       allowExitOnIdle: true,
+      ssl: connectionString.includes('sslmode=require')
+        ? { rejectUnauthorized: false }
+        : undefined,
     })
   }
   return pool

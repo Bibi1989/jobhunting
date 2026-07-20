@@ -30,6 +30,13 @@ export default defineNuxtConfig({
     externals: {
       inline: ['@react-pdf/renderer', 'react', 'react-dom'],
     },
+    // Also copy SQL onto disk for Docker/MIGRATIONS_DIR layouts
+    serverAssets: [
+      {
+        baseName: 'migrations',
+        dir: './server/db/migrations',
+      },
+    ],
   },
   runtimeConfig: {
     geminiApiKey: '',

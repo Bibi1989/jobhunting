@@ -4,41 +4,64 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type pg from 'pg'
 
-/**
- * Resolve package-local migrations: web/server/db/migrations
- * (override with MIGRATIONS_DIR for Docker / production builds).
- */
-function migrationsDir(): string {
-  if (process.env.MIGRATIONS_DIR && existsSync(process.env.MIGRATIONS_DIR)) {
-    return process.env.MIGRATIONS_DIR
-  }
-
-  const here = dirname(fileURLToPath(import.meta.url))
-  const candidates = [
-    join(here, '../db/migrations'), // web/server/db/migrations (dev)
-    join(process.cwd(), 'server/db/migrations'),
-    join(process.cwd(), 'web/server/db/migrations'),
-    join(process.cwd(), 'migrations'), // Docker image layout
-  ]
-
-  for (const path of candidates) {
-    if (existsSync(path)) return path
-  }
-
-  throw new Error(
-    'No migrations directory found. Expected web/server/db/migrations (or set MIGRATIONS_DIR).',
-  )
-}
+type MigrationFile = { id: string; sql: string }
 
 function checksum(sql: string): string {
   return createHash('sha256').update(sql, 'utf8').digest('hex')
 }
 
-function listMigrationFiles(directory: string): string[] {
-  return readdirSync(directory)
-    .filter((name) => name.endsWith('.sql'))
-    .sort()
-    .map((name) => join(directory, name))
+/**
+ * Prefer SQL bundled into the Nitro server build (works in AI Studio / Cloud Run /
+ * any deploy where server/db/migrations is not on disk next to the runtime).
+ * Falls back to MIGRATIONS_DIR or filesystem for local Docker layouts.
+ */
+function loadMigrations(): MigrationFile[] {
+  // Vite/Nitro: embed *.sql as raw strings at build time.
+  const bundled = import.meta.glob('../db/migrations/*.sql', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>
+
+  const fromBundle = Object.entries(bundled)
+    .map(([path, sql]) => ({
+      id: path.split(/[/\\]/).pop()!,
+      sql: String(sql),
+    }))
+    .filter((m) => m.id.endsWith('.sql'))
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  if (fromBundle.length) return fromBundle
+
+  const dirs: string[] = []
+  if (process.env.MIGRATIONS_DIR) dirs.push(process.env.MIGRATIONS_DIR)
+
+  try {
+    const here = dirname(fileURLToPath(import.meta.url))
+    dirs.push(
+      join(here, '../db/migrations'),
+      join(process.cwd(), 'server/db/migrations'),
+      join(process.cwd(), 'migrations'),
+    )
+  } catch {
+    /* import.meta.url may be unavailable in some bundles */
+  }
+
+  for (const directory of dirs) {
+    if (!directory || !existsSync(directory)) continue
+    const files = readdirSync(directory)
+      .filter((name) => name.endsWith('.sql'))
+      .sort()
+      .map((name) => ({
+        id: name,
+        sql: readFileSync(join(directory, name), 'utf8'),
+      }))
+    if (files.length) return files
+  }
+
+  throw new Error(
+    'No Nuxt migrations found. Add SQL under web/server/db/migrations (bundled at build) or set MIGRATIONS_DIR.',
+  )
 }
 
 /**
@@ -46,7 +69,7 @@ function listMigrationFiles(directory: string): string[] {
  * Tracks applied files + checksums in schema_migrations.
  */
 export async function migrate(client: pg.PoolClient): Promise<string[]> {
-  const directory = migrationsDir()
+  const migrations = loadMigrations()
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -62,9 +85,7 @@ export async function migrate(client: pg.PoolClient): Promise<string[]> {
   const applied = new Map(existing.rows.map((row) => [row.id, row.checksum]))
   const appliedNow: string[] = []
 
-  for (const filePath of listMigrationFiles(directory)) {
-    const migrationId = filePath.split(/[/\\]/).pop()!
-    const sql = readFileSync(filePath, 'utf8')
+  for (const { id: migrationId, sql } of migrations) {
     const digest = checksum(sql)
 
     if (applied.has(migrationId)) {
