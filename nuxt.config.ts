@@ -33,15 +33,17 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     geminiApiKey: '',
-    geminiModel: 'gemini-2.0-flash',
-    databaseUrl: 'postgresql://scraper:scraper@localhost:5432/job_scraper',
+    geminiModel: 'gemini-3.1-pro-preview',
+    // Empty default — set DATABASE_URL or NUXT_DATABASE_URL at runtime (Netlify).
+    // Do not bake a localhost URL here or prod will silently ignore DATABASE_URL.
+    databaseUrl: '',
     ollamaBaseUrl: 'http://localhost:11434',
     ollamaModel: 'gemma4:e4b',
     ollamaFallbackModels: 'llama3.2:latest',
     stripeSecretKey: '',
     stripeWebhookSecret: '',
     stripePriceProMonthly: '',
-    appUrl: 'http://localhost:3000',
+    appUrl: '',
     adminEmails: '',
     resendApiKey: '',
     contactFromEmail: '',
@@ -51,7 +53,7 @@ export default defineNuxtConfig({
       password: 'jobflow-dev-session-password-change-me-32chars',
     },
     public: {
-      appName: 'JobFlow AI',
+      appName: 'JobHunting',
       /**
        * Override with NUXT_PUBLIC_API_BACKEND=nuxt|fastapi
        * (do not bake process.env here — Nuxt must apply env overrides at runtime)

@@ -25,32 +25,50 @@ export const PRO_CREDITS = 150
 let pool: pg.Pool | null = null
 let schemaReady = false
 
+function resolveDatabaseUrl(): string {
+  const config = useRuntimeConfig()
+  const envUrl = String(process.env.NUXT_DATABASE_URL || process.env.DATABASE_URL || '').trim()
+  const configUrl = String(config.databaseUrl || '').trim()
+
+  // Prefer real host env (Netlify). Ignore baked/local defaults when env is set.
+  let value = envUrl || configUrl
+  if (!value) return ''
+
+  return value
+    .replace(/([?&])channel_binding=require&?/gi, '$1')
+    .replace(/[?&]$/, '')
+}
+
 export function getPool() {
   if (!pool) {
-    const config = useRuntimeConfig()
-    // Neon + some managed Postgres URLs append channel_binding=require, which
-    // breaks node-pg. Strip it; sslmode=require is enough.
-    let connectionString = String(config.databaseUrl || process.env.DATABASE_URL || '')
-      .replace(/([?&])channel_binding=require&?/gi, '$1')
-      .replace(/[?&]$/, '')
+    const connectionString = resolveDatabaseUrl()
 
     if (!connectionString) {
       throw createError({
         statusCode: 503,
-        statusMessage: 'DATABASE_URL is not configured',
+        statusMessage:
+          'DATABASE_URL is not configured. Set DATABASE_URL or NUXT_DATABASE_URL in Netlify env.',
       })
     }
 
     const needsSsl =
       /sslmode=require/i.test(connectionString) ||
       /neon\.tech/i.test(connectionString) ||
-      process.env.NETLIFY === 'true'
+      process.env.NETLIFY === 'true' ||
+      process.env.CONTEXT === 'production'
+
+    // When we pass ssl: {}, strip sslmode from the URL to avoid node-pg conflicts.
+    const poolUrl = needsSsl
+      ? connectionString
+          .replace(/[?&]sslmode=[^&]*/gi, '')
+          .replace(/\?&/, '?')
+          .replace(/[?&]$/, '')
+      : connectionString
 
     pool = new Pool({
-      connectionString,
-      // Neon cold start from Netlify can exceed 3s
-      connectionTimeoutMillis: 15_000,
-      max: 3,
+      connectionString: poolUrl,
+      connectionTimeoutMillis: 20_000,
+      max: 2,
       min: 0,
       idleTimeoutMillis: 5_000,
       allowExitOnIdle: true,
@@ -97,8 +115,11 @@ export function isDatabaseError(error: unknown) {
     code === 'ECONNREFUSED' ||
     code === 'ENOTFOUND' ||
     code === 'ETIMEDOUT' ||
+    code === 'ECONNRESET' ||
     code === '57P01' ||
-    code === '3D000'
+    code === '3D000' ||
+    code === '28P01' || // invalid password
+    code === '28000' // invalid authorization
   )
 }
 

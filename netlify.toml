@@ -1,10 +1,16 @@
-# Monorepo deploy (only if Netlify is connected to the full ai-job-scraper repo).
-# If the site uses the web-only jobhunting repo, use web/netlify.toml instead (no base).
+# This package is the Netlify site root (e.g. Bibi1989/jobhunting = web/).
 [build]
   command = "npm run build"
-  publish = "dist/"
+  publish = ".output/public"
 
 [build.environment]
   NODE_VERSION = "22"
   NITRO_PRESET = "netlify"
   NUXT_PUBLIC_API_BACKEND = "nuxt"
+
+# Required in Netlify UI → Environment variables ( mag Production + Deploy previews):
+#   DATABASE_URL            Neon pooler URL (sslmode=require; remove channel_binding=require)
+#   NUXT_DATABASE_URL       same as DATABASE_URL (Nuxt runtimeConfig override — recommended)
+#   NUXT_SESSION_PASSWORD   ≥32 random characters
+#   NUXT_PUBLIC_API_BACKEND=nuxt
+# Optional: GEMINI_API_KEY, NUXT_APP_URL=https://<site>.netlify.app
