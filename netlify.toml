@@ -1,4 +1,5 @@
-# This package is the Netlify site root (repo Bibi1989/jobhunting = web/).
+# Monorepo deploy (only if Netlify is connected to the full ai-job-scraper repo).
+# If the site uses the web-only jobhunting repo, use web/netlify.toml instead (no base).
 [build]
   command = "npm run build"
   publish = ".output/public"
@@ -7,8 +8,3 @@
   NODE_VERSION = "22"
   NITRO_PRESET = "netlify"
   NUXT_PUBLIC_API_BACKEND = "nuxt"
-
-# Required in Netlify UI → Environment variables:
-#   DATABASE_URL
-#   NUXT_SESSION_PASSWORD  (≥32 chars)
-#   NUXT_PUBLIC_API_BACKEND=nuxt
