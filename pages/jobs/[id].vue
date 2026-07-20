@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Save,
   X,
+  LayoutTemplate,
 } from 'lucide-vue-next'
 import type { Job, UserDocumentSummary } from '~/shared/types/job'
 import { CV_FORMATS, getCvFormat } from '~/shared/samples/cvFormats'
@@ -110,6 +111,20 @@ const profileReady = computed(() => {
 const canGenerate = computed(
   () => !needsProfileDetails.value || profileReady.value,
 )
+
+function builderResumePath() {
+  return job.value?.id ? `/builder/resume/new?jobId=${encodeURIComponent(job.value.id)}` : '/builder/resume/new'
+}
+function builderCoverLetterPath() {
+  return job.value?.id
+    ? `/builder/cover-letter/new?jobId=${encodeURIComponent(job.value.id)}`
+    : '/builder/cover-letter/new'
+}
+function builderPortfolioPath() {
+  return job.value?.id
+    ? `/dashboard/portfolio?jobId=${encodeURIComponent(job.value.id)}`
+    : '/dashboard/portfolio'
+}
 
 async function loadDocuments() {
   try {
@@ -606,9 +621,41 @@ function applyToJob() {
               <p class="font-bold text-emerald-400 text-xs uppercase tracking-widest mb-2">How to apply</p>
               <ol class="list-decimal list-inside space-y-1 text-slate-300 text-sm">
                 <li>Generate tailored resume & cover letter (AI Tailoring tab).</li>
+                <li>Or open the <strong>Resume Builder</strong> — scraped job description and your uploaded CV are copied in.</li>
                 <li>Preview, edit, then <strong>Save for this job</strong> so they stick with the saved role.</li>
                 <li>Open <strong>Application Q&amp;A</strong>, then apply on the company site.</li>
               </ol>
+            </div>
+
+            <div class="rounded-2xl border border-blue-500/25 bg-blue-950/25 p-4 space-y-3">
+              <div>
+                <p class="font-bold text-blue-300 text-xs uppercase tracking-widest mb-1">Open in builders</p>
+                <p class="text-xs text-slate-400">
+                  Carries this job’s description into Target Role, and loads your uploaded CV when available.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <NuxtLink
+                  :to="builderResumePath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-blue-500/40 bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  <LayoutTemplate :size="14" />
+                  Resume builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderCoverLetterPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-950/40 text-indigo-200 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 transition-all"
+                >
+                  <FileText :size="14" />
+                  Cover letter builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderPortfolioPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  Portfolio
+                </NuxtLink>
+              </div>
             </div>
 
             <p
@@ -637,6 +684,36 @@ function applyToJob() {
           </div>
 
           <div v-else-if="activeTab === 'tailor'" class="space-y-6 max-w-4xl mx-auto pb-6">
+            <div class="rounded-2xl border border-blue-500/25 bg-blue-950/25 p-4 space-y-3">
+              <div>
+                <p class="font-bold text-blue-300 text-xs uppercase tracking-widest mb-1">Prefer the visual builder?</p>
+                <p class="text-xs text-slate-400">
+                  Open the resume builder with this job’s scraped description and your uploaded CV prefilled.
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <NuxtLink
+                  :to="builderResumePath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-blue-500/40 bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  <LayoutTemplate :size="14" />
+                  Open resume builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderCoverLetterPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-950/40 text-indigo-200 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 transition-all"
+                >
+                  Cover letter builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderPortfolioPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  Portfolio
+                </NuxtLink>
+              </div>
+            </div>
+
             <p class="text-sm text-slate-400">
               Pick a CV format (live preview on the right), then upload or paste your materials.
             </p>
@@ -787,6 +864,25 @@ function applyToJob() {
                   <Save v-else :size="14" />
                   Save to documents
                 </button>
+                <NuxtLink
+                  :to="builderResumePath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5 transition-all"
+                >
+                  <LayoutTemplate :size="14" />
+                  Open resume builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderCoverLetterPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  Cover letter builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="builderPortfolioPath()"
+                  class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
+                >
+                  Portfolio
+                </NuxtLink>
               </div>
               <p class="text-[11px] text-slate-500">
                 Format: {{ selectedFormat.name }} · Opens in preview by default

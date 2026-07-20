@@ -22,6 +22,11 @@ export default withCredits(
     }
 
     const filePart = form.find((p) => p.name === 'file' && p.filename)
+    const jobDescriptionPart = form.find((p) => p.name === 'jobDescription')
+    const jobDescription = jobDescriptionPart?.data
+      ? Buffer.from(jobDescriptionPart.data).toString('utf8').trim()
+      : ''
+
     if (!filePart?.data || !filePart.filename) {
       throw createError({ statusCode: 400, statusMessage: 'A CV or cover letter file is required' })
     }
@@ -39,7 +44,7 @@ export default withCredits(
       })
     }
 
-    const profileData = await generatePortfolioFromText(documentText)
+    const profileData = await generatePortfolioFromText(documentText, jobDescription || undefined)
 
     // Returning here signals success to withCredits, which then charges 20 credits.
     return { profileData }

@@ -5,6 +5,7 @@ import type { BuilderResumeData, BuilderCoverLetter } from '~/shared/types/build
 import { downloadServerPdf } from '~/utils/downloadServerPdf'
 import { slugifyFilename } from '~/utils/download'
 import { coverLetterTemplates } from '~/utils/templates'
+import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
 
 const toast = useAppToast()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
@@ -25,9 +26,9 @@ const mobileNavOpen = ref(false)
 const mobilePane = ref<'edit' | 'preview'>('edit')
 
 const coverLetterTabs = [
+  { id: 'details', label: 'Target Role', icon: 'work' },
   { id: 'template', label: 'Template', icon: 'view_quilt' },
   { id: 'contact', label: 'Contact Info', icon: 'person' },
-  { id: 'details', label: 'Target Role', icon: 'work' },
   { id: 'content', label: 'Letter Content', icon: 'edit_note' },
 ] as const
 
@@ -208,7 +209,72 @@ onMounted(async () => {
     const templateQuery = String(route.query.template || '')
     if (templateQuery) applyCoverLetterTemplate(templateQuery)
   }
+
+  await applyJobPrefillFromRoute()
 })
+
+async function applyJobPrefillFromRoute() {
+  const jobId = route.query.jobId
+  if (!jobId) return
+
+  loading.value = true
+  try {
+    const prefill = await loadBuilderJobPrefill(jobId)
+    if (!prefill) return
+
+    if (prefill.description) {
+      coverLetter.value.jobDescription = prefill.description
+    }
+    if (prefill.company) {
+      coverLetter.value.companyName = prefill.company
+    }
+    if (prefill.title && !resumeData.value.personalInfo.jobTitle?.trim()) {
+      resumeData.value.personalInfo.jobTitle = prefill.title
+    }
+
+    if (prefill.resumeText.length > 40) {
+      rawResumeText.value = prefill.resumeText
+      uploadedResumeName.value = prefill.resumeName
+      try {
+        const parsed = await parseResumeTextToBuilder(prefill.resumeText)
+        if (parsed) {
+          const keepTemplate = resumeData.value.templateId
+          const keepName = resumeData.value.name
+          const keepLanguage = resumeData.value.language
+          resumeData.value = {
+            ...resumeData.value,
+            ...parsed,
+            templateId: keepTemplate,
+            name: keepName,
+            language: keepLanguage || 'en',
+            personalInfo: {
+              ...resumeData.value.personalInfo,
+              ...parsed.personalInfo,
+              jobTitle: parsed.personalInfo?.jobTitle || prefill.title || resumeData.value.personalInfo.jobTitle,
+            },
+            coverLetter: coverLetter.value,
+          }
+          await refreshCredits()
+        }
+      } catch (err) {
+        console.error(err)
+        toast.info('Job description loaded. Upload a resume if parse failed.')
+      }
+    }
+
+    activeTab.value = 'details'
+    toast.success(
+      prefill.resumeText
+        ? 'Job description and uploaded CV loaded for cover letter drafting.'
+        : 'Job description loaded. Upload a resume or draft from the description.',
+    )
+  } catch (err) {
+    console.error(err)
+    toast.error('Could not load job details for the builder.')
+  } finally {
+    loading.value = false
+  }
+}
 
 async function saveDraft() {
   if (!resumeData.value) return

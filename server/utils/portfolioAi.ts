@@ -32,9 +32,20 @@ Rules:
 - tech_stack must be an array of short strings (may be empty).
 - url on projects may be empty when no link exists.`
 
-function buildPrompt(documentText: string): string {
-  return `${SYSTEM_PROMPT}
+function buildPrompt(documentText: string, jobDescription?: string): string {
+  const jd = jobDescription?.trim()
+  const jdBlock = jd
+    ? `
 
+Optional target job description — emphasize skills and projects that align with this role (still do not invent facts):
+"""
+${jd.slice(0, 8000)}
+"""
+`
+    : ''
+
+  return `${SYSTEM_PROMPT}
+${jdBlock}
 Build the portfolio JSON from the following document text:
 
 """
@@ -102,7 +113,10 @@ function normalizeProfileData(input: unknown): PortfolioProfileData {
   }
 }
 
-export async function generatePortfolioFromText(documentText: string): Promise<PortfolioProfileData> {
+export async function generatePortfolioFromText(
+  documentText: string,
+  jobDescription?: string,
+): Promise<PortfolioProfileData> {
   const ai = createGeminiClient()
 
   // Prefer the configured model, then fall back to a known-good flash model.
@@ -111,7 +125,7 @@ export async function generatePortfolioFromText(documentText: string): Promise<P
   const response = await generateWithModels(ai, models, (model) =>
     ai.models.generateContent({
       model,
-      contents: buildPrompt(documentText),
+      contents: buildPrompt(documentText, jobDescription),
       config: { temperature: 0.4, responseMimeType: 'application/json' },
     }),
   )

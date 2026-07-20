@@ -8,6 +8,7 @@ import {
   type Portfolio,
   type PortfolioProfileData,
 } from '~/shared/types/portfolio'
+import { loadBuilderJobPrefill } from '~/utils/builderJobPrefill'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -20,6 +21,9 @@ const selectedFile = ref<File | null>(null)
 const dragging = ref(false)
 const selectedTemplate = ref<string>(DEFAULT_TEMPLATE_SLUG)
 const fileInput = ref<HTMLInputElement | null>(null)
+const jobContext = ref<{ jobId: string; title: string; company: string; description: string } | null>(
+  null,
+)
 
 const generating = ref(false)
 const saving = ref(false)
@@ -35,15 +39,47 @@ const { data: saved, refresh: refreshSaved } = await useFetch<{ portfolios: Port
 )
 
 const route = useRoute()
+const lastLoadedJobId = ref('')
 watch(
-  () => [route.query.template, saved.value?.portfolios?.length ?? 0, unlocked.value] as const,
-  ([slug, count]) => {
+  () => [route.query.template, route.query.jobId, saved.value?.portfolios?.length ?? 0, unlocked.value] as const,
+  async ([slug, jobId, count]) => {
     if (typeof slug === 'string' && PORTFOLIO_TEMPLATES.some((t) => t.slug === slug)) {
       selectedTemplate.value = slug
       activeTab.value = 'create'
-      return
+    } else if (typeof jobId === 'string' && jobId.trim()) {
+      activeTab.value = 'create'
+    } else if (count === 0 && unlocked.value) {
+      activeTab.value = 'create'
     }
-    if (count === 0 && unlocked.value) activeTab.value = 'create'
+
+    const id = typeof jobId === 'string' ? jobId.trim() : ''
+    if (!id || id === lastLoadedJobId.value) return
+    lastLoadedJobId.value = id
+
+    try {
+      const prefill = await loadBuilderJobPrefill(id)
+      if (!prefill) return
+      jobContext.value = {
+        jobId: prefill.jobId,
+        title: prefill.title,
+        company: prefill.company,
+        description: prefill.description,
+      }
+      if (prefill.resumeText.length > 40) {
+        selectedFile.value = new File(
+          [prefill.resumeText],
+          prefill.resumeName.endsWith('.txt') ? prefill.resumeName : `${prefill.resumeName}.txt`,
+          { type: 'text/plain' },
+        )
+        result.value = null
+        toast.success('Job description and uploaded CV ready for portfolio generation.')
+      } else if (prefill.description) {
+        toast.info('Job description loaded. Upload a CV to generate the portfolio.')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not load job context for portfolio.')
+    }
   },
   { immediate: true },
 )
@@ -80,6 +116,9 @@ async function generate() {
   try {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
+    if (jobContext.value?.description) {
+      formData.append('jobDescription', jobContext.value.description)
+    }
     const { profileData } = await $fetch<{ profileData: PortfolioProfileData }>(
       '/api/portfolio/generate',
       { method: 'POST', body: formData },
@@ -297,6 +336,21 @@ function primaryContactHref(data: PortfolioProfileData) {
         :aria-hidden="!unlocked"
       >
         <section>
+          <div
+            v-if="jobContext"
+            class="mb-6 rounded-2xl border border-blue-500/25 bg-blue-950/30 p-4 text-sm text-slate-200"
+          >
+            <p class="font-semibold text-blue-200 mb-1">
+              From job{{ jobContext.title ? `: ${jobContext.title}` : '' }}
+              <span v-if="jobContext.company" class="text-slate-400 font-normal"> · {{ jobContext.company }}</span>
+            </p>
+            <p class="text-xs text-slate-400 mb-2">
+              Scraped job description will be used to emphasize matching skills and projects. Your uploaded CV is prefilled when available.
+            </p>
+            <p v-if="jobContext.description" class="text-xs text-slate-500 line-clamp-3 whitespace-pre-wrap">
+              {{ jobContext.description }}
+            </p>
+          </div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-3">
             1 · Upload your document
           </h2>

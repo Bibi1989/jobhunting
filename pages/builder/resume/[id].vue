@@ -15,6 +15,7 @@ import {
   withLayoutState,
   type ResumeSectionId,
 } from '~/shared/pdf/schema'
+import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
 
 const toast = useAppToast()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
@@ -26,7 +27,11 @@ const router = useRouter()
 const resumeId = route.params.id as string
 const exporting = ref(false)
 const importing = ref(false)
+const enhancing = ref(false)
 const importFileInput = ref<HTMLInputElement | null>(null)
+const draftFileInput = ref<HTMLInputElement | null>(null)
+const uploadedResumeName = ref('')
+const rawResumeText = ref('')
 
 function newId() {
   return crypto.randomUUID()
@@ -50,12 +55,13 @@ function selectTemplate(templateId: string) {
   resumeData.value.templateSlug = id
 }
 
-const activeTab = ref('personalInfo')
+const activeTab = ref('targetRole')
 const activePopoverId = ref<string | null>(null)
 const mobileNavOpen = ref(false)
 const mobilePane = ref<'edit' | 'preview'>('edit')
 
 const builderTabs = [
+  { id: 'targetRole', label: 'Target Role', icon: 'business_center' },
   { id: 'template', label: 'Template', icon: 'view_quilt' },
   { id: 'layout', label: 'Section Order', icon: 'reorder' },
   { id: 'personalInfo', label: 'Personal Info', icon: 'person' },
@@ -130,7 +136,9 @@ const resumeData = ref<BuilderResumeData>({
   ],
   projects: [],
   achievements: [],
-  customSections: []
+  customSections: [],
+  targetJobDescription: '',
+  additionalInstructions: '',
 })
 
 const loading = ref(false)
@@ -157,7 +165,150 @@ type AtsCheckResult = {
 const atsRunning = ref(false)
 const atsFixing = ref(false)
 const atsResult = ref<AtsCheckResult | null>(null)
-const atsJobDescription = ref('')
+
+function hasResumeSignal() {
+  const info = resumeData.value.personalInfo
+  if (info?.fullName?.trim()) return true
+  if ((info?.summary || '').replace(/<[^>]+>/g, '').trim().length > 20) return true
+  if ((resumeData.value.experience || []).length > 0) return true
+  if (rawResumeText.value.trim().length > 40) return true
+  return false
+}
+
+async function draftResumeWithAi() {
+  if (!canAccessAI.value) {
+    toast.info(aiBlockedMessage() || 'Pro subscription required for AI.')
+    return
+  }
+
+  const hasJd = Boolean(resumeData.value.targetJobDescription?.trim())
+  const hasResume = hasResumeSignal()
+  if (!hasJd && !hasResume) {
+    toast.info('Upload a resume and/or paste a job description to draft.')
+    return
+  }
+
+  enhancing.value = true
+  try {
+    const response = await $fetch<{ resumeData?: BuilderResumeData }>('/api/ai/generate-resume', {
+      method: 'POST',
+      body: {
+        resumeData: resumeData.value,
+        jobDescription: resumeData.value.targetJobDescription || '',
+        additionalInstructions: resumeData.value.additionalInstructions || '',
+        rawResumeText: rawResumeText.value || undefined,
+        targetRole: resumeData.value.personalInfo.jobTitle,
+      },
+    })
+
+    if (response?.resumeData) {
+      const next = withLayoutState(response.resumeData)
+      next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
+      next.templateSlug = next.templateId
+      next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
+      next.targetJobDescription =
+        next.targetJobDescription ?? resumeData.value.targetJobDescription
+      next.additionalInstructions =
+        next.additionalInstructions ?? resumeData.value.additionalInstructions
+      resumeData.value = next
+      atsResult.value = null
+      toast.success(
+        hasJd && hasResume ? 'Resume drafted.' : 'Resume drafted from available details.',
+      )
+      activeTab.value = 'personalInfo'
+      mobilePane.value = 'edit'
+      await refreshCredits()
+      return
+    }
+    toast.error('AI returned an empty resume. Please try again.')
+  } catch (e: unknown) {
+    console.error(e)
+    const err = e as {
+      data?: { statusMessage?: string; message?: string }
+      statusMessage?: string
+      message?: string
+    }
+    toast.error(
+      err?.data?.statusMessage ||
+        err?.data?.message ||
+        err?.statusMessage ||
+        err?.message ||
+        'AI draft failed. Please try again.',
+    )
+  } finally {
+    enhancing.value = false
+  }
+}
+
+function triggerDraftUpload() {
+  if (!canAccessAI.value) {
+    toast.info(aiBlockedMessage() || 'Pro subscription required to import a resume.')
+    return
+  }
+  draftFileInput.value?.click()
+}
+
+async function handleDraftResumeUpload(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  target.value = ''
+  if (importing.value) return
+
+  importing.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'resume')
+
+    toast.info('Uploading resume…')
+    const docRes = await $fetch<{ document: { contentText: string; originalName?: string } }>(
+      '/api/documents',
+      { method: 'POST', body: formData },
+    )
+
+    if (!docRes.document?.contentText) {
+      throw new Error('Could not extract text from document')
+    }
+
+    rawResumeText.value = docRes.document.contentText
+    uploadedResumeName.value = docRes.document.originalName || file.name
+
+    toast.info('Parsing resume…')
+    const parseRes = await $fetch<{ resumeData: BuilderResumeData }>('/api/ai/parse-resume', {
+      method: 'POST',
+      body: { text: docRes.document.contentText },
+    })
+
+    if (parseRes.resumeData) {
+      const oldTemplateId = resumeData.value.templateId
+      const oldOrder = resumeData.value.sectionsOrder
+      const oldLanguage = resumeData.value.language
+      const oldJd = resumeData.value.targetJobDescription
+      const oldInstructions = resumeData.value.additionalInstructions
+
+      const next = withLayoutState({
+        ...parseRes.resumeData,
+        templateId: oldTemplateId,
+        templateSlug: oldTemplateId,
+        sectionsOrder: oldOrder,
+        language: oldLanguage,
+        targetJobDescription: oldJd,
+        additionalInstructions: oldInstructions,
+      })
+      resumeData.value = next
+      atsResult.value = null
+      toast.success('Resume loaded — draft with it alone or add a job description.')
+      await refreshCredits()
+    }
+  } catch (err: unknown) {
+    console.error(err)
+    const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(e.data?.statusMessage || e.statusMessage || 'Failed to import resume.')
+  } finally {
+    importing.value = false
+  }
+}
 
 async function runAtsCheck() {
   if (!canAccessAI.value) {
@@ -172,7 +323,7 @@ async function runAtsCheck() {
       body: {
         resumeData: resumeData.value,
         targetRole: resumeData.value.personalInfo.jobTitle,
-        jobDescription: atsJobDescription.value || undefined,
+        jobDescription: resumeData.value.targetJobDescription || undefined,
       },
     })
     atsResult.value = result
@@ -203,7 +354,7 @@ async function fixAtsIssues() {
       body: {
         resumeData: resumeData.value,
         atsResult: atsResult.value,
-        jobDescription: atsJobDescription.value || undefined,
+        jobDescription: resumeData.value.targetJobDescription || undefined,
       },
     })
     if (response?.resumeData) {
@@ -211,6 +362,10 @@ async function fixAtsIssues() {
       next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
       next.templateSlug = next.templateId
       next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
+      next.targetJobDescription =
+        next.targetJobDescription ?? resumeData.value.targetJobDescription
+      next.additionalInstructions =
+        next.additionalInstructions ?? resumeData.value.additionalInstructions
       resumeData.value = next
       atsResult.value = null
       await refreshCredits()
@@ -311,6 +466,9 @@ async function handleImportResume(e: Event) {
       throw new Error('Could not extract text from document')
     }
 
+    rawResumeText.value = docRes.document.contentText
+    uploadedResumeName.value = file.name
+
     toast.info('Extracting resume data... (this takes ~15 seconds)')
     const parseRes = await $fetch<{ resumeData: BuilderResumeData }>('/api/ai/parse-resume', {
       method: 'POST',
@@ -321,6 +479,8 @@ async function handleImportResume(e: Event) {
       const oldTemplateId = resumeData.value.templateId
       const oldOrder = resumeData.value.sectionsOrder
       const oldLanguage = resumeData.value.language
+      const oldJd = resumeData.value.targetJobDescription
+      const oldInstructions = resumeData.value.additionalInstructions
 
       const next = withLayoutState({
         ...parseRes.resumeData,
@@ -328,6 +488,8 @@ async function handleImportResume(e: Event) {
         templateSlug: oldTemplateId,
         sectionsOrder: oldOrder,
         language: oldLanguage,
+        targetJobDescription: oldJd,
+        additionalInstructions: oldInstructions,
       })
       resumeData.value = next
       atsResult.value = null
@@ -371,7 +533,76 @@ onMounted(async () => {
       resumeData.value.name = `${tpl.name} Resume`
     }
   }
+
+  await applyJobPrefillFromRoute()
 })
+
+async function applyJobPrefillFromRoute() {
+  const jobId = route.query.jobId
+  if (!jobId) return
+
+  loading.value = true
+  try {
+    const prefill = await loadBuilderJobPrefill(jobId)
+    if (!prefill) return
+
+    if (prefill.description) {
+      resumeData.value.targetJobDescription = prefill.description
+    }
+    if (prefill.title && !resumeData.value.personalInfo.jobTitle?.trim()) {
+      resumeData.value.personalInfo.jobTitle = prefill.title
+    }
+    if (prefill.title || prefill.company) {
+      const label = [prefill.title, prefill.company].filter(Boolean).join(' · ')
+      if (resumeId === 'new' || resumeData.value.name === 'My New Resume') {
+        resumeData.value.name = label ? `${label} Resume` : resumeData.value.name
+      }
+    }
+
+    if (prefill.resumeText.length > 40) {
+      rawResumeText.value = prefill.resumeText
+      uploadedResumeName.value = prefill.resumeName
+      try {
+        const parsed = await parseResumeTextToBuilder(prefill.resumeText)
+        if (parsed) {
+          const oldTemplateId = resumeData.value.templateId
+          const oldOrder = resumeData.value.sectionsOrder
+          const oldLanguage = resumeData.value.language
+          const oldJd = resumeData.value.targetJobDescription
+          const oldInstructions = resumeData.value.additionalInstructions
+          const next = withLayoutState({
+            ...parsed,
+            templateId: oldTemplateId,
+            templateSlug: oldTemplateId,
+            sectionsOrder: oldOrder,
+            language: oldLanguage,
+            targetJobDescription: oldJd || prefill.description,
+            additionalInstructions: oldInstructions,
+            name: resumeData.value.name,
+          } as BuilderResumeData)
+          if (prefill.title) next.personalInfo.jobTitle = next.personalInfo.jobTitle || prefill.title
+          resumeData.value = next
+          await refreshCredits()
+        }
+      } catch (err) {
+        console.error(err)
+        toast.info('Job description loaded. Upload or paste your CV if parse failed.')
+      }
+    }
+
+    activeTab.value = 'targetRole'
+    toast.success(
+      prefill.resumeText
+        ? 'Job description and uploaded CV loaded into Target Role.'
+        : 'Job description loaded. Upload a CV or draft from the description.',
+    )
+  } catch (err) {
+    console.error(err)
+    toast.error('Could not load job details for the builder.')
+  } finally {
+    loading.value = false
+  }
+}
 
 async function saveDraft() {
   saving.value = true
@@ -584,6 +815,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
         </div>
         
         <input type="file" ref="importFileInput" class="hidden" accept=".pdf,.docx,.doc,.txt" @change="handleImportResume" />
+        <input type="file" ref="draftFileInput" class="hidden" accept=".pdf,.docx,.doc,.txt,.md" @change="handleDraftResumeUpload" />
         <button @click="triggerImport" :disabled="importing || saving || exporting" class="px-2.5 sm:px-4 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 rounded hover:bg-indigo-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer flex items-center gap-1 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
           <span class="material-symbols-outlined text-[16px]" :class="{'animate-spin': importing}">
             {{ importing ? 'refresh' : 'upload_file' }}
@@ -785,6 +1017,96 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 <div class="bg-white/5 rounded border border-white/10">
                   <BuilderRichTextEditor v-model="resumeData.personalInfo.summary" />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="activeTab === 'targetRole'" class="pb-8">
+            <div class="mb-8">
+              <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
+              <p class="text-blue-200/60 text-sm">
+                Upload a resume and/or paste a job description — either is enough to draft; both is best.
+              </p>
+            </div>
+            <div class="space-y-5">
+              <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3 flex-wrap">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white">Resume for drafting</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                      {{
+                        uploadedResumeName ||
+                        (hasResumeSignal()
+                          ? 'Using contact & experience from this project'
+                          : 'Optional — upload PDF, DOCX, or TXT')
+                      }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    :disabled="importing || enhancing"
+                    class="text-[11px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-3 py-1.5 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+                    @click="triggerDraftUpload"
+                  >
+                    <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': importing }">
+                      {{ importing ? 'refresh' : 'upload_file' }}
+                    </span>
+                    {{ importing ? 'Importing…' : 'Upload resume' }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
+                  Job Description
+                </label>
+                <textarea
+                  v-model="resumeData.targetJobDescription"
+                  class="w-full h-48 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
+                  placeholder="Optional if you uploaded a resume. Paste the job requirements for a tighter draft…"
+                />
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
+                  Additional AI instructions
+                </label>
+                <textarea
+                  v-model="resumeData.additionalInstructions"
+                  class="w-full h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
+                  placeholder="Optional. Example: Emphasize leadership and TypeScript. Keep bullets concise."
+                />
+                <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
+              </div>
+
+              <button
+                type="button"
+                :disabled="enhancing || importing"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm disabled:opacity-50 cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.35)]"
+                @click="draftResumeWithAi"
+              >
+                <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': enhancing }">
+                  {{ enhancing ? 'refresh' : 'auto_awesome' }}
+                </span>
+                {{ enhancing ? 'Drafting…' : 'Draft resume with AI' }}
+              </button>
+
+              <div
+                v-if="route.query.jobId"
+                class="flex flex-wrap gap-2 pt-1"
+              >
+                <NuxtLink
+                  :to="`/builder/cover-letter/new?jobId=${encodeURIComponent(String(route.query.jobId))}`"
+                  class="text-[11px] px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 hover:border-blue-400 hover:text-white transition-colors"
+                >
+                  Cover letter builder
+                </NuxtLink>
+                <NuxtLink
+                  :to="`/dashboard/portfolio?jobId=${encodeURIComponent(String(route.query.jobId))}`"
+                  class="text-[11px] px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 hover:border-blue-400 hover:text-white transition-colors"
+                >
+                  Portfolio
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -1112,10 +1434,10 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   Target job description <span class="normal-case text-slate-500">(optional)</span>
                 </label>
                 <textarea
-                  v-model="atsJobDescription"
+                  v-model="resumeData.targetJobDescription"
                   rows="5"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
-                  placeholder="Paste a job description to check keyword alignment…"
+                  placeholder="Paste a job description to check keyword alignment (same field as Target Role)…"
                 />
               </div>
               <div class="flex flex-wrap items-center gap-3">
