@@ -30,15 +30,6 @@ export default withCredits(async (event) => {
     })
   }
 
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Gemini API key is not configured',
-    })
-  }
-
   let markdown = ''
   try {
     markdown = builderResumeToMarkdown(resumeData)
@@ -62,7 +53,7 @@ export default withCredits(async (event) => {
       ? `\n\nTarget job description:\n"""\n${jobDescription.trim().slice(0, 6000)}\n"""`
       : ''
 
-  const ai = createGeminiClient(apiKey)
+  const ai = createGeminiClient()
 
   const prompt = `You are an expert ATS (Applicant Tracking System) resume auditor.
 Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".

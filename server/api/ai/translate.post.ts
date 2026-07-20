@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'
+import { createGeminiClient } from '../../utils/gemini'
 import { withCredits } from '../../utils/withCredits'
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -21,17 +21,7 @@ export default withCredits(async (event) => {
 
   const langName = LANGUAGE_NAMES[targetLanguage] || targetLanguage
 
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey
-
-  if (!apiKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Gemini API key is missing',
-    })
-  }
-
-  const ai = new GoogleGenAI({ apiKey })
+  const ai = createGeminiClient()
   const payload = mode === 'cover_letter' ? coverLetter : resumeData
 
   const prompt = `You are an expert translator. I will provide you with a JSON object representing a ${

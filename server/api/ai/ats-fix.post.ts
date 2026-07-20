@@ -35,18 +35,12 @@ export default withCredits(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Run ATS Check first, then fix.' })
   }
 
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    throw createError({ statusCode: 500, statusMessage: 'Gemini API key is not configured' })
-  }
-
   const markdown = builderResumeToMarkdown(resumeData)
   const issues = Array.isArray(atsResult.issues) ? atsResult.issues : []
   const gaps = Array.isArray(atsResult.keywordGaps) ? atsResult.keywordGaps : []
   const wins = Array.isArray(atsResult.quickWins) ? atsResult.quickWins : []
 
-  const ai = createGeminiClient(apiKey)
+  const ai = createGeminiClient()
   const prompt = `You are an expert resume writer optimizing for ATS parseability.
 Apply the audit findings to improve this resume JSON. Keep the same JSON schema/shape.
 

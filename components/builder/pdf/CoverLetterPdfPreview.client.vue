@@ -1,54 +1,49 @@
 <script setup lang="ts">
 /**
- * Live A4 canvas — renders via the same Nitro @react-pdf pipeline as Download.
- * Avoids bundling @ceereals/vue-pdf / base64-js in Vite (CJS default-export 500).
+ * Live A4 cover-letter preview — same Nitro @react-pdf pipeline as Export PDF.
+ * Keeps preview identical to download (fixed A4 pages, no HTML paper-fill growth).
  */
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount, computed } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
-import type { BuilderResumeData } from '~/shared/types/builder'
-import {
-  normalizeSectionsOrder,
-  resolveTemplateSlug,
-  withLayoutState,
-} from '~/shared/pdf/schema'
+import type { BuilderCoverLetter, BuilderResumeData } from '~/shared/types/builder'
+import { withLayoutState } from '~/shared/pdf/schema'
 
 const props = defineProps<{
   resume: BuilderResumeData
+  coverLetter: BuilderCoverLetter
 }>()
 
 const url = ref('')
 const loading = ref(false)
 const error = ref('')
 
+const previewPayload = computed(() => {
+  const layout = withLayoutState({
+    ...props.resume,
+    coverLetter: props.coverLetter,
+    templateId: props.resume.templateId || props.resume.templateSlug || 'cl-standard',
+    templateSlug: props.resume.templateId || props.resume.templateSlug || 'cl-standard',
+  })
+  return {
+    kind: 'cover_letter' as const,
+    filename: 'cover-letter-preview.pdf',
+    resume: layout,
+    coverLetter: props.coverLetter,
+    templateSlug: layout.templateId || layout.templateSlug,
+  }
+})
+
 async function refreshPreview() {
   loading.value = true
   error.value = ''
   try {
-    const layout = withLayoutState(props.resume)
-    const templateSlug = resolveTemplateSlug(layout)
-    const sectionsOrder = normalizeSectionsOrder(
-      layout.sectionsOrder,
-      layout.customSections || [],
-    )
-
     const response = await fetch('/api/pdf/download', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/pdf',
       },
-      body: JSON.stringify({
-        kind: 'resume',
-        filename: 'preview.pdf',
-        resume: {
-          ...layout,
-          templateSlug,
-          templateId: layout.templateId || templateSlug,
-          sectionsOrder,
-        },
-        templateSlug,
-        sectionsOrder,
-      }),
+      body: JSON.stringify(previewPayload.value),
     })
 
     if (!response.ok) {
@@ -70,7 +65,7 @@ async function refreshPreview() {
 const debouncedRefresh = useDebounceFn(refreshPreview, 450)
 
 watch(
-  () => props.resume,
+  previewPayload,
   () => {
     void debouncedRefresh()
   },
@@ -83,7 +78,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="resume-pdf-preview relative w-full min-w-0 max-w-[210mm] mx-auto min-h-[842px] bg-white">
+  <div class="cover-letter-pdf-preview relative w-full min-w-0 max-w-[210mm] mx-auto min-h-[842px] bg-white shadow-2xl rounded-sm overflow-hidden">
     <div
       v-if="loading"
       class="absolute inset-x-0 top-0 z-10 flex justify-center pointer-events-none"
@@ -101,8 +96,8 @@ onBeforeUnmount(() => {
     <iframe
       v-if="url"
       :src="url"
-      title="Resume PDF preview"
-      class="w-full min-h-[842px] border-0 bg-white"
+      title="Cover letter PDF preview"
+      class="w-full min-h-[842px] h-[1123px] border-0 bg-white"
     />
   </div>
 </template>

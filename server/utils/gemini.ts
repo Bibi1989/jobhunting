@@ -95,15 +95,43 @@ const TAILORED_SCHEMA = {
   required: ['resume', 'coverLetter'],
 } as const
 
-export function createGeminiClient(apiKey: string) {
-  if (!apiKey) {
+export function resolveGeminiApiKey(): string {
+  // Prefer plain .env name; Nuxt also accepts NUXT_GEMINI_API_KEY → runtimeConfig.
+  const fromEnv =
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.NUXT_GEMINI_API_KEY?.trim() ||
+    ''
+  if (fromEnv) return fromEnv
+  try {
+    return String(useRuntimeConfig().geminiApiKey || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+export function resolveGeminiModel(): string {
+  const fromEnv =
+    process.env.GEMINI_MODEL?.trim() ||
+    process.env.NUXT_GEMINI_MODEL?.trim() ||
+    ''
+  if (fromEnv) return fromEnv
+  try {
+    return String(useRuntimeConfig().geminiModel || '').trim() || 'gemini-3.1-pro-preview'
+  } catch {
+    return 'gemini-3.1-pro-preview'
+  }
+}
+
+export function createGeminiClient(apiKey?: string) {
+  const key = (apiKey?.trim() || resolveGeminiApiKey()).trim()
+  if (!key) {
     throw createError({
       statusCode: 500,
       statusMessage: 'GEMINI_API_KEY is missing. Add it to .env and restart the server.',
     })
   }
 
-  if (apiKey.startsWith('ya29.')) {
+  if (key.startsWith('ya29.')) {
     throw createError({
       statusCode: 500,
       statusMessage:
@@ -111,7 +139,7 @@ export function createGeminiClient(apiKey: string) {
     })
   }
 
-  return new GoogleGenAI({ apiKey })
+  return new GoogleGenAI({ apiKey: key })
 }
 
 export async function generateWithModels<T>(

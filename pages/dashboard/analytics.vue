@@ -56,7 +56,7 @@ const hasUsage = computed(() => portfolios.value.length > 0)
     </header>
 
     <!-- Stat tiles -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
       <div
         v-for="s in stats"
         :key="s.label"
@@ -144,12 +144,12 @@ const hasUsage = computed(() => portfolios.value.length > 0)
     </section>
 
     <!-- Upsell for free users -->
-    <section v-if="!isPro" class="mt-8 rounded-2xl border border-blue-500/30 bg-blue-600/10 p-6 flex items-center justify-between gap-4">
-      <div>
+    <section v-if="!isPro" class="mt-8 rounded-2xl border border-blue-500/30 bg-blue-600/10 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="min-w-0">
         <p class="font-semibold text-white">Unlock AI Portfolios and premium tools</p>
         <p class="text-sm text-blue-200/70">Upgrade to Pro to generate portfolios and publish them to your domain.</p>
       </div>
-      <NuxtLink to="/pricing" class="shrink-0 rounded-xl bg-blue-500 hover:bg-blue-400 px-5 py-2.5 font-semibold text-white transition">
+      <NuxtLink to="/pricing" class="shrink-0 inline-flex justify-center rounded-xl bg-blue-500 hover:bg-blue-400 px-5 py-2.5 font-semibold text-white transition">
         Upgrade
       </NuxtLink>
     </section>

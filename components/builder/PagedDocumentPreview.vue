@@ -38,7 +38,11 @@ function pageSlice(pageIndex: number): { offset: number; height: number } {
       start + 1,
       contentHeightPx.value || start + contentBand.value,
     )
-  const height = Math.max(1, Math.min(contentBand.value, end - start))
+  let height = Math.max(1, Math.min(contentBand.value, end - start))
+  // Full A4 content band on page 1 so paper background isn't clipped to text height.
+  if (pageIndex === 0 && props.paperFill !== false) {
+    height = contentBand.value
+  }
   return { offset: start, height }
 }
 
@@ -137,9 +141,47 @@ function syncSidebarChrome() {
   sidebarChrome.value = { widthPct, background }
 }
 
+/** Paint page sheet with theme paper color; do not stretch content past natural height. */
+function syncPaperFill() {
+  if (props.paperFill === false) return
+  const root = contentRef.value
+  if (!root) return
+
+  // Cap fill to one A4 content band — never grow with scrollHeight (that caused
+  // cover-letter backgrounds to expand endlessly).
+  const band = contentBand.value
+  if (band <= 0) return
+
+  root.style.minHeight = `${band}px`
+
+  const themeRoot = root.firstElementChild as HTMLElement | null
+  let paperColor = '#ffffff'
+  if (themeRoot) {
+    const probe =
+      (themeRoot.firstElementChild as HTMLElement | null) &&
+      getComputedStyle(themeRoot.firstElementChild as HTMLElement).backgroundColor !== 'rgba(0, 0, 0, 0)'
+        ? (themeRoot.firstElementChild as HTMLElement)
+        : themeRoot
+    const bg = getComputedStyle(probe).backgroundColor
+    const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?/)
+    if (m) {
+      const alpha = m[4] !== undefined ? Number(m[4]) : 1
+      if (alpha >= 0.2) paperColor = `rgb(${m[1]}, ${m[2]}, ${m[3]})`
+    }
+    // Fill only the theme root to the A4 band — not nested scrollHeights.
+    themeRoot.style.minHeight = `${band}px`
+    themeRoot.style.boxSizing = 'border-box'
+  }
+
+  for (const sheet of getPageSheets()) {
+    sheet.style.backgroundColor = paperColor
+  }
+}
+
 function syncMirrors() {
   const el = contentRef.value
   syncSidebarChrome()
+  syncPaperFill()
   if (!el || pageCount.value <= 1) {
     mirrorHtml.value = ''
     return
@@ -221,7 +263,7 @@ onMounted(() => {
         >
           <div
             ref="contentRef"
-            class="preview-content relative z-10 w-full bg-transparent"
+            class="preview-content relative z-10 w-full bg-transparent flex flex-col"
             :style="paperFill === false ? undefined : { minHeight: `${contentBand}px` }"
           >
             <slot />

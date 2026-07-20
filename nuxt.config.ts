@@ -32,7 +32,12 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
+    /**
+     * Prefer GEMINI_API_KEY in web/.env (resolved at request time via resolveGeminiApiKey).
+     * Optional override: NUXT_GEMINI_API_KEY.
+     */
     geminiApiKey: '',
+    /** Prefer GEMINI_MODEL in web/.env; optional NUXT_GEMINI_MODEL. */
     geminiModel: 'gemini-3.1-pro-preview',
     // Empty default — set DATABASE_URL or NUXT_DATABASE_URL at runtime (Netlify).
     // Do not bake a localhost URL here or prod will silently ignore DATABASE_URL.

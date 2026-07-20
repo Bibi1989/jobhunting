@@ -20,7 +20,7 @@ defineProps<{
   <!-- Standard: centered classic letterhead -->
   <div
     v-if="templateId === 'cl-standard' || !templateId.startsWith('cl-')"
-    class="bg-white text-slate-900 w-full p-10 flex flex-col font-serif"
+    class="bg-white text-slate-900 w-full min-h-full p-10 flex flex-col font-serif"
   >
     <header class="text-center mb-6 border-b-2 border-slate-900 pb-4">
       <h1 class="text-3xl font-bold tracking-tight mb-1 uppercase">{{ fullName || 'Your Name' }}</h1>
@@ -38,16 +38,16 @@ defineProps<{
       <p class="mt-3 font-bold">{{ hiringManager || 'Hiring Manager' }}</p>
       <p>{{ companyName }}</p>
     </div>
-    <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed" v-html="bodyHtml" />
+    <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed flex-1" v-html="bodyHtml" />
   </div>
 
   <!-- Creative: bold left accent + large name -->
   <div
     v-else-if="templateId === 'cl-creative'"
-    class="bg-white text-slate-900 w-full flex font-sans overflow-hidden"
+    class="bg-white text-slate-900 w-full min-h-full flex font-sans overflow-hidden"
   >
-    <div class="w-3 bg-[#006a61] shrink-0" />
-    <div class="flex-1 p-10 flex flex-col">
+    <div class="w-3 bg-[#006a61] shrink-0 self-stretch" />
+    <div class="flex-1 p-10 flex flex-col min-h-full bg-white">
       <header class="mb-8">
         <p class="text-[10px] uppercase tracking-[0.25em] text-[#006a61] font-bold mb-2">Cover Letter</p>
         <h1 class="text-4xl font-black tracking-tight text-slate-900 leading-none">{{ fullName || 'Your Name' }}</h1>
@@ -63,17 +63,17 @@ defineProps<{
         <p class="mt-2 font-bold text-[#006a61]">{{ hiringManager || 'Hiring Manager' }}</p>
         <p class="text-slate-700">{{ companyName }}</p>
       </div>
-      <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed text-slate-700" v-html="bodyHtml" />
+      <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed text-slate-700 flex-1" v-html="bodyHtml" />
     </div>
   </div>
 
   <!-- Executive: memo header with top rule -->
   <div
     v-else-if="templateId === 'cl-executive'"
-    class="bg-[#fafaf8] text-slate-900 w-full p-10 flex flex-col font-serif"
+    class="bg-[#fafaf8] text-slate-900 w-full min-h-full p-10 flex flex-col font-serif"
   >
-    <div class="h-1.5 bg-[#091426] mb-6" />
-    <header class="mb-8 border-b border-slate-300 pb-4">
+    <div class="h-1.5 bg-[#091426] mb-6 shrink-0" />
+    <header class="mb-8 border-b border-slate-300 pb-4 shrink-0">
       <div class="flex justify-between items-start gap-4">
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-[#091426]">{{ fullName || 'Your Name' }}</h1>
@@ -94,15 +94,15 @@ defineProps<{
         <span>Application — {{ jobTitle || 'Open Role' }}</span>
       </div>
     </header>
-    <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed" v-html="bodyHtml" />
+    <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed flex-1" v-html="bodyHtml" />
   </div>
 
   <!-- Tech: left rail contact + mono accents -->
   <div
     v-else
-    class="bg-white text-slate-900 w-full flex font-sans overflow-hidden"
+    class="bg-white text-slate-900 w-full min-h-full flex font-sans overflow-hidden"
   >
-    <aside class="w-[180px] bg-slate-900 text-slate-100 p-6 flex flex-col gap-6 shrink-0">
+    <aside class="w-[180px] bg-slate-900 text-slate-100 p-6 flex flex-col gap-6 shrink-0 self-stretch min-h-full">
       <div>
         <h1 class="text-lg font-bold leading-tight">{{ fullName || 'Your Name' }}</h1>
         <p v-if="jobTitle" class="text-[10px] text-cyan-300 mt-1 font-mono uppercase tracking-wider">{{ jobTitle }}</p>
@@ -125,13 +125,13 @@ defineProps<{
         TECH INTRO
       </div>
     </aside>
-    <div class="flex-1 p-8 flex flex-col">
-      <div v-if="companyName || hiringManager" class="mb-6 text-[12px]">
+    <div class="flex-1 p-8 flex flex-col min-h-full bg-white">
+      <div v-if="companyName || hiringManager" class="mb-6 text-[12px] shrink-0">
         <p class="font-mono text-[10px] text-slate-400">{{ letterDate }}</p>
         <p class="mt-3 font-bold">{{ hiringManager || 'Hiring Manager' }}</p>
         <p class="text-slate-600">{{ companyName }}</p>
       </div>
-      <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed text-slate-800" v-html="bodyHtml" />
+      <div class="rich-text-content cover-letter-body text-[13px] leading-relaxed text-slate-800 flex-1" v-html="bodyHtml" />
     </div>
   </div>
 </template>

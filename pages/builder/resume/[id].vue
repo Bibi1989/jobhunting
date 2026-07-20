@@ -52,6 +52,35 @@ function selectTemplate(templateId: string) {
 
 const activeTab = ref('personalInfo')
 const activePopoverId = ref<string | null>(null)
+const mobileNavOpen = ref(false)
+const mobilePane = ref<'edit' | 'preview'>('edit')
+
+const builderTabs = [
+  { id: 'template', label: 'Template', icon: 'view_quilt' },
+  { id: 'layout', label: 'Section Order', icon: 'reorder' },
+  { id: 'personalInfo', label: 'Personal Info', icon: 'person' },
+  { id: 'experience', label: 'Experience', icon: 'work' },
+  { id: 'projects', label: 'Projects', icon: 'integration_instructions' },
+  { id: 'education', label: 'Education', icon: 'school' },
+  { id: 'skills', label: 'Skills', icon: 'psychology' },
+  { id: 'achievements', label: 'Achievements', icon: 'emoji_events' },
+  { id: 'custom', label: 'Custom Sections', icon: 'dashboard_customize' },
+  { id: 'atsCheck', label: 'ATS Check', icon: 'fact_check' },
+] as const
+
+function selectBuilderTab(id: string) {
+  activeTab.value = id
+  mobileNavOpen.value = false
+  mobilePane.value = 'edit'
+}
+
+function goBack() {
+  if (import.meta.client && window.history.length > 1) {
+    router.back()
+    return
+  }
+  void router.push('/builder')
+}
 
 const resumeData = ref<BuilderResumeData>({
   name: 'My New Resume',
@@ -516,63 +545,90 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
 </script>
 
 <template>
-  <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-slate-100 font-sans selection:bg-blue-500/30 h-screen flex flex-col">
+  <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-slate-100 font-sans selection:bg-blue-500/30 h-dvh flex flex-col overflow-hidden">
     <!-- TopNavBar -->
-    <header class="flex justify-between items-center px-6 h-16 shrink-0 bg-slate-900/40 backdrop-blur-md border-b border-white/10">
-      <div class="flex items-center gap-8">
-        <NuxtLink to="/" class="font-serif text-2xl text-white font-bold hover:text-blue-300 transition-colors">ScrapeEngine</NuxtLink>
-        <nav class="hidden md:flex gap-6 items-center">
+    <header class="flex justify-between items-center px-3 sm:px-6 h-14 sm:h-16 shrink-0 bg-slate-900/40 backdrop-blur-md border-b border-white/10 gap-2">
+      <div class="flex items-center gap-2 sm:gap-6 min-w-0">
+        <button
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
+          aria-label="Go back"
+          @click="goBack"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <button
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
+          aria-label="Open sections"
+          @click="mobileNavOpen = !mobileNavOpen"
+        >
+          <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
+        </button>
+        <NuxtLink to="/" class="font-serif text-lg sm:text-2xl text-white font-bold hover:text-blue-300 transition-colors truncate">ScrapeEngine</NuxtLink>
+        <nav class="hidden lg:flex gap-6 items-center">
           <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
           <NuxtLink to="/builder/templates" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">Templates</NuxtLink>
         </nav>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <select v-model="resumeData.language" @change="handleLanguageChange" class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all cursor-pointer">
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div class="hidden sm:flex items-center gap-2">
+          <select v-model="resumeData.language" @change="handleLanguageChange" class="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all cursor-pointer">
             <option value="en" class="bg-slate-800 text-white">EN</option>
             <option value="de" class="bg-slate-800 text-white">DE</option>
             <option value="fr" class="bg-slate-800 text-white">FR</option>
             <option value="es" class="bg-slate-800 text-white">ES</option>
           </select>
           <span v-if="translating" class="material-symbols-outlined text-blue-400 animate-spin text-sm">refresh</span>
-          <input type="text" v-model="resumeData.name" class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all" placeholder="Resume Name" />
+          <input type="text" v-model="resumeData.name" class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all w-28 lg:w-40" placeholder="Resume Name" />
         </div>
         
         <input type="file" ref="importFileInput" class="hidden" accept=".pdf,.docx,.doc,.txt" @change="handleImportResume" />
-        <button @click="triggerImport" :disabled="importing || saving || exporting" class="px-4 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 rounded hover:bg-indigo-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer flex items-center gap-1 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+        <button @click="triggerImport" :disabled="importing || saving || exporting" class="px-2.5 sm:px-4 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 rounded hover:bg-indigo-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer flex items-center gap-1 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
           <span class="material-symbols-outlined text-[16px]" :class="{'animate-spin': importing}">
             {{ importing ? 'refresh' : 'upload_file' }}
           </span>
           <span class="hidden md:inline">{{ importing ? 'Importing...' : 'Import Resume' }}</span>
         </button>
 
-        <button @click="saveDraft" :disabled="saving" class="px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer">
-          {{ saving ? 'Saving...' : 'Save Draft' }}
+        <button @click="saveDraft" :disabled="saving" class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer">
+          <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
+          <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
         </button>
-        <button @click="exportPdf" :disabled="exporting" class="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50">
-          {{ exporting ? 'Exporting...' : 'Export PDF' }}
+        <button @click="exportPdf" :disabled="exporting" class="px-2.5 sm:px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50">
+          <span class="sm:hidden">{{ exporting ? '…' : 'PDF' }}</span>
+          <span class="hidden sm:inline">{{ exporting ? 'Exporting...' : 'Export PDF' }}</span>
         </button>
       </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
-      <!-- SideNavBar -->
-      <aside class="w-64 shrink-0 flex flex-col py-6 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 overflow-y-auto">
+    <!-- Mobile edit / preview switcher -->
+    <div class="lg:hidden flex shrink-0 border-b border-white/10 bg-slate-900/70">
+      <button
+        type="button"
+        class="flex-1 py-2.5 text-sm font-semibold cursor-pointer transition-colors"
+        :class="mobilePane === 'edit' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
+        @click="mobilePane = 'edit'"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="flex-1 py-2.5 text-sm font-semibold cursor-pointer transition-colors"
+        :class="mobilePane === 'preview' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
+        @click="mobilePane = 'preview'"
+      >
+        Preview
+      </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden relative">
+      <!-- Desktop SideNavBar -->
+      <aside class="hidden lg:flex w-64 shrink-0 flex-col py-6 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 overflow-y-auto">
         <nav class="flex-1">
           <ul class="space-y-1">
-            <li v-for="tab in [
-              { id: 'template', label: 'Template', icon: 'view_quilt' },
-              { id: 'layout', label: 'Section Order', icon: 'reorder' },
-              { id: 'personalInfo', label: 'Personal Info', icon: 'person' },
-              { id: 'experience', label: 'Experience', icon: 'work' },
-              { id: 'projects', label: 'Projects', icon: 'integration_instructions' },
-              { id: 'education', label: 'Education', icon: 'school' },
-              { id: 'skills', label: 'Skills', icon: 'psychology' },
-              { id: 'achievements', label: 'Achievements', icon: 'emoji_events' },
-              { id: 'custom', label: 'Custom Sections', icon: 'dashboard_customize' },
-              { id: 'atsCheck', label: 'ATS Check', icon: 'fact_check' },
-            ]" :key="tab.id">
-              <button @click="activeTab = tab.id" :class="['w-full flex items-center gap-4 px-6 py-3 text-sm transition-all cursor-pointer', activeTab === tab.id ? 'text-blue-400 font-bold border-r-2 border-blue-400 bg-blue-500/10' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200']">
+            <li v-for="tab in builderTabs" :key="tab.id">
+              <button @click="selectBuilderTab(tab.id)" :class="['w-full flex items-center gap-4 px-6 py-3 text-sm transition-all cursor-pointer', activeTab === tab.id ? 'text-blue-400 font-bold border-r-2 border-blue-400 bg-blue-500/10' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200']">
                 <span class="material-symbols-outlined">{{ tab.icon }}</span>
                 <span class="flex-1 text-left">{{ tab.label }}</span>
                 <span
@@ -585,17 +641,55 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
         </nav>
       </aside>
 
+      <!-- Mobile section drawer -->
+      <div v-if="mobileNavOpen" class="fixed inset-0 z-40 lg:hidden">
+        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Close sections" @click="mobileNavOpen = false" />
+        <aside class="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-white/10 py-4 overflow-y-auto shadow-2xl">
+          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">Sections</p>
+          <nav>
+            <ul class="space-y-0.5">
+              <li v-for="tab in builderTabs" :key="`m-${tab.id}`">
+                <button
+                  type="button"
+                  class="w-full flex items-center gap-3 px-5 py-3 text-sm cursor-pointer"
+                  :class="activeTab === tab.id ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-300'"
+                  @click="selectBuilderTab(tab.id)"
+                >
+                  <span class="material-symbols-outlined">{{ tab.icon }}</span>
+                  <span class="flex-1 text-left">{{ tab.label }}</span>
+                </button>
+              </li>
+            </ul>
+          </nav>
+          <div class="px-5 pt-4 mt-2 border-t border-white/10 space-y-2 sm:hidden">
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Language</label>
+            <select v-model="resumeData.language" @change="handleLanguageChange" class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none cursor-pointer">
+              <option value="en" class="bg-slate-800">EN</option>
+              <option value="de" class="bg-slate-800">DE</option>
+              <option value="fr" class="bg-slate-800">FR</option>
+              <option value="es" class="bg-slate-800">ES</option>
+            </select>
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">Name</label>
+            <input type="text" v-model="resumeData.name" class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none" placeholder="Resume Name" />
+          </div>
+        </aside>
+      </div>
+
       <!-- Main Content Canvas -->
-      <main class="flex-1 flex overflow-hidden">
+      <main class="flex-1 flex overflow-hidden min-w-0">
         <!-- Left Pane: Editor Form -->
-        <section class="w-1/2 h-full flex flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-8 custom-scrollbar relative" @click="activePopoverId = null">
+        <section
+          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-1/2"
+          :class="mobilePane === 'edit' ? 'flex' : 'hidden lg:flex'"
+          @click="activePopoverId = null"
+        >
           
           <div v-if="activeTab === 'template'">
             <div class="mb-8">
               <h1 class="font-bold text-2xl text-white mb-1">Choose Template</h1>
               <p class="text-blue-200/60 text-sm">Select a design for your resume.</p>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 v-for="tpl in resumeTemplates"
                 :key="tpl.id"
@@ -640,7 +734,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
               <p class="text-blue-200/60 text-sm">Update your contact details and professional summary.</p>
             </div>
             <div class="space-y-6">
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Name</label>
                   <input v-model="resumeData.personalInfo.fullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
@@ -650,7 +744,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   <input v-model="resumeData.personalInfo.jobTitle" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Email</label>
                   <input v-model="resumeData.personalInfo.email" type="email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
@@ -660,7 +754,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   <input v-model="resumeData.personalInfo.phone" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
                   <input v-model="resumeData.personalInfo.location" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
@@ -670,7 +764,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   <input v-model="resumeData.personalInfo.portfolio" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">LinkedIn</label>
                   <input v-model="resumeData.personalInfo.linkedin" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
@@ -713,7 +807,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
                     <input v-model="exp.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Company</label>
                       <div class="flex items-center gap-2 relative">
@@ -734,7 +828,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                       <input v-model="exp.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Start Date</label>
                       <input v-model="exp.startDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
@@ -795,7 +889,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                       </div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Organization / Client</label>
                       <input v-model="proj.organization" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
@@ -805,7 +899,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                       <input v-model="proj.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Start Date</label>
                       <input v-model="proj.startDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
@@ -859,7 +953,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">School / University</label>
                     <input v-model="edu.school" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
                       <input v-model="edu.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
@@ -892,7 +986,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
               </button>
             </div>
-            <div class="grid grid-cols-2 gap-4 pb-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-10">
               <div v-for="(skill, index) in resumeData.skills" :key="skill.id" class="flex items-center gap-2 bg-white/5 p-2 px-3 rounded-lg border border-white/10 group hover:border-white/20 transition-colors">
                 <input v-model="skill.name" type="text" class="flex-1 bg-transparent border-none text-sm outline-none text-white" placeholder="e.g. TypeScript" />
                 <button @click="removeSkill(index)" class="text-red-400 material-symbols-outlined text-sm hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">close</button>
@@ -918,7 +1012,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Title</label>
                     <input v-model="ach.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                   </div>
-                  <div class="grid grid-cols-2 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Issuer / Organization</label>
                       <input v-model="ach.issuer" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
@@ -963,7 +1057,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   <div v-for="(item, iIndex) in section.items" :key="item.id" class="bg-black/20 p-4 rounded border border-white/5 relative group hover:border-white/20 transition-colors">
                     <button @click="removeCustomItem(section, iIndex)" class="absolute top-2 right-2 text-red-400 hover:text-red-300 material-symbols-outlined text-sm transition-colors opacity-0 group-hover:opacity-100 z-10">close</button>
                     <div class="space-y-4">
-                      <div class="grid grid-cols-2 gap-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="flex flex-col">
                           <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Item Title</label>
                           <input v-model="item.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none text-sm transition-colors" />
@@ -1120,8 +1214,13 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
         </section>
 
         <!-- Right Pane: Live PDF preview (matches selected gallery template) -->
-        <section class="w-1/2 h-full bg-slate-800/80 overflow-y-auto p-12 flex justify-center items-start shadow-inner">
-          <BuilderPdfResumePdfPreview :resume="resumeData" />
+        <section
+          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-1/2"
+          :class="mobilePane === 'preview' ? 'flex' : 'hidden lg:flex'"
+        >
+          <div class="shrink-0 mx-auto">
+            <BuilderPdfResumePdfPreview :resume="resumeData" />
+          </div>
         </section>
       </main>
     </div>

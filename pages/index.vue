@@ -28,6 +28,7 @@ const { hasMaterials } = useJobMaterials()
 const { history, showDropdown, addToHistory } = useScrapeHistory()
 const { visitedJobs, markVisited } = useVisitedJobs()
 const mobileMenuOpen = ref(false)
+const mobileToolsOpen = ref(false)
 const { canAccessScraper, loggedIn, refreshCredits, scraperBlockedMessage, pending } = useSaaS()
 
 const runtimeConfig = useRuntimeConfig()
@@ -233,8 +234,8 @@ function hideHistoryDropdown() {
 </script>
 
 <template>
-  <div class="h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col p-4 md:p-6 overflow-hidden">
-    <div class="max-w-[1400px] mx-auto w-full grow flex flex-col h-full overflow-hidden">
+  <div class="min-h-dvh lg:h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col p-4 md:p-6 overflow-x-hidden lg:overflow-hidden">
+    <div class="max-w-[1400px] mx-auto w-full grow flex flex-col min-h-0 lg:h-full lg:overflow-hidden">
       <header class="shrink-0 border-b border-slate-900 pb-4 mb-4 md:mb-6">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
@@ -476,13 +477,30 @@ function hideHistoryDropdown() {
           </div>
         </div>
 
+        <!-- Mobile: collapse filters/docs so jobs stay reachable -->
+        <div class="md:hidden shrink-0">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-slate-800 bg-slate-900/70 text-sm font-semibold text-slate-200 cursor-pointer"
+            @click="mobileToolsOpen = !mobileToolsOpen"
+          >
+            <span>Filters &amp; documents</span>
+            <span class="material-symbols-outlined text-[20px] text-slate-400">
+              {{ mobileToolsOpen ? 'expand_less' : 'expand_more' }}
+            </span>
+          </button>
+        </div>
+
         <!-- Bottom Row (Sidebar & Live Stream List) -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow min-h-0">
           
           <!-- Left Column (Sidebar + API Status) -->
-          <div class="md:col-span-1 flex flex-col gap-4 min-h-0">
+          <div
+            class="md:col-span-1 flex-col gap-4 md:min-h-0"
+            :class="mobileToolsOpen ? 'flex' : 'hidden md:flex'"
+          >
             <!-- Sidebar Panel (Filters & Docs) -->
-            <div class="flex-grow glass-panel rounded-3xl p-6 flex flex-col gap-6 overflow-y-auto relative min-h-0">
+            <div class="md:flex-grow glass-panel rounded-3xl p-5 md:p-6 flex flex-col gap-6 overflow-y-auto relative md:min-h-0 max-h-[70vh] md:max-h-none">
               <FilterBar
                 v-model:search-query="searchQuery"
                 v-model:location-filter="locationFilter"
@@ -504,20 +522,20 @@ function hideHistoryDropdown() {
               <div class="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Globe :size="18" />
               </div>
-              <div class="flex flex-col">
+              <div class="flex flex-col min-w-0">
                 <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest select-none">API Status</span>
                 <span class="text-xs font-semibold" :class="loading ? 'text-amber-400' : 'text-emerald-400'">
                   {{ loading ? 'Processing...' : apiStatusLabel }}
                 </span>
-                <span class="text-[10px] text-slate-500 mt-0.5">Backend: {{ apiBackendLabel }}</span>
+                <span class="text-[10px] text-slate-500 mt-0.5 truncate">Backend: {{ apiBackendLabel }}</span>
               </div>
             </div>
           </div>
 
           <!-- Right Column (Live Stream Job Cards List) -->
-          <div class="md:col-span-3 flex flex-col min-h-0">
-            <div class="glass-panel rounded-3xl flex flex-col h-full overflow-hidden relative">
-              <div class="p-6 border-b border-slate-800/60 flex justify-between items-center shrink-0 bg-slate-900/40 backdrop-blur-md z-10 flex-wrap gap-4">
+          <div class="md:col-span-3 flex flex-col md:min-h-0 min-h-[24rem]">
+            <div class="glass-panel rounded-3xl flex flex-col md:h-full overflow-hidden relative">
+              <div class="p-4 md:p-6 border-b border-slate-800/60 flex justify-between items-center shrink-0 bg-slate-900/40 backdrop-blur-md z-10 flex-wrap gap-3">
                 <h3 class="font-bold text-sm tracking-tight text-slate-200 flex items-center gap-2">
                   <span class="relative flex h-2 w-2" v-if="!showFavorites && !loading">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -525,7 +543,7 @@ function hideHistoryDropdown() {
                   </span>
                   {{ showFavorites ? 'Saved Roles' : 'Live Stream' }}
                 </h3>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
                   <span class="text-xs text-slate-400 font-medium">
                     Showing <span class="text-indigo-400 font-bold">{{ filteredJobs.length }}</span> matches
                   </span>
@@ -541,7 +559,7 @@ function hideHistoryDropdown() {
               </div>
 
               <!-- Job Cards Stream container -->
-              <div class="flex-grow p-4 md:p-6 overflow-y-auto">
+              <div class="md:flex-grow p-4 md:p-6 md:overflow-y-auto">
                 <!-- Idle State -->
                 <div
                   v-if="!loading && sourceJobs.length === 0 && !hasScraped && !showFavorites"

@@ -10,6 +10,7 @@ import {
   type CandidateProfile,
 } from '../../shared/samples/candidateProfile'
 import { formatGeminiError } from './jobs'
+import { resolveGeminiApiKey } from './gemini'
 
 export const MODEL_PDF_TAILOR = 'gemini-3.1-pro-preview'
 export const MODEL_FLASH_LITE = 'gemini-3.1-pro-preview'
@@ -61,21 +62,22 @@ const JOB_SIGNALS_SCHEMA = {
   required: ['title', 'requiredSkills', 'keywords', 'responsibilities'],
 } as const
 
-export function createDocumentAiClient(apiKey: string): GoogleGenAI {
-  if (!apiKey) {
+export function createDocumentAiClient(apiKey?: string): GoogleGenAI {
+  const key = (apiKey?.trim() || resolveGeminiApiKey()).trim()
+  if (!key) {
     throw createError({
       statusCode: 500,
       statusMessage: 'GEMINI_API_KEY is missing. Add it to .env and restart the server.',
     })
   }
-  if (apiKey.startsWith('ya29.')) {
+  if (key.startsWith('ya29.')) {
     throw createError({
       statusCode: 500,
       statusMessage:
         'GEMINI_API_KEY appears to be an OAuth access token. Use an AI Studio API key instead.',
     })
   }
-  return new GoogleGenAI({ apiKey })
+  return new GoogleGenAI({ apiKey: key })
 }
 
 /**

@@ -12,17 +12,7 @@ export default withCredits(async (event) => {
     })
   }
 
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
-
-  if (!apiKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Gemini API key is not configured'
-    })
-  }
-
-  const ai = createGeminiClient(apiKey)
+  const ai = createGeminiClient()
 
   let prompt = ''
   if (type === 'summary') {

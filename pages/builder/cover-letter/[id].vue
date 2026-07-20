@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { BuilderResumeData, BuilderCoverLetter } from '~/shared/types/builder'
 import { downloadServerPdf } from '~/utils/downloadServerPdf'
-import { sanitizeRichTextHtml } from '~/utils/richText'
 import { slugifyFilename } from '~/utils/download'
 import { coverLetterTemplates } from '~/utils/templates'
 
@@ -15,11 +14,113 @@ definePageMeta({ middleware: 'auth' })
 const route = useRoute()
 const router = useRouter()
 const resumeId = route.params.id as string
-const previewRef = ref<HTMLElement | null>(null)
-const pagedPreview = ref<{ contentEl?: HTMLElement | null } | null>(null)
 const exporting = ref(false)
+const importing = ref(false)
+const importFileInput = ref<HTMLInputElement | null>(null)
+const uploadedResumeName = ref('')
+const rawResumeText = ref('')
 const activeTab = ref('details')
 const translating = ref(false)
+const mobileNavOpen = ref(false)
+const mobilePane = ref<'edit' | 'preview'>('edit')
+
+const coverLetterTabs = [
+  { id: 'template', label: 'Template', icon: 'view_quilt' },
+  { id: 'contact', label: 'Contact Info', icon: 'person' },
+  { id: 'details', label: 'Target Role', icon: 'work' },
+  { id: 'content', label: 'Letter Content', icon: 'edit_note' },
+] as const
+
+function selectCoverLetterTab(id: string) {
+  activeTab.value = id
+  mobileNavOpen.value = false
+  mobilePane.value = 'edit'
+}
+
+function goBack() {
+  if (import.meta.client && window.history.length > 1) {
+    router.back()
+    return
+  }
+  void router.push('/builder')
+}
+
+function hasResumeSignal() {
+  const info = resumeData.value.personalInfo
+  if (info?.fullName?.trim()) return true
+  if ((info?.summary || '').replace(/<[^>]+>/g, '').trim().length > 20) return true
+  if ((resumeData.value.experience || []).length > 0) return true
+  if (rawResumeText.value.trim().length > 40) return true
+  return false
+}
+
+function triggerResumeUpload() {
+  if (!canAccessAI.value) {
+    toast.info(aiBlockedMessage() || 'Pro subscription required to import a resume.')
+    return
+  }
+  importFileInput.value?.click()
+}
+
+async function handleResumeUpload(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  target.value = ''
+  if (importing.value) return
+
+  importing.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'resume')
+
+    toast.info('Uploading resume…')
+    const docRes = await $fetch<{ document: { contentText: string; originalName?: string } }>(
+      '/api/documents',
+      { method: 'POST', body: formData },
+    )
+
+    if (!docRes.document?.contentText) {
+      throw new Error('Could not extract text from document')
+    }
+
+    rawResumeText.value = docRes.document.contentText
+    uploadedResumeName.value = docRes.document.originalName || file.name
+
+    toast.info('Parsing resume…')
+    const parseRes = await $fetch<{ resumeData: BuilderResumeData }>('/api/ai/parse-resume', {
+      method: 'POST',
+      body: { text: docRes.document.contentText },
+    })
+
+    if (parseRes.resumeData) {
+      const keepTemplate = resumeData.value.templateId
+      const keepName = resumeData.value.name
+      const keepLanguage = resumeData.value.language
+      resumeData.value = {
+        ...resumeData.value,
+        ...parseRes.resumeData,
+        templateId: keepTemplate,
+        name: keepName,
+        language: keepLanguage || 'en',
+        personalInfo: {
+          ...resumeData.value.personalInfo,
+          ...parseRes.resumeData.personalInfo,
+        },
+        coverLetter: coverLetter.value,
+      }
+      toast.success('Resume loaded — you can draft with it alone or add a job description.')
+      await refreshCredits()
+    }
+  } catch (err: unknown) {
+    console.error(err)
+    const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(e.data?.statusMessage || e.statusMessage || 'Failed to import resume.')
+  } finally {
+    importing.value = false
+  }
+}
 
 const LANG_LABELS = { en: 'English', de: 'German', fr: 'French', es: 'Spanish' } as const
 
@@ -58,16 +159,6 @@ const coverLetter = ref<BuilderCoverLetter>({
   additionalInstructions: '',
   content: '<p>Start typing your cover letter here...</p>',
 })
-
-const previewContentHtml = computed(() => sanitizeRichTextHtml(coverLetter.value.content))
-const letterDate = computed(() =>
-  new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-)
-const previewWatchKey = computed(() => [
-  coverLetter.value,
-  resumeData.value.personalInfo,
-  resumeData.value.templateId,
-])
 
 function applyCoverLetterTemplate(templateId: string, options: { seedContent?: boolean } = {}) {
   const tpl = coverLetterTemplates.find((t) => t.id === templateId)
@@ -153,6 +244,8 @@ async function exportPdf() {
   if (exporting.value) return
   exporting.value = true
   try {
+    // Keep nested coverLetter in sync so PDF uses the live editor draft + template.
+    resumeData.value.coverLetter = coverLetter.value
     const base = slugifyFilename(
       `${resumeData.value.personalInfo.fullName || resumeData.value.name || 'cover'}-cover-letter`,
     )
@@ -160,7 +253,8 @@ async function exportPdf() {
       kind: 'cover_letter',
       filename: base,
       resume: resumeData.value,
-      coverLetter: resumeData.value.coverLetter,
+      coverLetter: coverLetter.value,
+      templateSlug: resumeData.value.templateId,
     })
     toast.success('PDF downloaded.')
   } catch (error) {
@@ -235,12 +329,11 @@ async function enhanceCoverLetter() {
     toast.info(aiBlockedMessage() || 'Pro subscription required for AI.')
     return
   }
-  if (!coverLetter.value.jobDescription?.trim()) {
-    toast.info('Paste a job description before using AI Enhance.')
-    return
-  }
-  if (!coverLetter.value.companyName?.trim()) {
-    toast.info('Enter the company name before using AI Enhance.')
+
+  const hasJd = Boolean(coverLetter.value.jobDescription?.trim())
+  const hasResume = hasResumeSignal()
+  if (!hasJd && !hasResume) {
+    toast.info('Upload a resume and/or paste a job description to draft a cover letter.')
     return
   }
 
@@ -250,23 +343,39 @@ async function enhanceCoverLetter() {
       method: 'POST',
       body: {
         resumeData: resumeData.value,
-        jobDescription: coverLetter.value.jobDescription,
-        companyName: coverLetter.value.companyName,
+        jobDescription: coverLetter.value.jobDescription || '',
+        companyName: coverLetter.value.companyName || '',
         hiringManager: coverLetter.value.hiringManager,
         tone: coverLetter.value.tone,
         currentContent: coverLetter.value.content,
         additionalInstructions: coverLetter.value.additionalInstructions || '',
+        rawResumeText: rawResumeText.value || undefined,
       },
     })
 
-    if (response?.content) {
+    if (response?.content?.trim()) {
       coverLetter.value.content = response.content
-      toast.success('Cover letter enhanced.')
+      toast.success(hasJd && hasResume ? 'Cover letter drafted.' : 'Cover letter drafted from available details.')
+      activeTab.value = 'content'
+      mobilePane.value = 'edit'
       await refreshCredits()
+      return
     }
-  } catch (e) {
+    toast.error('AI returned an empty cover letter. Please try again.')
+  } catch (e: unknown) {
     console.error(e)
-    toast.error('AI enhancement failed. Please try again.')
+    const err = e as {
+      data?: { statusMessage?: string; message?: string }
+      statusMessage?: string
+      message?: string
+    }
+    toast.error(
+      err?.data?.statusMessage ||
+        err?.data?.message ||
+        err?.statusMessage ||
+        err?.message ||
+        'AI enhancement failed. Please try again.',
+    )
   } finally {
     enhancing.value = false
   }
@@ -278,20 +387,36 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 </script>
 
 <template>
-  <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-slate-100 font-sans selection:bg-blue-500/30 h-screen flex flex-col">
-    <header class="flex justify-between items-center px-6 h-16 shrink-0 bg-slate-900/40 backdrop-blur-md border-b border-white/10">
-      <div class="flex items-center gap-8">
-        <NuxtLink to="/" class="font-serif text-2xl text-white font-bold hover:text-blue-300 transition-colors">ScrapeEngine</NuxtLink>
-        <nav class="hidden md:flex gap-6 items-center">
+  <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-slate-100 font-sans selection:bg-blue-500/30 h-dvh flex flex-col overflow-hidden">
+    <header class="flex justify-between items-center px-3 sm:px-6 h-14 sm:h-16 shrink-0 bg-slate-900/40 backdrop-blur-md border-b border-white/10 gap-2">
+      <div class="flex items-center gap-2 sm:gap-6 min-w-0">
+        <button
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
+          aria-label="Go back"
+          @click="goBack"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <button
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
+          aria-label="Open sections"
+          @click="mobileNavOpen = !mobileNavOpen"
+        >
+          <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
+        </button>
+        <NuxtLink to="/" class="font-serif text-lg sm:text-2xl text-white font-bold hover:text-blue-300 transition-colors truncate">ScrapeEngine</NuxtLink>
+        <nav class="hidden lg:flex gap-6 items-center">
           <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
         </nav>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <span class="text-white text-sm font-semibold opacity-80 mr-4 border-r border-white/20 pr-4">Cover Letter</span>
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="text-white text-sm font-semibold opacity-80 mr-2 border-r border-white/20 pr-3 hidden md:inline">Cover Letter</span>
           <select
             v-model="resumeData.language"
-            class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all cursor-pointer"
+            class="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all cursor-pointer"
             @change="handleLanguageChange"
           >
             <option value="en" class="bg-slate-800 text-white">EN</option>
@@ -304,38 +429,54 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
             v-if="resumeData"
             v-model="resumeData.name"
             type="text"
-            class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all"
+            class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all w-28 lg:w-40"
             placeholder="Document Name"
           />
         </div>
         <button
           :disabled="saving"
-          class="px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer"
+          class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer"
           @click="saveDraft"
         >
-          {{ saving ? 'Saving...' : 'Save Draft' }}
+          <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
+          <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
         </button>
         <button
           :disabled="exporting"
-          class="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50"
+          class="px-2.5 sm:px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50"
           @click="exportPdf"
         >
-          {{ exporting ? 'Exporting...' : 'Export PDF' }}
+          <span class="sm:hidden">{{ exporting ? '…' : 'PDF' }}</span>
+          <span class="hidden sm:inline">{{ exporting ? 'Exporting...' : 'Export PDF' }}</span>
         </button>
       </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
-      <aside class="w-64 shrink-0 flex flex-col py-6 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 overflow-y-auto">
+    <div class="lg:hidden flex shrink-0 border-b border-white/10 bg-slate-900/70">
+      <button
+        type="button"
+        class="flex-1 py-2.5 text-sm font-semibold cursor-pointer transition-colors"
+        :class="mobilePane === 'edit' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
+        @click="mobilePane = 'edit'"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="flex-1 py-2.5 text-sm font-semibold cursor-pointer transition-colors"
+        :class="mobilePane === 'preview' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
+        @click="mobilePane = 'preview'"
+      >
+        Preview
+      </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden relative">
+      <aside class="hidden lg:flex w-64 shrink-0 flex-col py-6 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 overflow-y-auto">
         <nav class="flex-1">
           <ul class="space-y-1">
             <li
-              v-for="tab in [
-                { id: 'template', label: 'Template', icon: 'view_quilt' },
-                { id: 'contact', label: 'Contact Info', icon: 'person' },
-                { id: 'details', label: 'Target Role', icon: 'work' },
-                { id: 'content', label: 'Letter Content', icon: 'edit_note' },
-              ]"
+              v-for="tab in coverLetterTabs"
               :key="tab.id"
             >
               <button
@@ -346,7 +487,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                     ? 'text-blue-400 font-bold border-r-2 border-blue-400 bg-blue-500/10'
                     : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
                 ]"
-                @click="activeTab = tab.id"
+                @click="selectCoverLetterTab(tab.id)"
               >
                 <span class="material-symbols-outlined">{{ tab.icon }}</span> {{ tab.label }}
               </button>
@@ -355,14 +496,60 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         </nav>
       </aside>
 
-      <main class="flex-1 flex overflow-hidden">
-        <section class="w-1/2 h-full flex flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-8 custom-scrollbar relative">
+      <div v-if="mobileNavOpen" class="fixed inset-0 z-40 lg:hidden">
+        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Close sections" @click="mobileNavOpen = false" />
+        <aside class="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-white/10 py-4 overflow-y-auto shadow-2xl">
+          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">Sections</p>
+          <nav>
+            <ul class="space-y-0.5">
+              <li v-for="tab in coverLetterTabs" :key="`m-${tab.id}`">
+                <button
+                  type="button"
+                  class="w-full flex items-center gap-3 px-5 py-3 text-sm cursor-pointer"
+                  :class="activeTab === tab.id ? 'text-blue-400 font-bold bg-blue-500/10' : 'text-slate-300'"
+                  @click="selectCoverLetterTab(tab.id)"
+                >
+                  <span class="material-symbols-outlined">{{ tab.icon }}</span>
+                  <span>{{ tab.label }}</span>
+                </button>
+              </li>
+            </ul>
+          </nav>
+          <div class="px-5 pt-4 mt-2 border-t border-white/10 space-y-2 sm:hidden">
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Language</label>
+            <select
+              v-model="resumeData.language"
+              class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none cursor-pointer"
+              @change="handleLanguageChange"
+            >
+              <option value="en" class="bg-slate-800">EN</option>
+              <option value="de" class="bg-slate-800">DE</option>
+              <option value="fr" class="bg-slate-800">FR</option>
+              <option value="es" class="bg-slate-800">ES</option>
+            </select>
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">Name</label>
+            <input
+              v-if="resumeData"
+              v-model="resumeData.name"
+              type="text"
+              class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none"
+              placeholder="Document Name"
+            />
+          </div>
+        </aside>
+      </div>
+
+      <main class="flex-1 flex overflow-hidden min-w-0">
+        <section
+          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-1/2"
+          :class="mobilePane === 'edit' ? 'flex' : 'hidden lg:flex'"
+        >
           <div v-if="activeTab === 'template'">
             <div class="mb-8">
               <h1 class="font-bold text-2xl text-white mb-1">Choose Template</h1>
               <p class="text-blue-200/60 text-sm">Switch cover letter layouts without losing your draft.</p>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 v-for="tpl in coverLetterTemplates"
                 :key="tpl.id"
@@ -432,7 +619,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
               <p class="text-blue-200/60 text-sm">Shown in the letter header, matching your resume.</p>
             </div>
             <div class="space-y-4">
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Name</label>
                   <input v-model="resumeData.personalInfo.fullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
@@ -460,18 +647,51 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
           <div v-else-if="activeTab === 'details'">
             <div class="mb-8">
               <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
-              <p class="text-blue-200/60 text-sm">Company and job details used by AI Enhance.</p>
+              <p class="text-blue-200/60 text-sm">
+                Upload a resume and/or paste a job description — either is enough to draft; both is best.
+              </p>
             </div>
             <div class="space-y-5">
+              <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3 flex-wrap">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white">Resume for drafting</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                      {{ uploadedResumeName || (hasResumeSignal() ? 'Using contact & experience from this project' : 'Optional — upload PDF, DOCX, or TXT') }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <input
+                      ref="importFileInput"
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.docx,.doc,.txt,.md"
+                      @change="handleResumeUpload"
+                    />
+                    <button
+                      type="button"
+                      :disabled="importing || enhancing"
+                      class="text-[11px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-3 py-1.5 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer"
+                      @click="triggerResumeUpload"
+                    >
+                      <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': importing }">
+                        {{ importing ? 'refresh' : 'upload_file' }}
+                      </span>
+                      {{ importing ? 'Importing…' : 'Upload resume' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Target Company <span class="text-blue-400 ml-2">*Required</span>
+                  Target Company
                 </label>
                 <input
                   v-model="coverLetter.companyName"
                   type="text"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
-                  placeholder="e.g. Google, Stripe"
+                  placeholder="e.g. Google, Stripe (optional)"
                 />
               </div>
               <div class="flex flex-col">
@@ -485,12 +705,12 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
               </div>
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Job Description <span class="text-blue-400 ml-2">*Required</span>
+                  Job Description
                 </label>
                 <textarea
                   v-model="coverLetter.jobDescription"
                   class="w-full h-48 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
-                  placeholder="Paste the job requirements here..."
+                  placeholder="Optional if you uploaded a resume. Paste the job requirements for a tighter draft…"
                 />
               </div>
               <div class="flex flex-col">
@@ -502,11 +722,11 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   class="w-full h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
                   placeholder="Optional. Example: Keep the cover letter to one page. Emphasize leadership and German language skills."
                 />
-                <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI Enhance as extra tasks or constraints.</p>
+                <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
               </div>
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2">Tone</label>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     class="flex flex-col items-center justify-center p-3 rounded-lg border transition-all cursor-pointer"
@@ -536,6 +756,18 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   </button>
                 </div>
               </div>
+
+              <button
+                type="button"
+                :disabled="enhancing || importing"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm disabled:opacity-50 cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.35)]"
+                @click="enhanceCoverLetter"
+              >
+                <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': enhancing }">
+                  {{ enhancing ? 'refresh' : 'auto_awesome' }}
+                </span>
+                {{ enhancing ? 'Drafting…' : 'Draft cover letter with AI' }}
+              </button>
             </div>
           </div>
 
@@ -543,7 +775,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
             <div class="mb-6 flex items-start justify-between gap-3">
               <div>
                 <h1 class="font-bold text-2xl text-white mb-1">Letter Content</h1>
-                <p class="text-blue-200/60 text-sm">Edit your draft, then enhance it with AI.</p>
+                <p class="text-blue-200/60 text-sm">Edit your draft, or regenerate with AI from resume and/or job details.</p>
               </div>
               <button
                 type="button"
@@ -554,7 +786,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                 <span class="material-symbols-outlined text-[12px]" :class="{ 'animate-spin': enhancing }">
                   {{ enhancing ? 'refresh' : 'auto_awesome' }}
                 </span>
-                {{ enhancing ? 'Enhancing...' : 'AI Enhance' }}
+                {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance' }}
               </button>
             </div>
 
@@ -565,23 +797,16 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
           </div>
         </section>
 
-        <section class="w-1/2 h-full bg-slate-800/80 overflow-y-auto p-12 flex justify-center items-start shadow-inner">
-          <BuilderPagedDocumentPreview ref="pagedPreview" :watch-key="previewWatchKey">
-            <div ref="previewRef" class="w-full overflow-hidden">
-              <BuilderCoverLetterThemeRenderer
-                :template-id="resumeData.templateId"
-                :full-name="resumeData.personalInfo.fullName"
-                :job-title="resumeData.personalInfo.jobTitle"
-                :location="resumeData.personalInfo.location"
-                :email="resumeData.personalInfo.email"
-                :phone="resumeData.personalInfo.phone"
-                :company-name="coverLetter.companyName"
-                :hiring-manager="coverLetter.hiringManager"
-                :letter-date="letterDate"
-                :body-html="previewContentHtml"
-              />
-            </div>
-          </BuilderPagedDocumentPreview>
+        <section
+          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-1/2"
+          :class="mobilePane === 'preview' ? 'flex' : 'hidden lg:flex'"
+        >
+          <div class="shrink-0 mx-auto w-full max-w-[210mm]">
+            <BuilderPdfCoverLetterPdfPreview
+              :resume="resumeData"
+              :cover-letter="coverLetter"
+            />
+          </div>
         </section>
       </main>
     </div>

@@ -54,8 +54,7 @@ export default withCredits(async (event) => {
       })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || useRuntimeConfig().geminiApiKey
-    const ai = createDocumentAiClient(String(apiKey || ''))
+    const ai = createDocumentAiClient()
 
     const resumeBuffer = partBuffer(resumePart || undefined)
     const coverBuffer = partBuffer(coverLetterPart || undefined)

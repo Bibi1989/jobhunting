@@ -1,7 +1,16 @@
 <script setup lang="ts">
 const { loggedIn } = useSaaS()
 const route = useRoute()
+const router = useRouter()
 const mobileOpen = ref(false)
+
+function goBack() {
+  if (import.meta.client && window.history.length > 1) {
+    router.back()
+    return
+  }
+  void router.push('/')
+}
 
 const topNav = [
   { label: 'My Projects', to: '/builder' },
@@ -29,7 +38,15 @@ watch(
   <div class="bg-linear-to-br from-slate-900 via-blue-950 to-slate-900 text-slate-100 min-h-screen selection:bg-blue-500/30">
     <!-- TopNavBar -->
     <header class="flex justify-between items-center px-4 sm:px-6 h-16 w-full fixed top-0 z-50 bg-slate-900/40 backdrop-blur-md border-b border-white/10">
-      <div class="flex items-center gap-3 sm:gap-8">
+      <div class="flex items-center gap-2 sm:gap-8">
+        <button
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5"
+          aria-label="Go back"
+          @click="goBack"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+        </button>
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5"
@@ -41,7 +58,7 @@ watch(
         <NuxtLink to="/" class="font-serif text-xl sm:text-2xl text-white font-bold tracking-wide hover:text-blue-300 transition-colors">
           ScrapeEngine
         </NuxtLink>
-        <nav class="hidden md:flex gap-6 items-center h-full">
+        <nav class="hidden lg:flex gap-6 items-center h-full">
           <NuxtLink
             v-for="item in topNav"
             :key="item.to"

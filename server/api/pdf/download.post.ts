@@ -32,13 +32,22 @@ export default defineEventHandler(async (event) => {
 
   const kind = body.kind === 'cover_letter' ? 'cover_letter' : 'resume'
 
-  // Merge explicit top-level layout fields into the resume payload.
   const resume = withLayoutState({
     ...body.resume,
     templateSlug: body.templateSlug || body.resume.templateSlug || body.resume.templateId,
-    templateId: body.templateSlug || body.resume.templateId || body.resume.templateSlug || 'the-distinguished',
+    templateId:
+      body.templateSlug ||
+      body.resume.templateId ||
+      body.resume.templateSlug ||
+      (kind === 'cover_letter' ? 'cl-standard' : 'the-distinguished'),
     sectionsOrder: body.sectionsOrder || body.resume.sectionsOrder,
   })
+
+  // Prefer the explicit coverLetter payload (live editor) over nested resume.coverLetter.
+  const coverLetterPayload = body.coverLetter || resume.coverLetter
+  if (kind === 'cover_letter' && coverLetterPayload) {
+    resume.coverLetter = coverLetterPayload
+  }
 
   const filename = sanitizeFilename(
     body.filename ||
@@ -49,7 +58,7 @@ export default defineEventHandler(async (event) => {
 
   const document =
     kind === 'cover_letter'
-      ? createCoverLetterPdfDocument(resume, body.coverLetter || resume.coverLetter)
+      ? createCoverLetterPdfDocument(resume, coverLetterPayload)
       : createResumePdfDocument(resume)
 
   setHeader(event, 'Content-Type', 'application/pdf')

@@ -476,37 +476,38 @@ function applyToJob() {
 </script>
 
 <template>
-  <div class="h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col p-4 md:p-6 overflow-hidden">
-    <div class="max-w-[1400px] mx-auto w-full grow flex flex-col h-full overflow-hidden">
+  <div class="min-h-dvh lg:h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 flex flex-col p-4 md:p-6 overflow-x-hidden lg:overflow-hidden">
+    <div class="max-w-[1400px] mx-auto w-full grow flex flex-col min-h-0 lg:h-full lg:overflow-hidden">
       <!-- Top Header Nav -->
-      <header class="flex justify-between items-center mb-6 gap-4 shrink-0 border-b border-slate-900 pb-5">
-        <div class="flex items-center gap-4">
+      <header class="flex justify-between items-center mb-4 md:mb-6 gap-3 shrink-0 border-b border-slate-900 pb-4 md:pb-5">
+        <div class="flex items-center gap-3 md:gap-4 min-w-0">
           <NuxtLink
             to="/"
-            class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all duration-300 border border-slate-800 flex items-center justify-center"
+            class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all duration-300 border border-slate-800 flex items-center justify-center shrink-0"
             title="Back to Dashboard"
           >
             <ArrowLeft :size="18" />
           </NuxtLink>
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-bold text-xl glowing-logo text-white select-none">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 md:w-10 md:h-10 shrink-0 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl glowing-logo text-white select-none">
               S
             </div>
-            <div>
-              <h1 class="text-2xl font-extrabold tracking-tight">
+            <div class="min-w-0">
+              <h1 class="text-xl md:text-2xl font-extrabold tracking-tight truncate">
                 Scrape<span class="text-gradient">Engine</span>
               </h1>
-              <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest -mt-1">Intelligent Job Hub v5.0</p>
+              <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest -mt-1 hidden sm:block">Intelligent Job Hub v5.0</p>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 shrink-0">
           <NuxtLink
             to="/"
             class="text-xs font-bold text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-all duration-300"
           >
-            Back to Jobs
+            <span class="hidden sm:inline">Back to Jobs</span>
+            <span class="sm:hidden">Jobs</span>
           </NuxtLink>
         </div>
       </header>
@@ -527,19 +528,19 @@ function applyToJob() {
 
       <div
         v-else
-        class="relative w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col grow min-h-0"
+        class="relative w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col grow min-h-[70vh] lg:min-h-0"
       >
         <!-- Header Info -->
-        <div class="p-6 border-b border-slate-800 flex justify-between items-start gap-4 bg-slate-900/50">
-          <div class="flex gap-4 items-start">
+        <div class="p-4 md:p-6 border-b border-slate-800 flex justify-between items-start gap-4 bg-slate-900/50">
+          <div class="flex gap-3 md:gap-4 items-start min-w-0">
             <div
-              class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 bg-gradient-to-tr shadow-md"
+              class="w-11 h-11 md:w-12 md:h-12 rounded-xl flex items-center justify-center font-bold text-base md:text-lg shrink-0 bg-gradient-to-tr shadow-md"
               :class="logoGradient"
             >
               {{ (job.company || job.title).substring(0, 2).toUpperCase() }}
             </div>
-            <div>
-              <h2 class="text-xl font-bold text-slate-100 pr-8">{{ job.title }}</h2>
+            <div class="min-w-0">
+              <h2 class="text-lg md:text-xl font-bold text-slate-100 break-words">{{ job.title }}</h2>
               <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-slate-400">
                 <span v-if="job.company" class="flex items-center gap-1.5">
                   <Building2 :size="14" /> {{ job.company }}
@@ -562,7 +563,7 @@ function applyToJob() {
         </div>
 
         <!-- Tab List Nav -->
-        <div class="px-6 border-b border-slate-800 flex gap-2 shrink-0 bg-slate-900/80 backdrop-blur z-10 py-3.5 overflow-x-auto">
+        <div class="px-3 sm:px-6 border-b border-slate-800 flex gap-2 shrink-0 bg-slate-900/80 backdrop-blur z-10 py-3 overflow-x-auto scrollbar-thin">
           <button
             type="button"
             class="px-4 py-2 font-bold text-xs rounded-xl transition-all duration-300 whitespace-nowrap flex items-center gap-2"
@@ -599,7 +600,7 @@ function applyToJob() {
         </div>
 
         <!-- Scrollable content -->
-        <div class="p-6 overflow-y-auto flex-grow text-slate-300 leading-relaxed bg-slate-950/50">
+        <div class="p-4 md:p-6 overflow-y-auto flex-grow text-slate-300 leading-relaxed bg-slate-950/50">
           <div v-if="activeTab === 'description'" class="space-y-4">
             <div class="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4 text-sm">
               <p class="font-bold text-emerald-400 text-xs uppercase tracking-widest mb-2">How to apply</p>

@@ -10,13 +10,7 @@ export default withCredits(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Resume text is required' })
   }
 
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    throw createError({ statusCode: 500, statusMessage: 'Gemini API key is not configured' })
-  }
-
-  const ai = createGeminiClient(apiKey)
+  const ai = createGeminiClient()
   const prompt = `You are an expert resume parser and writer.
 I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
 Your task is to parse this text and structure it into a valid JSON object representing the resume data.

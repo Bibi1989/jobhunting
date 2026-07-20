@@ -1,4 +1,4 @@
-import { createGeminiClient, generateWithModels } from './gemini'
+import { createGeminiClient, generateWithModels, resolveGeminiModel } from './gemini'
 import type { PortfolioProfileData, PortfolioProject } from '~/shared/types/portfolio'
 
 /**
@@ -103,12 +103,10 @@ function normalizeProfileData(input: unknown): PortfolioProfileData {
 }
 
 export async function generatePortfolioFromText(documentText: string): Promise<PortfolioProfileData> {
-  const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY || ''
-  const ai = createGeminiClient(apiKey)
+  const ai = createGeminiClient()
 
   // Prefer the configured model, then fall back to a known-good flash model.
-  const models = [config.geminiModel || 'gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
+  const models = [resolveGeminiModel(), 'gemini-2.5-flash', 'gemini-2.0-flash']
 
   const response = await generateWithModels(ai, models, (model) =>
     ai.models.generateContent({

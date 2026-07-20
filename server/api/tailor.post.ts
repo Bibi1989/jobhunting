@@ -8,7 +8,7 @@ import {
 } from '../../shared/samples/candidateProfile'
 import { getLatestDocuments } from '../utils/documents'
 import { getGeminiModels } from '../utils/jobs'
-import { createGeminiClient, tailorApplicationMaterials } from '../utils/gemini'
+import { createGeminiClient, resolveGeminiModel, tailorApplicationMaterials } from '../utils/gemini'
 import { getJobById } from '../utils/jobRepository'
 import { replaceEmDashes } from '../../shared/samples/professionalDocuments'
 import { resolveCandidateProfileSync } from '../utils/candidateProfile'
@@ -74,12 +74,11 @@ export default withCredits(async (event) => {
     })
   }
 
-  const config = useRuntimeConfig()
-  const ai = createGeminiClient(config.geminiApiKey)
+  const ai = createGeminiClient()
 
   const tailored = await tailorApplicationMaterials(
     ai,
-    getGeminiModels(config.geminiModel),
+    getGeminiModels(resolveGeminiModel()),
     job,
     resumeText || undefined,
     coverLetterText || undefined,

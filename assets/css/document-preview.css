@@ -88,6 +88,11 @@
   line-height: 1.45;
 }
 
+.pdf-preview-stack .preview-content > * {
+  /* Fill the A4 content band only — do not inherit endless % growth */
+  min-height: 0;
+}
+
 /* Paged A4 sheets: keep brand column continuous across page breaks */
 .pdf-preview-stack .preview-content {
   background: transparent !important;

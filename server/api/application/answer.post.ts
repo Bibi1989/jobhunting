@@ -1,7 +1,7 @@
 import type { ApplicationQuestion, Job } from '../../../shared/types/job'
 import { answerApplicationQuestions } from '../../utils/applicationForm'
 import { getLatestDocuments } from '../../utils/documents'
-import { createGeminiClient } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
 import { getGeminiModels } from '../../utils/jobs'
 import { getJobById } from '../../utils/jobRepository'
 import { withCredits } from '../../utils/withCredits'
@@ -46,12 +46,11 @@ export default withCredits(
       if (!coverLetterText && docs.coverLetter) coverLetterText = docs.coverLetter.contentText
     }
 
-    const config = useRuntimeConfig()
-    const ai = createGeminiClient(config.geminiApiKey)
+    const ai = createGeminiClient()
 
     const questions = await answerApplicationQuestions(
       ai,
-      getGeminiModels(config.geminiModel),
+      getGeminiModels(resolveGeminiModel()),
       job,
       body.questions,
       resumeText || undefined,

@@ -6,6 +6,7 @@ import {
   extractJobsFromHtml,
   filterJobsByTarget,
   hasScrapeTarget,
+  resolveGeminiModel,
   searchJobsForUrl,
   type JobScrapeTarget,
 } from '../utils/gemini'
@@ -63,9 +64,8 @@ export default withCredits(
       }
     }
 
-    const config = useRuntimeConfig()
-    const ai = createGeminiClient(config.geminiApiKey)
-    const models = getGeminiModels(config.geminiModel)
+    const ai = createGeminiClient()
+    const models = getGeminiModels(resolveGeminiModel())
 
     const { html, isError, statusText, status, finalUrl } = await fetchPageHtml(url)
     const cleanedHtml = isError ? '' : cleanHtmlForExtraction(html, finalUrl)
