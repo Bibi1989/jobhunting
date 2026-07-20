@@ -1,0 +1,220 @@
+/**
+ * Shared visual tokens for vue-pdf (client) and @react-pdf/renderer (server).
+ * Plain objects — wrap with StyleSheet.create only on the React side if needed.
+ */
+
+export const pagePadding = {
+  top: 28,
+  bottom: 28,
+  left: 36,
+  right: 36,
+} as const
+
+export const colors = {
+  ink: '#0f172a',
+  muted: '#475569',
+  soft: '#64748b',
+  line: '#e2e8f0',
+  brand: '#006a61',
+  brandDark: '#0b3d38',
+  paper: '#ffffff',
+  sidebar: '#006a61',
+  sidebarText: '#ffffff',
+  sidebarMuted: '#ccfbf1',
+  chipBg: '#f8fafc',
+  techChipBorder: '#5eead4',
+  techChipBg: '#0f766e',
+} as const
+
+export const pageStyle = {
+  paddingTop: pagePadding.top,
+  paddingBottom: pagePadding.bottom,
+  paddingLeft: pagePadding.left,
+  paddingRight: pagePadding.right,
+  fontFamily: 'Helvetica',
+  fontSize: 10,
+  color: colors.ink,
+  backgroundColor: colors.paper,
+} as const
+
+export const styles = {
+  page: pageStyle,
+  h1: {
+    fontSize: 22,
+    fontFamily: 'Helvetica-Bold',
+    letterSpacing: 0.4,
+    color: colors.ink,
+    marginBottom: 4,
+  },
+  h2: {
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase' as const,
+    color: colors.brand,
+    marginBottom: 6,
+    marginTop: 10,
+    paddingBottom: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  subtitle: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase' as const,
+    color: colors.brand,
+    marginBottom: 4,
+  },
+  muted: {
+    fontSize: 9,
+    color: colors.muted,
+    marginBottom: 1,
+  },
+  body: {
+    fontSize: 9.5,
+    lineHeight: 1.35,
+    color: colors.ink,
+  },
+  section: {
+    marginBottom: 2,
+  },
+  atom: {
+    marginBottom: 8,
+  },
+  rowBetween: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'flex-start' as const,
+    gap: 8,
+  },
+  itemTitle: {
+    fontSize: 10.5,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.ink,
+    marginBottom: 1,
+  },
+  itemMeta: {
+    fontSize: 9,
+    color: colors.brand,
+    marginBottom: 3,
+  },
+  bulletRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    marginBottom: 2,
+    paddingRight: 4,
+  },
+  bulletGlyph: {
+    width: 10,
+    fontSize: 9,
+    color: colors.soft,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 9.5,
+    lineHeight: 1.4,
+    color: colors.ink,
+  },
+  chipRow: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 6,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    fontSize: 8,
+    color: colors.ink,
+    backgroundColor: colors.chipBg,
+  },
+  contactLine: {
+    fontSize: 8.5,
+    color: colors.muted,
+    marginBottom: 2,
+  },
+  techPage: {
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    color: colors.ink,
+    backgroundColor: colors.paper,
+    paddingTop: pagePadding.top,
+    paddingBottom: pagePadding.bottom,
+  },
+  techSidebar: {
+    width: '32%',
+    backgroundColor: colors.sidebar,
+    color: colors.sidebarText,
+    paddingLeft: 22,
+    paddingRight: 18,
+  },
+  techMain: {
+    width: '68%',
+    paddingLeft: 24,
+    paddingRight: 28,
+  },
+  techName: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.sidebarText,
+    textTransform: 'uppercase' as const,
+    marginBottom: 6,
+    lineHeight: 1.15,
+  },
+  techRole: {
+    fontSize: 8,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase' as const,
+    color: colors.sidebarMuted,
+    marginBottom: 18,
+  },
+  techHeading: {
+    fontSize: 8,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase' as const,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.sidebarMuted,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.25)',
+    paddingBottom: 3,
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  techText: {
+    fontSize: 8.5,
+    color: colors.sidebarText,
+    marginBottom: 4,
+    lineHeight: 1.35,
+  },
+  techChip: {
+    borderWidth: 1,
+    borderColor: colors.techChipBorder,
+    backgroundColor: colors.techChipBg,
+    borderRadius: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginBottom: 5,
+    marginRight: 4,
+  },
+  techChipText: {
+    fontSize: 7.5,
+    color: colors.sidebarText,
+  },
+  modernSplit: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: 18,
+  },
+  modernLeft: {
+    width: '34%',
+  },
+  modernRight: {
+    width: '66%',
+    borderLeftWidth: 1,
+    borderLeftColor: colors.line,
+    paddingLeft: 14,
+  },
+} as const

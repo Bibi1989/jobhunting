@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ScrapeEngine - Professional Experience Editor</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#eff4ff",
+                    "outline-variant": "#c5c6cd",
+                    "inverse-primary": "#bcc7de",
+                    "on-background": "#0b1c30",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-primary-container": "#8590a6",
+                    "primary": "#091426",
+                    "on-tertiary-container": "#ff4e69",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container": "#e5eeff",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed": "#40000d",
+                    "on-surface": "#0b1c30",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "primary-container": "#1e293b",
+                    "background": "#f8f9ff",
+                    "outline": "#75777d",
+                    "inverse-surface": "#213145",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "secondary-fixed": "#89f5e7",
+                    "secondary": "#006a61",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "on-surface-variant": "#45474c",
+                    "on-primary-fixed": "#111c2d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#cbdbf5",
+                    "surface-tint": "#545f73",
+                    "primary-fixed-dim": "#bcc7de",
+                    "tertiary-fixed": "#ffdadb",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary-container": "#006f66",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#86f2e4",
+                    "on-secondary-fixed-variant": "#005049",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#d8e3fb",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#00201d",
+                    "tertiary": "#330009",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "tertiary-container": "#590016",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-compact": "0.5rem",
+                    "stack-section": "2rem",
+                    "stack-item": "1rem",
+                    "margin-page": "2.5rem",
+                    "gutter-column": "1.5rem"
+            },
+            "fontFamily": {
+                    "meta-label": ["JetBrains Mono"],
+                    "name-display-mobile": ["Playfair Display"],
+                    "name-display": ["Playfair Display"],
+                    "section-title": ["Inter"],
+                    "body-main": ["Inter"],
+                    "body-compact": ["Inter"]
+            },
+            "fontSize": {
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}],
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .canvas-area {
+            background-color: #cbd5e1; /* Neutral grey background to make white paper pop */
+            background-image: radial-gradient(#94a3b8 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+        }
+        .resume-paper {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        /* Hide scrollbars for cleaner editor look */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Floating Action Button transition */
+        .fab-hover:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-main selection:bg-secondary-container">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-margin-page h-16 w-full fixed top-0 z-50 bg-surface-container-lowest dark:bg-primary-container border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-8">
+<span class="font-name-display text-name-display-mobile text-primary dark:text-primary-fixed">ScrapeEngine</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-on-surface-variant dark:text-on-primary-container font-section-title text-section-title hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">My Projects</a>
+<a class="text-on-surface-variant dark:text-on-primary-container font-section-title text-section-title hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Templates</a>
+<a class="text-on-surface-variant dark:text-on-primary-container font-section-title text-section-title hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Analytics</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 mr-4">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container transition-colors">share</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container transition-colors">settings</button>
+</div>
+<button class="px-4 py-2 bg-surface-container text-on-surface border border-outline-variant rounded hover:bg-surface-container-high transition-colors font-section-title text-section-title">Save Draft</button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded hover:opacity-90 transition-opacity font-section-title text-section-title">Export PDF</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] flex flex-col py-stack-section bg-surface dark:bg-primary docked h-full left-0 w-64 border-r border-outline-variant">
+<!-- Sidebar Header -->
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-12 bg-surface-container-low dark:bg-primary-container rounded-sm flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A macro close-up of a high-quality resume document on heavy cream-colored paper. The typography is elegant and sharp, featuring a classic serif font for the name. The lighting is soft and directional, highlighting the subtle texture of the paper grain. The overall atmosphere is sophisticated and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVhUP4LwQGbmJWM2oZZ7v3u_8b6sXThIqPoTGe0YHvMyPkYw4TLrUu5Or5CbGuwh5MV_0Yfy_-B6snEaPJfag0HSSqkNexn1Qy1yvvHVDpgjwKu0_2rdEkaVD2-iIV_o5LDQtKfy-jI-xH05EJg7oQIgh2-r0s3ewKfR-xfiAwW0wZQQCvCHfQd-Vqn8I3-uC3f9Q7ZWqncokxn3orMu3jgW52i-dz9bjIVzlfALLrc3fbmtTK7dMnyQ"/>
+</div>
+<div>
+<h3 class="text-on-surface font-bold text-xs uppercase tracking-wider">Current Resume</h3>
+<p class="text-on-surface-variant text-body-compact">Executive Template</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant dark:text-on-primary-container font-body-compact text-body-compact hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                        Personal Info
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-primary dark:text-secondary-fixed font-bold border-r-2 border-primary dark:border-secondary-fixed font-body-compact text-body-compact transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="work" style="font-variation-settings: 'FILL' 1;">work</span>
+                        Experience
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant dark:text-on-primary-container font-body-compact text-body-compact hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+                        Education
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant dark:text-on-primary-container font-body-compact text-body-compact hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                        Skills
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant dark:text-on-primary-container font-body-compact text-body-compact hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+                        Projects
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant dark:text-on-primary-container font-body-compact text-body-compact hover:bg-surface-container-high dark:hover:bg-surface-variant transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                        Cover Letter
+                    </a>
+</li>
+</ul>
+<div class="mt-8 px-6">
+<button class="w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-outline-variant text-on-surface-variant font-section-title text-section-title hover:border-primary hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+                    Add Section
+                </button>
+</div>
+</nav>
+<!-- Sidebar Footer -->
+<div class="pt-6 border-t border-outline-variant">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-4 px-6 py-2 text-on-surface-variant font-body-compact text-body-compact hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                        Help
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-6 py-2 text-on-surface-variant font-body-compact text-body-compact hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                        Settings
+                    </a>
+</li>
+</ul>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 h-screen flex overflow-hidden">
+<!-- Left Pane: Editor Form -->
+<section class="w-[45%] h-full flex flex-col bg-surface border-r border-outline-variant overflow-y-auto no-scrollbar relative p-margin-page">
+<div class="mb-stack-section">
+<h1 class="font-section-title text-xl text-primary mb-1">Professional Experience</h1>
+<p class="text-on-surface-variant text-body-main">Highlight your career progression and key achievements.</p>
+</div>
+<!-- Form Entries -->
+<div class="space-y-stack-section pb-32">
+<!-- Entry 1 -->
+<div class="group bg-surface-container-low p-6 rounded-lg border border-transparent hover:border-outline-variant transition-all">
+<div class="flex justify-between items-start mb-6">
+<span class="bg-primary text-on-primary font-meta-label text-meta-label px-2 py-0.5 rounded">Entry #1</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">drag_indicator</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors">delete</button>
+</div>
+</div>
+<div class="space-y-6">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface font-semibold placeholder:text-outline transition-colors" placeholder="Job Title" type="text" value="Senior Product Designer"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Job Title</label>
+</div>
+<div class="grid grid-cols-2 gap-gutter-column">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Company" type="text" value="Innovate Tech Solutions"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Company</label>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Location" type="text" value="San Francisco, CA"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Location</label>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-gutter-column">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Start Date" type="text" value="Jan 2021"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Start Date</label>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="End Date" type="text" value="Present"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">End Date</label>
+</div>
+</div>
+<div class="relative">
+<textarea class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors resize-none leading-relaxed" placeholder="Describe your responsibilities and achievements..." rows="4">Led the digital transformation of the core enterprise platform, resulting in a 40% increase in user engagement. Managed a cross-functional team of 12 designers and developers using agile methodologies.</textarea>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Description</label>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="group bg-surface-container-low p-6 rounded-lg border border-transparent hover:border-outline-variant transition-all">
+<div class="flex justify-between items-start mb-6">
+<span class="bg-primary text-on-primary font-meta-label text-meta-label px-2 py-0.5 rounded">Entry #2</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">drag_indicator</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors">delete</button>
+</div>
+</div>
+<div class="space-y-6">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface font-semibold placeholder:text-outline transition-colors" placeholder="Job Title" type="text" value="UI/UX Designer"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Job Title</label>
+</div>
+<div class="grid grid-cols-2 gap-gutter-column">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Company" type="text" value="Global Creative Agency"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Company</label>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Location" type="text" value="New York, NY"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Location</label>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-gutter-column">
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="Start Date" type="text" value="June 2018"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">Start Date</label>
+</div>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant py-2 focus:ring-0 focus:border-primary text-on-surface placeholder:text-outline transition-colors" placeholder="End Date" type="text" value="Dec 2020"/>
+<label class="absolute -top-4 left-0 text-[10px] uppercase tracking-tighter text-on-surface-variant">End Date</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Button -->
+<button class="fixed bottom-10 left-[calc(64px+45%/2)] -translate-x-1/2 flex items-center gap-2 bg-primary text-on-primary px-6 py-4 rounded-full shadow-lg fab-hover transition-all z-10">
+<span class="material-symbols-outlined">add</span>
+<span class="font-section-title font-bold text-sm tracking-wide">ADD EXPERIENCE</span>
+</button>
+</section>
+<!-- Right Pane: Live Preview -->
+<section class="w-[55%] h-full canvas-area overflow-y-auto p-12 flex justify-center items-start">
+<!-- Resume Document (The Distinguished Style) -->
+<div class="resume-paper bg-white w-full max-w-[210mm] min-h-[297mm] p-16 flex flex-col">
+<!-- Header (Distinguished Style) -->
+<header class="text-center mb-12">
+<h1 class="font-name-display text-name-display text-primary mb-4">Jonathan R. Sterling</h1>
+<div class="flex justify-center items-center gap-4 text-on-surface-variant font-body-main text-xs uppercase tracking-[0.2em]">
+<span>San Francisco, CA</span>
+<span class="text-outline-variant text-[6px]">•</span>
+<span>jonathan.sterling@email.com</span>
+<span class="text-outline-variant text-[6px]">•</span>
+<span>415.555.0198</span>
+</div>
+<div class="mt-8 flex justify-center">
+<div class="w-24 h-0.5 bg-primary"></div>
+</div>
+</header>
+<div class="flex gap-12">
+<!-- Right Main Column -->
+<div class="flex-1 space-y-10">
+<!-- Summary -->
+<section>
+<h2 class="font-section-title text-section-title text-primary border-b border-outline-variant pb-1 mb-4 uppercase tracking-widest">Profile</h2>
+<p class="font-body-main text-[11px] leading-relaxed text-on-surface text-justify">
+                                Strategic and visionary Product Designer with over 8 years of experience building scalable digital ecosystems. Expert at translating complex business requirements into elegant, user-centric interfaces. Proven track record of leading high-performance design teams and driving innovation through human-centered design principles.
+                            </p>
+</section>
+<!-- Experience -->
+<section>
+<h2 class="font-section-title text-section-title text-primary border-b border-outline-variant pb-1 mb-6 uppercase tracking-widest">Experience</h2>
+<div class="space-y-8">
+<!-- Experience Item 1 -->
+<div class="relative pl-6 border-l border-outline-variant">
+<div class="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-white border-2 border-primary rounded-full"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-bold text-primary text-sm">Senior Product Designer</h3>
+<p class="italic text-on-surface-variant text-[11px]">Innovate Tech Solutions</p>
+</div>
+<div class="text-right">
+<p class="font-meta-label text-meta-label text-primary">JAN 2021 — PRESENT</p>
+<p class="text-[9px] text-on-surface-variant uppercase">San Francisco, CA</p>
+</div>
+</div>
+<ul class="list-none space-y-2 mt-3">
+<li class="flex items-start gap-3">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary flex-shrink-0"></span>
+<p class="font-body-main text-[10px] leading-normal text-on-surface">Led the digital transformation of the core enterprise platform, resulting in a 40% increase in user engagement over 12 months.</p>
+</li>
+<li class="flex items-start gap-3">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary flex-shrink-0"></span>
+<p class="font-body-main text-[10px] leading-normal text-on-surface">Managed a cross-functional team of 12 designers and developers using agile methodologies to accelerate feature releases by 25%.</p>
+</li>
+<li class="flex items-start gap-3">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary flex-shrink-0"></span>
+<p class="font-body-main text-[10px] leading-normal text-on-surface">Established a centralized design system that reduced front-end development time by 15 hours per sprint.</p>
+</li>
+</ul>
+</div>
+<!-- Experience Item 2 -->
+<div class="relative pl-6 border-l border-outline-variant opacity-60">
+<div class="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-white border-2 border-outline-variant rounded-full"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<h3 class="font-bold text-primary text-sm">UI/UX Designer</h3>
+<p class="italic text-on-surface-variant text-[11px]">Global Creative Agency</p>
+</div>
+<div class="text-right">
+<p class="font-meta-label text-meta-label text-primary">JUNE 2018 — DEC 2020</p>
+<p class="text-[9px] text-on-surface-variant uppercase">New York, NY</p>
+</div>
+</div>
+<ul class="list-none space-y-2 mt-3">
+<li class="flex items-start gap-3">
+<span class="mt-1.5 w-1.5 h-1.5 bg-outline-variant flex-shrink-0"></span>
+<p class="font-body-main text-[10px] leading-normal text-on-surface">Crafted high-fidelity prototypes and interface designs for Fortune 500 clients across finance and healthcare sectors.</p>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Education -->
+<section>
+<h2 class="font-section-title text-section-title text-primary border-b border-outline-variant pb-1 mb-4 uppercase tracking-widest">Education</h2>
+<div class="flex justify-between">
+<div>
+<h3 class="font-bold text-primary text-sm">BFA in Graphic Design</h3>
+<p class="italic text-on-surface-variant text-[11px]">Rhode Island School of Design</p>
+</div>
+<p class="font-meta-label text-meta-label text-primary">CLASS OF 2018</p>
+</div>
+</section>
+</div>
+<!-- Left Sidebar Column (Traditional Layout) -->
+<div class="w-1/4 space-y-10">
+<section>
+<h2 class="font-section-title text-section-title text-primary border-b border-outline-variant pb-1 mb-4 uppercase tracking-widest">Skills</h2>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">Figma</span>
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">React</span>
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">Webflow</span>
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">Typography</span>
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">Branding</span>
+<span class="bg-surface-container px-2 py-1 text-[9px] font-bold text-primary uppercase">Agile</span>
+</div>
+</section>
+<section>
+<h2 class="font-section-title text-section-title text-primary border-b border-outline-variant pb-1 mb-4 uppercase tracking-widest">Expertise</h2>
+<ul class="space-y-2 text-[10px] font-body-main text-on-surface-variant uppercase tracking-tighter">
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 bg-primary rounded-full"></span>
+                                    User Research
+                                </li>
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 bg-primary rounded-full"></span>
+                                    Design Systems
+                                </li>
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 bg-primary rounded-full"></span>
+                                    Interactive Motion
+                                </li>
+<li class="flex items-center gap-2">
+<span class="w-1 h-1 bg-primary rounded-full"></span>
+                                    Accessibility
+                                </li>
+</ul>
+</section>
+</div>
+</div>
+<!-- Footer Page Marker -->
+<footer class="mt-auto pt-16 flex justify-between items-end">
+<p class="text-[8px] text-outline uppercase tracking-widest">Page 1 of 2</p>
+<div class="flex gap-2">
+<div class="w-2 h-2 bg-primary"></div>
+<div class="w-2 h-2 bg-surface-container-high"></div>
+<div class="w-2 h-2 bg-primary-container"></div>
+</div>
+</footer>
+</div>
+</section>
+</main>
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input, textarea');
+            
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    const label = input.nextElementSibling;
+                    if (label) {
+                        label.classList.remove('text-on-surface-variant');
+                        label.classList.add('text-primary', 'font-bold');
+                    }
+                });
+                
+                input.addEventListener('blur', () => {
+                    const label = input.nextElementSibling;
+                    if (label) {
+                        label.classList.remove('text-primary', 'font-bold');
+                        label.classList.add('text-on-surface-variant');
+                    }
+                });
+            });
+
+            // Smooth simple scroll shadow for editor header
+            const editorPane = document.querySelector('section.overflow-y-auto');
+            const header = document.querySelector('section.overflow-y-auto > div:first-child');
+            
+            editorPane.addEventListener('scroll', () => {
+                if (editorPane.scrollTop > 10) {
+                    header.classList.add('opacity-80');
+                } else {
+                    header.classList.remove('opacity-80');
+                }
+            });
+        });
+    </script>
+</body></html>

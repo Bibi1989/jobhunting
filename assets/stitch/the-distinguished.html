@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ResumeBuilder AI - Executive Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#cbdbf5",
+                    "primary-fixed": "#d8e3fb",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "inverse-surface": "#213145",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#bcc7de",
+                    "primary": "#091426",
+                    "secondary-container": "#86f2e4",
+                    "on-secondary-container": "#006f66",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-background": "#0b1c30",
+                    "outline": "#75777d",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "primary-container": "#1e293b",
+                    "outline-variant": "#c5c6cd",
+                    "on-surface": "#0b1c30",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#006a61",
+                    "tertiary": "#330009",
+                    "on-secondary": "#ffffff",
+                    "on-surface-variant": "#45474c",
+                    "background": "#f8f9ff",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed": "#00201d",
+                    "surface-container-low": "#eff4ff",
+                    "surface": "#f8f9ff",
+                    "on-primary-container": "#8590a6",
+                    "tertiary-container": "#590016",
+                    "on-secondary-fixed-variant": "#005049",
+                    "tertiary-fixed": "#ffdadb",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#89f5e7",
+                    "surface-bright": "#f8f9ff",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "surface-variant": "#d3e4fe",
+                    "surface-tint": "#545f73",
+                    "on-primary-fixed": "#111c2d",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#ff4e69",
+                    "surface-container-high": "#dce9ff",
+                    "inverse-primary": "#bcc7de",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "on-tertiary-fixed": "#40000d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-compact": "0.5rem",
+                    "stack-item": "1rem",
+                    "gutter-column": "1.5rem",
+                    "stack-section": "2rem",
+                    "margin-page": "2.5rem"
+            },
+            "fontFamily": {
+                    "section-title": ["Inter"],
+                    "body-compact": ["Inter"],
+                    "name-display-mobile": ["Playfair Display"],
+                    "meta-label": ["JetBrains Mono"],
+                    "body-main": ["Inter"],
+                    "name-display": ["Playfair Display"]
+            },
+            "fontSize": {
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}],
+                    "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .cv-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .cv-canvas { box-shadow: none !important; margin: 0 !important; width: 100% !important; }
+        }
+        .experience-bullet::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background-color: #091426;
+            margin-right: 8px;
+            margin-bottom: 2px;
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed antialiased overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-on-primary-fixed text-primary dark:text-primary-fixed font-section-title text-section-title docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows flex justify-between items-center px-margin-page py-4 w-full z-50 sticky">
+<div class="flex items-center gap-4">
+<span class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">ResumeBuilder AI</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Templates</a>
+<a class="text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 cursor-pointer active:opacity-80" href="#">My Resumes</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Resources</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-stack-item">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-section-title text-section-title hover:opacity-90 transition-opacity cursor-pointer">
+                Create New
+            </button>
+</div>
+</nav>
+<main class="flex min-h-screen">
+<!-- SideNavBar (Editor Controls) -->
+<aside class="hidden lg:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-screen w-64 sticky top-16 left-0 border-r border-outline-variant dark:border-outline">
+<div class="mb-4 px-4 py-6">
+<h3 class="font-name-display text-name-display-mobile text-on-surface dark:text-on-primary-fixed">Editor Mode</h3>
+<p class="font-body-main text-body-main text-on-surface-variant dark:text-surface-variant">Professional Template</p>
+</div>
+<div class="space-y-1">
+<button class="w-full flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">person</span>
+                    Personal Info
+                </button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">work</span>
+                    Experience
+                </button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">school</span>
+                    Education
+                </button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">construction</span>
+                    Skills
+                </button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">check_circle</span>
+                    Finish
+                </button>
+</div>
+<div class="mt-auto p-4">
+<button class="w-full bg-secondary text-on-secondary px-4 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-on-secondary-fixed-variant transition-colors">
+<span class="material-symbols-outlined">download</span>
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- CV Canvas Area -->
+<section class="flex-1 p-8 md:p-12 bg-surface-dim overflow-y-auto">
+<!-- CV Document -->
+<div class="cv-canvas max-w-[800px] mx-auto bg-white min-h-[1100px] cv-shadow p-margin-page flex flex-col gap-stack-section relative overflow-hidden">
+<!-- Atmospheric Visual Subtlety (Small line accent) -->
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+<!-- CV Header -->
+<header class="flex flex-col md:flex-row justify-between items-end border-b border-outline-variant pb-8">
+<div class="w-full md:w-2/3">
+<h1 class="font-name-display text-name-display text-primary uppercase tracking-tight">Alexander Sterling</h1>
+<p class="font-section-title text-section-title text-on-surface-variant mt-2 tracking-[0.2em] uppercase italic">Chief Technology Officer</p>
+</div>
+<div class="w-full md:w-1/3 flex flex-col text-right font-meta-label text-meta-label text-on-surface-variant gap-1 mt-4 md:mt-0">
+<div class="flex items-center justify-end gap-2">
+<span>a.sterling@exec-mail.com</span>
+<span class="material-symbols-outlined text-[12px]">mail</span>
+</div>
+<div class="flex items-center justify-end gap-2">
+<span>+1 (555) 234-8900</span>
+<span class="material-symbols-outlined text-[12px]">phone_iphone</span>
+</div>
+<div class="flex items-center justify-end gap-2">
+<span>San Francisco, CA</span>
+<span class="material-symbols-outlined text-[12px]">location_on</span>
+</div>
+<div class="flex items-center justify-end gap-2">
+<span>linkedin.com/in/alexsterling</span>
+<span class="material-symbols-outlined text-[12px]">share</span>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter-column">
+<!-- Main Body (70%) -->
+<div class="md:col-span-8 flex flex-col gap-stack-section">
+<!-- Professional Profile -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-4">Professional Profile</h2>
+<p class="font-body-main text-body-main text-on-surface leading-relaxed text-justify">
+                                Visionary Technology Leader with over 20 years of experience driving digital transformation and large-scale infrastructure overhauls for Fortune 500 enterprises. Proven track record in building high-performance engineering teams, implementing cloud-native architectures, and aligning technology roadmaps with core business objectives to achieve exponential growth. Authoritative strategist specializing in AI integration and cybersecurity governance within high-stakes financial and SaaS environments.
+                            </p>
+</section>
+<!-- Experience -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-6">Professional Experience</h2>
+<div class="space-y-stack-section">
+<!-- Job 1 -->
+<div class="relative pl-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-section-title text-primary text-[16px]">Chief Technology Officer</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant uppercase">2018 — Present</span>
+</div>
+<p class="font-body-main font-bold text-on-secondary-fixed-variant mb-3">Global Nexus Dynamics • San Francisco, CA</p>
+<ul class="space-y-2">
+<li class="font-body-main text-on-surface experience-bullet">Directed a global engineering organization of 450+ staff across 4 continents, managing a $120M annual R&amp;D budget.</li>
+<li class="font-body-main text-on-surface experience-bullet">Spearheaded the migration of legacy mainframe systems to a multi-cloud AWS/Azure environment, reducing operational latency by 40% and infrastructure costs by $12M annually.</li>
+<li class="font-body-main text-on-surface experience-bullet">Architected a proprietary AI-driven predictive analytics platform that increased customer retention by 22% within the first fiscal year.</li>
+</ul>
+</div>
+<!-- Job 2 -->
+<div class="relative pl-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-section-title text-primary text-[16px]">VP of Engineering</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant uppercase">2012 — 2018</span>
+</div>
+<p class="font-body-main font-bold text-on-secondary-fixed-variant mb-3">Innovate Financial Systems • New York, NY</p>
+<ul class="space-y-2">
+<li class="font-body-main text-on-surface experience-bullet">Led the engineering team through a successful IPO, overseeing technical due diligence and SEC compliance requirements.</li>
+<li class="font-body-main text-on-surface experience-bullet">Implemented agile transformation across 25 cross-functional squads, increasing product delivery velocity by 65%.</li>
+<li class="font-body-main text-on-surface experience-bullet">Pioneered a zero-trust security framework that eliminated internal data breaches for 5 consecutive years.</li>
+</ul>
+</div>
+<!-- Job 3 -->
+<div class="relative pl-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-section-title text-primary text-[16px]">Senior Software Architect</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant uppercase">2006 — 2012</span>
+</div>
+<p class="font-body-main font-bold text-on-secondary-fixed-variant mb-3">DataStream Solutions • Boston, MA</p>
+<ul class="space-y-2">
+<li class="font-body-main text-on-surface experience-bullet">Designed core distributed data processing engines capable of handling 5TB of real-time transactional data daily.</li>
+<li class="font-body-main text-on-surface experience-bullet">Mentored 15 junior developers, 8 of whom progressed to senior leadership roles within the firm.</li>
+</ul>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Content (30%) -->
+<aside class="md:col-span-4 flex flex-col gap-stack-section border-l border-outline-variant pl-gutter-column">
+<!-- Core Competencies -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-4 w-full">Core Competencies</h2>
+<div class="grid grid-cols-1 gap-2">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Strategic IT Planning</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Cloud Architecture</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Agile/Scrum Leadership</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Budgetary Management</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Risk Mitigation</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Vendor Management</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+<span class="font-body-main text-on-surface">Compliance &amp; Governance</span>
+</div>
+</div>
+</section>
+<!-- Education -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-4 w-full">Education</h2>
+<div class="space-y-4">
+<div>
+<p class="font-section-title text-on-surface text-[12px] uppercase">M.S. in Computer Science</p>
+<p class="font-body-main text-on-surface-variant italic">Stanford University</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant mt-1">Class of 2005</p>
+</div>
+<div>
+<p class="font-section-title text-on-surface text-[12px] uppercase">B.S. in Software Engineering</p>
+<p class="font-body-main text-on-surface-variant italic">MIT</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant mt-1">Class of 2003</p>
+</div>
+</div>
+</section>
+<!-- Certifications -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-4 w-full">Certifications</h2>
+<div class="space-y-3">
+<div class="p-3 bg-surface-container-low border border-outline-variant">
+<p class="font-section-title text-primary text-[10px] uppercase">AWS Certified Solutions Architect</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant mt-1">Professional Level</p>
+</div>
+<div class="p-3 bg-surface-container-low border border-outline-variant">
+<p class="font-section-title text-primary text-[10px] uppercase">CISM - Information Security</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant mt-1">ISACA</p>
+</div>
+<div class="p-3 bg-surface-container-low border border-outline-variant">
+<p class="font-section-title text-primary text-[10px] uppercase">Project Management Professional</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant mt-1">PMI Institute</p>
+</div>
+</div>
+</section>
+<!-- Languages -->
+<section>
+<h2 class="font-name-display text-section-title text-primary uppercase border-b-2 border-primary inline-block mb-4 w-full">Languages</h2>
+<div class="flex flex-wrap gap-2">
+<span class="font-meta-label text-meta-label border border-primary px-2 py-1 text-primary">ENGLISH (NATIVE)</span>
+<span class="font-meta-label text-meta-label border border-outline px-2 py-1 text-on-surface-variant">FRENCH (PROFICIENT)</span>
+<span class="font-meta-label text-meta-label border border-outline px-2 py-1 text-on-surface-variant">GERMAN (BASIC)</span>
+</div>
+</section>
+</aside>
+</div>
+<!-- Footer Text -->
+<footer class="mt-auto pt-8 border-t border-outline-variant flex justify-between items-center opacity-60">
+<p class="font-meta-label text-meta-label text-on-surface-variant">REFERENCES AVAILABLE UPON REQUEST</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant">STERLING_CTO_2024.PDF</p>
+</footer>
+</div>
+<!-- Contextual FAB (Only for editor) -->
+<button class="fixed bottom-8 right-8 bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-transform lg:hidden">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</section>
+</main>
+<!-- App Footer -->
+<footer class="bg-on-surface dark:bg-on-primary-fixed text-on-primary dark:text-primary-fixed font-meta-label text-meta-label full-width bottom flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact z-40">
+<div class="flex flex-col gap-2">
+<span class="font-name-display text-section-title text-on-primary">ResumeBuilder AI</span>
+<p>© 2024 ResumeBuilder AI. Precise &amp; Authoritative Design.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-90 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-90 hover:opacity-100" href="#">Terms of Service</a>
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-90 hover:opacity-100" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        // Simple Interaction logic for Editor tabs
+        document.querySelectorAll('aside button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Toggle active state classes
+                document.querySelectorAll('aside button').forEach(b => {
+                    b.classList.remove('bg-primary-container', 'dark:bg-primary', 'text-on-primary-container', 'dark:text-on-primary', 'font-bold');
+                    b.classList.add('text-on-surface-variant', 'dark:text-surface-variant', 'hover:bg-surface-variant', 'dark:hover:bg-on-primary-fixed-variant');
+                });
+                button.classList.add('bg-primary-container', 'dark:bg-primary', 'text-on-primary-container', 'dark:text-on-primary', 'font-bold');
+                button.classList.remove('text-on-surface-variant', 'dark:text-surface-variant', 'hover:bg-surface-variant', 'dark:hover:bg-on-primary-fixed-variant');
+            });
+        });
+    </script>
+</body></html>

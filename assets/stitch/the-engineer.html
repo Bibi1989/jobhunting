@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ResumeBuilder AI - The Engineer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .skill-dot-active {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #091426;
+        }
+        .skill-dot-inactive {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #c5c6cd;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bcc7de;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#0b1c30",
+                      "surface-tint": "#545f73",
+                      "on-tertiary-container": "#ff4e69",
+                      "on-primary-fixed-variant": "#3c475a",
+                      "inverse-primary": "#bcc7de",
+                      "primary": "#091426",
+                      "secondary-fixed": "#89f5e7",
+                      "error-container": "#ffdad6",
+                      "outline-variant": "#c5c6cd",
+                      "primary-fixed-dim": "#bcc7de",
+                      "surface-container-low": "#eff4ff",
+                      "primary-fixed": "#d8e3fb",
+                      "surface-variant": "#d3e4fe",
+                      "on-surface-variant": "#45474c",
+                      "primary-container": "#1e293b",
+                      "surface-dim": "#cbdbf5",
+                      "on-primary-container": "#8590a6",
+                      "on-primary-fixed": "#111c2d",
+                      "on-primary": "#ffffff",
+                      "inverse-surface": "#213145",
+                      "on-secondary-fixed": "#00201d",
+                      "tertiary-container": "#590016",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed-dim": "#ffb2b7",
+                      "tertiary": "#330009",
+                      "on-tertiary-fixed-variant": "#92002a",
+                      "secondary-fixed-dim": "#6bd8cb",
+                      "on-secondary-fixed-variant": "#005049",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed": "#ffdadb",
+                      "on-background": "#0b1c30",
+                      "surface-container-highest": "#d3e4fe",
+                      "secondary": "#006a61",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#eaf1ff",
+                      "surface-container-high": "#dce9ff",
+                      "surface-bright": "#f8f9ff",
+                      "on-tertiary-fixed": "#40000d",
+                      "background": "#f8f9ff",
+                      "on-secondary-container": "#006f66",
+                      "secondary-container": "#86f2e4",
+                      "surface-container": "#e5eeff",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface": "#f8f9ff",
+                      "on-secondary": "#ffffff",
+                      "outline": "#75777d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-item": "1rem",
+                      "gutter-column": "1.5rem",
+                      "margin-page": "2.5rem",
+                      "stack-compact": "0.5rem",
+                      "stack-section": "2rem"
+              },
+              "fontFamily": {
+                      "name-display-mobile": ["Playfair Display"],
+                      "body-compact": ["Inter"],
+                      "name-display": ["Playfair Display"],
+                      "section-title": ["Inter"],
+                      "body-main": ["Inter"],
+                      "meta-label": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-main selection:bg-primary-fixed selection:text-primary">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-on-primary-fixed flex justify-between items-center px-margin-page py-4 w-full fixed top-0 z-50 border-b border-outline-variant dark:border-outline">
+<div class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">ResumeBuilder AI</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Templates</a>
+<a class="font-section-title text-section-title text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 cursor-pointer active:opacity-80" href="#">My Resumes</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Resources</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Pricing</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-section-title text-section-title hover:opacity-90 transition-opacity">Create New</button>
+</div>
+</header>
+<div class="flex pt-[73px] min-h-screen">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-screen w-64 fixed left-0">
+<div class="p-4 mb-4">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+<div>
+<div class="font-section-title text-section-title text-on-surface dark:text-on-primary-fixed">Editor Mode</div>
+<div class="text-meta-label font-meta-label text-on-surface-variant opacity-70">Professional Template</div>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90 font-body-main text-body-main">
+<span class="material-symbols-outlined">person</span>
+<span>Personal Info</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90 font-body-main text-body-main">
+<span class="material-symbols-outlined">work</span>
+<span>Experience</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90 font-body-main text-body-main">
+<span class="material-symbols-outlined">school</span>
+<span>Education</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full transition-all scale-95 active:scale-90 font-body-main text-body-main">
+<span class="material-symbols-outlined">construction</span>
+<span>Skills</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90 font-body-main text-body-main">
+<span class="material-symbols-outlined">check_circle</span>
+<span>Finish</span>
+</button>
+</nav>
+</div>
+<div class="mt-auto p-4">
+<button class="w-full bg-primary text-on-primary py-3 rounded-full font-section-title text-section-title flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 bg-surface-bright flex justify-center p-8 lg:p-12">
+<!-- Document Paper Container -->
+<div class="w-full max-w-[850px] bg-white shadow-xl min-h-[1100px] flex flex-col md:flex-row relative overflow-hidden ring-1 ring-outline-variant/30">
+<!-- Main Body (66%) -->
+<div class="flex-[2] p-margin-page border-r border-outline-variant/20">
+<header class="mb-stack-section">
+<h1 class="font-name-display text-name-display text-primary uppercase tracking-tight mb-2">Alex Rivera</h1>
+<p class="font-section-title text-section-title text-on-surface-variant uppercase tracking-widest border-b border-primary-container/20 pb-2 mb-4">Senior Systems Architect</p>
+<div class="flex flex-wrap gap-4 text-meta-label font-meta-label text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">mail</span> a.rivera@engine.io</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">location_on</span> San Francisco, CA</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">link</span> github.com/arivera</span>
+</div>
+</header>
+<!-- Profile Section -->
+<section class="mb-stack-section">
+<h2 class="font-section-title text-section-title text-primary mb-1 uppercase">Profile</h2>
+<div class="w-full h-[1px] bg-primary mb-4"></div>
+<p class="font-body-main text-body-main text-on-surface leading-relaxed">
+                            Performance-driven Systems Architect with 10+ years of experience in designing high-availability distributed systems and cloud-native infrastructure. Expert in optimizing CI/CD pipelines and microservices orchestration to reduce latency by up to 40%.
+                        </p>
+</section>
+<!-- Experience Section -->
+<section class="mb-stack-section">
+<h2 class="font-section-title text-section-title text-primary mb-1 uppercase">Experience</h2>
+<div class="w-full h-[1px] bg-primary mb-4"></div>
+<div class="mb-stack-item">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-section-title text-section-title text-primary font-bold">Lead Infrastructure Engineer</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">2020 — PRESENT</span>
+</div>
+<p class="font-meta-label text-meta-label text-secondary mb-3 italic">TechNova Solutions</p>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 text-body-main">
+<span class="text-primary mt-1">▪</span>
+<span>Architected a multi-region Kubernetes cluster handling 50k+ concurrent requests with 99.99% uptime.</span>
+</li>
+<li class="flex items-start gap-2 text-body-main">
+<span class="text-primary mt-1">▪</span>
+<span>Reduced infrastructure costs by 25% through strategic migration from monolithic architecture to serverless AWS Lambda functions.</span>
+</li>
+<li class="flex items-start gap-2 text-body-main">
+<span class="text-primary mt-1">▪</span>
+<span>Implemented automated security scanning across 200+ repositories, ensuring PCI-DSS compliance across all deployments.</span>
+</li>
+</ul>
+</div>
+<div class="mb-stack-item">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-section-title text-section-title text-primary font-bold">Backend Developer</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">2016 — 2020</span>
+</div>
+<p class="font-meta-label text-meta-label text-secondary mb-3 italic">Quant Data Systems</p>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 text-body-main">
+<span class="text-primary mt-1">▪</span>
+<span>Optimized SQL query performance by 60% for a large-scale financial database using advanced indexing and partitioning strategies.</span>
+</li>
+<li class="flex items-start gap-2 text-body-main">
+<span class="text-primary mt-1">▪</span>
+<span>Developed a real-time data streaming platform using Apache Kafka and Go, processing 1TB of data daily.</span>
+</li>
+</ul>
+</div>
+</section>
+<!-- Projects Section (Asymmetric Highlight) -->
+<section>
+<h2 class="font-section-title text-section-title text-primary mb-1 uppercase">Projects</h2>
+<div class="w-full h-[1px] bg-primary mb-4"></div>
+<div class="grid grid-cols-1 gap-4">
+<div class="border-l-4 border-primary-fixed bg-surface-container-lowest p-3 shadow-sm">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-section-title text-section-title text-primary font-bold">OpenSource Observability Tool</h4>
+<span class="text-meta-label font-meta-label text-primary">Go / React / Prometheus</span>
+</div>
+<p class="text-body-main text-on-surface-variant italic">Created a unified dashboard for visualizing multi-cloud metric streams with zero-latency overhead.</p>
+</div>
+<div class="border-l-4 border-primary-fixed bg-surface-container-lowest p-3 shadow-sm">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-section-title text-section-title text-primary font-bold">Neural Net Edge Processor</h4>
+<span class="text-meta-label font-meta-label text-primary">C++ / TensorRT</span>
+</div>
+<p class="text-body-main text-on-surface-variant italic">Engineered a lightweight inference engine for IoT devices that operates in low-power environments.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Sidebar (33%) -->
+<div class="flex-1 bg-surface-container-low/50 p-margin-page">
+<!-- Photo/Profile Icon -->
+<div class="mb-stack-section flex flex-col items-center">
+<div class="w-32 h-32 rounded-lg bg-surface-container-highest overflow-hidden mb-4 ring-1 ring-outline-variant/30 relative">
+<div class="absolute inset-0 flex items-center justify-center bg-primary">
+<span class="material-symbols-outlined text-on-primary text-6xl">code</span>
+</div>
+</div>
+<div class="text-center">
+<p class="font-meta-label text-meta-label text-on-surface-variant uppercase tracking-widest">Architect Id: #0294</p>
+</div>
+</div>
+<!-- Technical Skills Section -->
+<section class="mb-stack-section">
+<h2 class="font-section-title text-section-title text-primary mb-3 uppercase tracking-tighter">Stack &amp; Tools</h2>
+<div class="space-y-4">
+<!-- Skill Item -->
+<div class="group">
+<div class="flex justify-between items-center mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">terminal</span>
+<span class="font-body-main text-body-main font-bold">Go &amp; Rust</span>
+</div>
+<div class="flex gap-1">
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+</div>
+</div>
+<p class="text-meta-label font-meta-label text-on-surface-variant pl-6">Low-level systems and high-concurrency apps.</p>
+</div>
+<div class="group">
+<div class="flex justify-between items-center mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">cloud</span>
+<span class="font-body-main text-body-main font-bold">AWS &amp; GCP</span>
+</div>
+<div class="flex gap-1">
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-inactive"></div>
+</div>
+</div>
+<p class="text-meta-label font-meta-label text-on-surface-variant pl-6">Cloud architecture and IAM management.</p>
+</div>
+<div class="group">
+<div class="flex justify-between items-center mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">layers</span>
+<span class="font-body-main text-body-main font-bold">Kubernetes</span>
+</div>
+<div class="flex gap-1">
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+</div>
+</div>
+<p class="text-meta-label font-meta-label text-on-surface-variant pl-6">Helm charts and Istio mesh deployment.</p>
+</div>
+<div class="group">
+<div class="flex justify-between items-center mb-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">database</span>
+<span class="font-body-main text-body-main font-bold">PostgreSQL</span>
+</div>
+<div class="flex gap-1">
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-active"></div>
+<div class="skill-dot-inactive"></div>
+<div class="skill-dot-inactive"></div>
+</div>
+</div>
+<p class="text-meta-label font-meta-label text-on-surface-variant pl-6">Advanced indexing and query optimization.</p>
+</div>
+</div>
+</section>
+<!-- Education Section -->
+<section class="mb-stack-section">
+<h2 class="font-section-title text-section-title text-primary mb-3 uppercase tracking-tighter">Education</h2>
+<div class="space-y-4">
+<div>
+<p class="font-section-title text-section-title font-bold leading-tight">M.S. Computer Science</p>
+<p class="font-meta-label text-meta-label text-secondary">Stanford University</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant">GPA: 3.9/4.0</p>
+</div>
+<div>
+<p class="font-section-title text-section-title font-bold leading-tight">B.S. Software Engineering</p>
+<p class="font-meta-label text-meta-label text-secondary">MIT</p>
+</div>
+</div>
+</section>
+<!-- Certifications -->
+<section>
+<h2 class="font-section-title text-section-title text-primary mb-3 uppercase tracking-tighter">Certifications</h2>
+<div class="flex flex-wrap gap-2">
+<span class="bg-primary text-on-primary font-meta-label text-meta-label px-2 py-1 rounded">AWS Solution Architect</span>
+<span class="bg-primary text-on-primary font-meta-label text-meta-label px-2 py-1 rounded">CKA (Kubernetes)</span>
+<span class="bg-surface-container-highest text-primary font-meta-label text-meta-label px-2 py-1 rounded">CISSP</span>
+</div>
+</section>
+</div>
+<!-- Hard Shadow Pop Effect for Creative Templates (Subtle implementation here) -->
+<div class="absolute -bottom-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-on-surface dark:bg-on-primary-fixed flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact">
+<div class="flex flex-col gap-2">
+<div class="font-name-display text-section-title text-on-primary">ResumeBuilder AI</div>
+<p class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container">© 2024 ResumeBuilder AI. Precise &amp; Authoritative Design.</p>
+</div>
+<div class="flex gap-6">
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-colors" href="#">Privacy Policy</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-colors" href="#">Terms of Service</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-colors" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for skill items
+        document.querySelectorAll('.group').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.querySelector('.material-symbols-outlined').style.transform = 'translateX(4px)';
+                item.querySelector('.material-symbols-outlined').style.transition = 'transform 0.2s ease';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.querySelector('.material-symbols-outlined').style.transform = 'translateX(0)';
+            });
+        });
+
+        // Theme sync helper
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDark) document.documentElement.classList.add('dark');
+    </script>
+</body></html>

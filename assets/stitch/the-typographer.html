@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ResumeBuilder AI - The Typographer</title>
+<!-- Google Fonts: Inter for Bold Sans-Serif, Playfair Display for Serifs, JetBrains Mono for Meta -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Playfair+Display:ital,wght@0,400;0,700;1,400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#0b1c30",
+                    "surface-tint": "#545f73",
+                    "on-tertiary-container": "#ff4e69",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "inverse-primary": "#bcc7de",
+                    "primary": "#091426",
+                    "secondary-fixed": "#89f5e7",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c5c6cd",
+                    "primary-fixed-dim": "#bcc7de",
+                    "surface-container-low": "#eff4ff",
+                    "primary-fixed": "#d8e3fb",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-container": "#8590a6",
+                    "on-primary-fixed": "#111c2d",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "secondary": "#006a61",
+                    "surface-bright": "#f8f9ff",
+                    "background": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "outline": "#75777d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-item": "1rem",
+                    "gutter-column": "1.5rem",
+                    "margin-page": "2.5rem",
+                    "stack-compact": "0.5rem",
+                    "stack-section": "2rem"
+            },
+            "fontFamily": {
+                    "name-display-mobile": ["Playfair Display"],
+                    "body-compact": ["Inter"],
+                    "name-display": ["Playfair Display"],
+                    "section-title": ["Inter"],
+                    "body-main": ["Playfair Display"],
+                    "meta-label": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.15em", "fontWeight": "800"}],
+                    "body-main": ["12px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        /* Custom All-Caps for the Typographer Template */
+        .typographer-heading {
+            text-transform: uppercase;
+        }
+        /* Editorial Vertical Dividers */
+        .editorial-border {
+            border-left: 1px solid #c5c6cd;
+        }
+        /* Custom spacing for the well-spaced serif body */
+        .serif-body {
+            letter-spacing: 0.01em;
+        }
+        /* Page Frame */
+        .document-frame {
+            min-height: 297mm;
+            width: 210mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 40px rgba(0,0,0,0.03);
+        }
+        @media print {
+            .no-print { display: none; }
+            .document-frame { box-shadow: none; margin: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface font-body-main selection:bg-secondary-fixed selection:text-on-secondary-fixed overflow-x-hidden">
+<!-- TOP NAVIGATION SHELL -->
+<nav class="bg-surface dark:bg-on-primary-fixed border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-page py-4 w-full sticky top-0 z-50 no-print">
+<div class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">
+            ResumeBuilder AI
+        </div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 font-section-title text-section-title typographer-heading" href="#">Templates</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors font-section-title text-section-title typographer-heading" href="#">My Resumes</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors font-section-title text-section-title typographer-heading" href="#">Resources</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors font-section-title text-section-title typographer-heading" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">search</span>
+<button class="bg-primary text-on-primary px-6 py-2 font-section-title text-[12px] typographer-heading hover:opacity-90 transition-all cursor-pointer active:opacity-80">
+                Create New
+            </button>
+</div>
+</nav>
+<div class="flex min-h-screen">
+<!-- SIDE NAVIGATION SHELL (EDITOR MODE) -->
+<aside class="hidden lg:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-screen w-64 sticky top-0 border-r border-outline-variant no-print">
+<div class="px-4 py-8">
+<h2 class="font-name-display text-name-display-mobile text-on-surface dark:text-on-primary-fixed mb-1">Editor Mode</h2>
+<p class="font-body-main text-body-main text-on-surface-variant">Professional Template</p>
+</div>
+<nav class="flex flex-col gap-2 px-2">
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-main">Personal Info</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="font-body-main">Experience</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-body-main">Education</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">construction</span>
+<span class="font-body-main">Skills</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-body-main">Finish</span>
+</a>
+</nav>
+<div class="mt-auto p-4">
+<button class="w-full bg-primary text-on-primary py-4 typographer-heading font-section-title text-[12px] hover:opacity-90 transition-all">
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- MAIN CANVAS: THE TYPOGRAPHER RESUME -->
+<main class="flex-1 py-12 px-6 flex justify-center bg-surface-container-high">
+<div class="document-frame p-[3.5rem] flex flex-col gap-stack-section relative overflow-hidden">
+<!-- HEADER: BOLD TYPOGRAPHY -->
+<header class="grid grid-cols-12 border-b-2 border-primary pb-8">
+<div class="col-span-8">
+<h1 class="font-name-display text-[64px] leading-[0.9] tracking-tighter text-primary italic mb-2">Julianne<br/>Vanguard</h1>
+<p class="font-section-title text-section-title typographer-heading text-on-surface-variant">Senior Design Director &amp; Brand Strategist</p>
+</div>
+<div class="col-span-4 flex flex-col items-end justify-end text-right gap-1">
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-on-surface-variant">New York City, NY</p>
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-on-surface-variant">+1 212 555 0198</p>
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-primary font-bold">j.vanguard@studio.com</p>
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-on-surface-variant">vanguard.design</p>
+</div>
+</header>
+<!-- INTRO: EDITORIAL FOCUS -->
+<section class="grid grid-cols-12">
+<div class="col-span-3">
+<h2 class="font-section-title text-section-title typographer-heading text-primary pt-1">The Profile</h2>
+</div>
+<div class="col-span-9">
+<p class="font-body-main text-[16px] leading-relaxed italic text-on-surface serif-body">
+                            A multi-disciplinary creative leader with over 12 years of experience in shaping visual identities for Fortune 500 companies. Specialized in high-end editorial design, minimal UI frameworks, and the intersection of typography and human-centric technology. Architect of visual systems that bridge the gap between traditional prestige and digital innovation.
+                        </p>
+</div>
+</section>
+<div class="w-full h-px bg-outline-variant"></div>
+<!-- EXPERIENCE: ASYMMETRIC GRID -->
+<section class="grid grid-cols-12 gap-y-stack-section">
+<div class="col-span-3">
+<h2 class="font-section-title text-section-title typographer-heading text-primary pt-1">Experience</h2>
+</div>
+<div class="col-span-9 flex flex-col gap-stack-section">
+<!-- Entry 1 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-baseline border-b border-outline-variant pb-1">
+<h3 class="font-section-title text-[16px] typographer-heading text-primary">Global Design Lead</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant">2020 — PRESENT</span>
+</div>
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-secondary font-bold">LUMINA CREATIVE GROUP / LONDON</p>
+<ul class="flex flex-col gap-stack-compact mt-2">
+<li class="flex gap-4 group">
+<span class="text-primary font-bold">/</span>
+<p class="font-body-main text-body-main text-on-surface-variant serif-body">Directed a global team of 45 designers across three continents to redefine the brand language for emerging fintech ecosystems.</p>
+</li>
+<li class="flex gap-4">
+<span class="text-primary font-bold">/</span>
+<p class="font-body-main text-body-main text-on-surface-variant serif-body">Pioneered a "Typography-First" design system that reduced product launch cycles by 30% while increasing brand recognition by 15%.</p>
+</li>
+<li class="flex gap-4">
+<span class="text-primary font-bold">/</span>
+<p class="font-body-main text-body-main text-on-surface-variant serif-body">Curated award-winning editorial campaigns for high-fashion digital marketplaces, merging heritage aesthetics with Web3 functionality.</p>
+</li>
+</ul>
+</div>
+<!-- Entry 2 -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-baseline border-b border-outline-variant pb-1">
+<h3 class="font-section-title text-[16px] typographer-heading text-primary">Senior Art Director</h3>
+<span class="font-meta-label text-meta-label text-on-surface-variant">2016 — 2020</span>
+</div>
+<p class="font-meta-label text-meta-label uppercase tracking-widest text-secondary font-bold">NOVA DIGITAL STUDIO / NEW YORK</p>
+<ul class="flex flex-col gap-stack-compact mt-2">
+<li class="flex gap-4">
+<span class="text-primary font-bold">/</span>
+<p class="font-body-main text-body-main text-on-surface-variant serif-body">Oversaw the visual transition of legacy luxury brands into the mobile-first era, focusing on readability and high-contrast accessibility.</p>
+</li>
+<li class="flex gap-4">
+<span class="text-primary font-bold">/</span>
+<p class="font-body-main text-body-main text-on-surface-variant serif-body">Implemented grid-based layout logic that unified web, print, and social media presence under a singular aesthetic authority.</p>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- BENTO SKILLS GRID -->
+<section class="grid grid-cols-12 gap-y-stack-section">
+<div class="col-span-3">
+<h2 class="font-section-title text-section-title typographer-heading text-primary pt-1">Expertise</h2>
+</div>
+<div class="col-span-9 grid grid-cols-3 gap-4">
+<div class="bg-surface-container-low p-4 flex flex-col gap-2">
+<p class="font-meta-label text-meta-label uppercase text-on-primary-container">Strategic</p>
+<h4 class="font-section-title text-[11px] typographer-heading">Brand Identity</h4>
+<h4 class="font-section-title text-[11px] typographer-heading">Design Ops</h4>
+</div>
+<div class="bg-primary text-on-primary p-4 flex flex-col gap-2">
+<p class="font-meta-label text-meta-label uppercase text-on-primary-container">Technical</p>
+<h4 class="font-section-title text-[11px] typographer-heading">Advanced Typography</h4>
+<h4 class="font-section-title text-[11px] typographer-heading">Figma Systems</h4>
+</div>
+<div class="bg-surface-container-low p-4 flex flex-col gap-2">
+<p class="font-meta-label text-meta-label uppercase text-on-primary-container">Cultural</p>
+<h4 class="font-section-title text-[11px] typographer-heading">Art Curation</h4>
+<h4 class="font-section-title text-[11px] typographer-heading">Creative Writing</h4>
+</div>
+</div>
+</section>
+<div class="mt-auto pt-8 border-t border-outline">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-meta-label text-meta-label text-on-surface-variant italic">Reference available upon formal request.</p>
+</div>
+<div class="text-right">
+<p class="font-section-title text-[10px] typographer-heading">Last Updated</p>
+<p class="font-meta-label text-meta-label text-primary">NOVEMBER 2024</p>
+</div>
+</div>
+</div>
+<!-- Subtle Texture/Animation Overlay -->
+<div class="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-multiply">
+
+</div>
+</div>
+</main>
+</div>
+<!-- FOOTER SHELL -->
+<footer class="bg-on-surface dark:bg-on-primary-fixed flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact no-print">
+<div class="flex flex-col md:flex-row items-center gap-8">
+<div class="font-name-display text-section-title text-on-primary typographer-heading">ResumeBuilder AI</div>
+<div class="flex gap-4">
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Help Center</a>
+</div>
+</div>
+<div class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container">
+            © 2024 ResumeBuilder AI. Precise &amp; Authoritative Design.
+        </div>
+</footer>
+<!-- MOBILE FAB (Only for specific pages) -->
+<div class="md:hidden fixed bottom-6 right-6 z-50 no-print">
+<button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<!-- MOBILE NAVIGATION (Only on mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant flex justify-around py-4 px-2 no-print z-50">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined">description</span>
+<span class="font-meta-label text-[10px] typographer-heading">Editor</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">visibility</span>
+<span class="font-meta-label text-[10px] typographer-heading">Preview</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">palette</span>
+<span class="font-meta-label text-[10px] typographer-heading">Style</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-meta-label text-[10px] typographer-heading">Config</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for hover states on sections
+        document.querySelectorAll('section').forEach(section => {
+            section.addEventListener('mouseenter', () => {
+                section.style.backgroundColor = 'rgba(0,0,0,0.005)';
+                section.style.transition = 'background-color 0.3s ease';
+            });
+            section.addEventListener('mouseleave', () => {
+                section.style.backgroundColor = 'transparent';
+            });
+        });
+    </script>
+</body></html>

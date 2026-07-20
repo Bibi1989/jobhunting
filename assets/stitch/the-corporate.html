@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ResumeBuilder AI - The Corporate</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#0b1c30",
+                    "surface-tint": "#545f73",
+                    "on-tertiary-container": "#ff4e69",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "inverse-primary": "#bcc7de",
+                    "primary": "#091426",
+                    "secondary-fixed": "#89f5e7",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c5c6cd",
+                    "primary-fixed-dim": "#bcc7de",
+                    "surface-container-low": "#eff4ff",
+                    "primary-fixed": "#d8e3fb",
+                    "surface-variant": "#d3e4fe",
+                    "on-surface-variant": "#45474c",
+                    "primary-container": "#1e293b",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary-container": "#8590a6",
+                    "on-primary-fixed": "#111c2d",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "on-secondary-fixed": "#00201d",
+                    "tertiary-container": "#590016",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "tertiary": "#330009",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-secondary-fixed-variant": "#005049",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdadb",
+                    "on-background": "#0b1c30",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary": "#006a61",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-container-high": "#dce9ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-tertiary-fixed": "#40000d",
+                    "background": "#f8f9ff",
+                    "on-secondary-container": "#006f66",
+                    "secondary-container": "#86f2e4",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#75777d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-item": "1rem",
+                    "gutter-column": "1.5rem",
+                    "margin-page": "2.5rem",
+                    "stack-compact": "0.5rem",
+                    "stack-section": "2rem"
+            },
+            "fontFamily": {
+                    "name-display-mobile": ["Playfair Display"],
+                    "body-compact": ["Inter"],
+                    "name-display": ["Playfair Display"],
+                    "section-title": ["Inter"],
+                    "body-main": ["Inter"],
+                    "meta-label": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 1.25rem;
+        }
+        .resume-shadow {
+            box-shadow: 0 4px 20px -2px rgba(9, 20, 38, 0.1);
+        }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .resume-canvas { box-shadow: none; border: none; margin: 0; padding: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background font-body-main text-on-surface selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-on-primary-fixed border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-page py-4 w-full no-print sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">ResumeBuilder AI</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Templates</a>
+<a class="font-section-title text-section-title text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 cursor-pointer active:opacity-80" href="#">My Resumes</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Resources</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-section-title text-section-title hover:opacity-90 transition-all cursor-pointer">
+                Create New
+            </button>
+</div>
+</nav>
+<main class="flex min-h-screen">
+<!-- SideNavBar - Editor Controls -->
+<aside class="hidden lg:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-screen w-64 sticky top-16 no-print">
+<div class="px-4 py-6">
+<h2 class="font-name-display text-name-display-mobile text-on-surface dark:text-on-primary-fixed mb-1">Editor Mode</h2>
+<p class="font-body-main text-body-main text-on-surface-variant dark:text-surface-variant">Professional Template</p>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<button class="flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full scale-95 active:scale-90 transition-transform text-left">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-main text-body-main">Personal Info</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform text-left">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+<span class="font-body-main text-body-main">Experience</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform text-left">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="font-body-main text-body-main">Education</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform text-left">
+<span class="material-symbols-outlined" data-icon="Construction">construction</span>
+<span class="font-body-main text-body-main">Skills</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full scale-95 active:scale-90 transition-transform text-left">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-body-main text-body-main">Finish</span>
+</button>
+</nav>
+<div class="p-4 mt-auto">
+<button class="w-full py-4 bg-secondary text-on-secondary font-section-title text-section-title rounded-lg hover:bg-on-secondary-container transition-colors uppercase tracking-widest">
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- Resume Content Area -->
+<section class="flex-grow flex justify-center py-12 px-4 md:px-12 bg-surface-container">
+<div class="resume-canvas w-full max-w-[800px] bg-white min-h-[1100px] resume-shadow relative overflow-hidden">
+<!-- Strong Blue Header Bar -->
+<header class="bg-primary-container text-on-primary p-margin-page">
+<div class="flex flex-col md:flex-row justify-between items-end gap-6">
+<div class="flex flex-col gap-2">
+<h1 class="font-name-display text-name-display text-on-primary leading-tight">Arthur S. Sterling</h1>
+<p class="font-section-title text-section-title uppercase tracking-[0.2em] text-on-primary-container">Senior Operations Director</p>
+</div>
+<div class="flex flex-col gap-1 items-end text-right font-meta-label text-meta-label text-on-primary-container">
+<span class="flex items-center gap-2">arthur.sterling@executive.com <span class="material-symbols-outlined text-[14px]" data-icon="mail">mail</span></span>
+<span class="flex items-center gap-2">+1 (555) 012-3456 <span class="material-symbols-outlined text-[14px]" data-icon="call">call</span></span>
+<span class="flex items-center gap-2">New York City, NY <span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span></span>
+<span class="flex items-center gap-2">linkedin.com/in/asterling <span class="material-symbols-outlined text-[14px]" data-icon="link">link</span></span>
+</div>
+</div>
+</header>
+<!-- Professional Summary -->
+<div class="px-margin-page py-stack-section">
+<div class="mb-stack-item">
+<h3 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Professional Profile</h3>
+<div class="h-[2px] bg-primary w-full opacity-10"></div>
+</div>
+<p class="font-body-main text-body-main text-on-surface leading-relaxed">
+                        Accomplished and results-driven Senior Operations Director with over 15 years of experience in optimizing organizational efficiency and driving multi-million dollar revenue growth. Expert in strategic planning, cross-functional leadership, and implementing lean methodologies within global corporate environments. Proven track record of reducing overhead by 22% while scaling production capacity for Fortune 500 manufacturing firms.
+                    </p>
+</div>
+<!-- Experience Section -->
+<div class="px-margin-page pb-stack-section">
+<div class="mb-stack-item">
+<h3 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Professional Experience</h3>
+<div class="h-[2px] bg-primary w-full opacity-10"></div>
+</div>
+<!-- Job Entry 1 -->
+<div class="mb-stack-section">
+<div class="flex justify-between items-baseline mb-2">
+<h4 class="font-section-title text-base text-primary font-bold">Global Operations Lead</h4>
+<span class="font-meta-label text-meta-label text-on-surface-variant italic">JAN 2018 — PRESENT</span>
+</div>
+<div class="flex justify-between items-baseline mb-stack-compact">
+<span class="font-section-title text-sm text-on-surface-variant">NexGen Industrial Solutions</span>
+<span class="font-meta-label text-meta-label text-on-surface-variant">NEW YORK, NY</span>
+</div>
+<ul class="list-none space-y-2 mt-4">
+<li class="flex gap-4 items-start">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary-container shrink-0"></span>
+<p class="font-body-main text-body-main">Directed a department of 450+ employees across three continents, achieving a record-breaking 18% increase in operational throughput within 24 months.</p>
+</li>
+<li class="flex gap-4 items-start">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary-container shrink-0"></span>
+<p class="font-body-main text-body-main">Spearheaded the digital transformation of supply chain logistics, migrating legacy systems to AI-driven predictive analytics platforms.</p>
+</li>
+<li class="flex gap-4 items-start">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary-container shrink-0"></span>
+<p class="font-body-main text-body-main">Negotiated vendor contracts totaling $85M annually, securing a 12% cost reduction through strategic consolidation and volume leveraging.</p>
+</li>
+</ul>
+</div>
+<!-- Job Entry 2 -->
+<div class="mb-stack-section">
+<div class="flex justify-between items-baseline mb-2">
+<h4 class="font-section-title text-base text-primary font-bold">Senior Strategy Manager</h4>
+<span class="font-meta-label text-meta-label text-on-surface-variant italic">JUNE 2012 — DEC 2017</span>
+</div>
+<div class="flex justify-between items-baseline mb-stack-compact">
+<span class="font-section-title text-sm text-on-surface-variant">Starlight Financial Group</span>
+<span class="font-meta-label text-meta-label text-on-surface-variant">CHICAGO, IL</span>
+</div>
+<ul class="list-none space-y-2 mt-4">
+<li class="flex gap-4 items-start">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary-container shrink-0"></span>
+<p class="font-body-main text-body-main">Orchestrated the post-merger integration of two regional banking entities, ensuring 100% business continuity and cultural alignment for 1,200 staff members.</p>
+</li>
+<li class="flex gap-4 items-start">
+<span class="mt-1.5 w-1.5 h-1.5 bg-primary-container shrink-0"></span>
+<p class="font-body-main text-body-main">Developed a proprietary risk-assessment framework that decreased credit default rates by 14% over a 3-year period.</p>
+</li>
+</ul>
+</div>
+</div>
+<!-- Skills & Education Grid -->
+<div class="px-margin-page pb-stack-section grid grid-cols-1 md:grid-cols-2 gap-gutter-column">
+<!-- Skills -->
+<div>
+<div class="mb-stack-item">
+<h3 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Core Competencies</h3>
+<div class="h-[2px] bg-primary w-full opacity-10"></div>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Strategic Planning</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Financial Modeling</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Lean Six Sigma</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Risk Management</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">M&A Integration</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Stakeholder Relations</span>
+<span class="px-3 py-1 bg-surface-container-high border border-outline-variant font-meta-label text-meta-label text-primary uppercase">Global Supply Chain</span>
+</div>
+</div>
+<!-- Education -->
+<div>
+<div class="mb-stack-item">
+<h3 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Education</h3>
+<div class="h-[2px] bg-primary w-full opacity-10"></div>
+</div>
+<div class="space-y-4">
+<div>
+<h5 class="font-section-title text-xs font-bold text-primary">Master of Business Administration (MBA)</h5>
+<p class="font-body-main text-body-main text-on-surface-variant">Harvard Business School | 2012</p>
+</div>
+<div>
+<h5 class="font-section-title text-xs font-bold text-primary">B.Sc. in Economics</h5>
+<p class="font-body-main text-body-main text-on-surface-variant">University of Pennsylvania | 2008</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Accents for the PDF Document -->
+<footer class="absolute bottom-0 left-0 w-full h-2 bg-primary-container"></footer>
+</div>
+</section>
+</main>
+<!-- Global Footer -->
+<footer class="bg-on-surface dark:bg-on-primary-fixed text-on-primary dark:text-primary-fixed flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact no-print">
+<div class="flex flex-col gap-2">
+<span class="font-name-display text-section-title text-on-primary">ResumeBuilder AI</span>
+<p class="font-meta-label text-meta-label opacity-70">© 2024 ResumeBuilder AI. Precise & Authoritative Design.</p>
+</div>
+<div class="flex gap-6">
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Privacy Policy</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Terms of Service</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        // Micro-interactions for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.add('scale-95');
+                setTimeout(() => btn.classList.remove('scale-95'), 100);
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ScrapeEngine - Template Selector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+
+        /* Custom scrollbar for high-end feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5c6cd;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #75777d;
+        }
+
+        /* Template card hover effects */
+        .template-card:hover .template-overlay {
+            opacity: 1;
+        }
+        .template-card:hover .template-preview {
+            transform: scale(1.02);
+        }
+    </style>
+<!-- Tailwind Config Injection -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#eff4ff",
+                    "outline-variant": "#c5c6cd",
+                    "inverse-primary": "#bcc7de",
+                    "on-background": "#0b1c30",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-primary-container": "#8590a6",
+                    "primary": "#091426",
+                    "on-tertiary-container": "#ff4e69",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container": "#e5eeff",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed": "#40000d",
+                    "on-surface": "#0b1c30",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "primary-container": "#1e293b",
+                    "background": "#f8f9ff",
+                    "outline": "#75777d",
+                    "inverse-surface": "#213145",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "secondary-fixed": "#89f5e7",
+                    "secondary": "#006a61",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "on-surface-variant": "#45474c",
+                    "on-primary-fixed": "#111c2d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#cbdbf5",
+                    "surface-tint": "#545f73",
+                    "primary-fixed-dim": "#bcc7de",
+                    "tertiary-fixed": "#ffdadb",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary-container": "#006f66",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#86f2e4",
+                    "on-secondary-fixed-variant": "#005049",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#d8e3fb",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed": "#00201d",
+                    "tertiary": "#330009",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "tertiary-container": "#590016",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-compact": "0.5rem",
+                    "stack-section": "2rem",
+                    "stack-item": "1rem",
+                    "margin-page": "2.5rem",
+                    "gutter-column": "1.5rem"
+            },
+            "fontFamily": {
+                    "meta-label": ["JetBrains Mono"],
+                    "name-display-mobile": ["Playfair Display"],
+                    "name-display": ["Playfair Display"],
+                    "section-title": ["Inter"],
+                    "body-main": ["Inter"],
+                    "body-compact": ["Inter"]
+            },
+            "fontSize": {
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}],
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-main selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopNavBar (Shared Component Implementation) -->
+<header class="flex justify-between items-center px-margin-page h-16 w-full fixed top-0 z-50 bg-surface-container-lowest dark:bg-primary-container border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-gutter-column">
+<span class="font-name-display text-name-display-mobile text-primary dark:text-primary-fixed">ScrapeEngine</span>
+<nav class="hidden md:flex gap-6 items-center h-full">
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 ease-in-out" href="#">My Projects</a>
+<a class="font-section-title text-section-title text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 transition-colors duration-200 ease-in-out" href="#">Templates</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 ease-in-out" href="#">Analytics</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 mr-4 border-r border-outline-variant pr-4">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="share">share</span></button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="settings">settings</span></button>
+</div>
+<button class="px-4 py-2 text-primary font-section-title text-section-title hover:bg-surface-container transition-colors">Save Draft</button>
+<button class="px-4 py-2 bg-primary text-on-primary font-section-title text-section-title rounded shadow-sm hover:bg-primary-container transition-all">Export PDF</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high ml-2 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged male executive in a sharp navy blue suit, set against a soft-focus office background with warm amber lighting. The style is crisp and editorial, maintaining a high-contrast corporate aesthetic with subtle blue and grey tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiZz7ZsH-ZgYkhDs4L_V9B7teOiPQARXTfI2KACq68dzCUxcMvtkOWpSJFnS3P6lvraw66eTaENsM3VCuUC7nvquqKQiJLZwasnS5W0sNFX9qUe4pQxMpfiCHFmJ35Y1LLm1H5qZ0c9Qgr9SmYFe2WZi17-we9Uxmoert3ngm0QJIAeLMJmzkcYEFtmGK71QGHC21H9hHo2AsC4IdpcFv4Zw0YniJhkbcG--LehjK1q0Oyp5KhqkL3zg"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Shared Component Implementation) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] flex flex-col py-stack-section bg-surface dark:bg-primary docked h-full left-0 w-64 bg-surface-container-low dark:bg-primary-container z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-12 bg-white border border-outline-variant rounded-sm flex items-center justify-center overflow-hidden">
+<div class="w-full h-full bg-surface-container-highest"></div>
+</div>
+<div>
+<h3 class="font-section-title text-section-title text-primary block leading-none">Current Resume</h3>
+<span class="text-meta-label font-meta-label text-on-surface-variant">Executive Template</span>
+</div>
+</div>
+<button class="w-full mt-4 py-2 flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant text-on-surface-variant font-section-title text-section-title hover:border-primary hover:text-primary transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                Add Section
+            </button>
+</div>
+<nav class="flex-1 overflow-y-auto">
+<div class="flex flex-col">
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                    Personal Info
+                </a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+                    Experience
+                </a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+                    Education
+                </a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                    Skills
+                </a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+                    Projects
+                </a>
+<a class="flex items-center gap-4 px-6 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                    Cover Letter
+                </a>
+</div>
+</nav>
+<div class="px-6 py-stack-item border-t border-outline-variant/30 flex flex-col gap-1">
+<a class="flex items-center gap-4 py-2 text-on-surface-variant hover:text-primary transition-all font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="help">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant hover:text-primary transition-all font-body-compact text-body-compact" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="settings">settings</span>
+                Settings
+            </a>
+</div>
+</aside>
+<!-- Main Content: Template Selector -->
+<main class="pl-64 pt-16 min-h-screen">
+<div class="max-w-[1200px] mx-auto px-margin-page py-stack-section">
+<!-- Header Section with Search and Toggle -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div class="flex-1">
+<h1 class="font-name-display text-name-display text-primary mb-2">Select a Template</h1>
+<p class="text-on-surface-variant max-w-xl">Choose from our curated collection of 20 high-impact CV templates. Switch styles instantly while preserving your data.</p>
+</div>
+<div class="flex items-center gap-6 bg-surface-container-low p-1.5 rounded-full px-4 border border-outline-variant/50">
+<div class="flex items-center gap-3">
+<span class="font-section-title text-[12px] text-on-surface">Live Preview with My Info</span>
+<button class="relative inline-flex h-6 w-11 items-center rounded-full bg-outline-variant transition-colors focus:outline-none" id="preview-toggle" onclick="this.classList.toggle('bg-secondary'); this.querySelector('span').classList.toggle('translate-x-6');">
+<span class="inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white transition-transform"></span>
+</button>
+</div>
+</div>
+</div>
+<!-- Filters & Categories -->
+<div class="sticky top-16 z-30 bg-surface/95 backdrop-blur-md py-4 mb-10 border-b border-outline-variant/30">
+<div class="flex items-center gap-8">
+<button class="font-section-title text-section-title text-primary border-b-2 border-primary pb-2">All Templates</button>
+<button class="font-section-title text-section-title text-on-surface-variant hover:text-primary transition-colors pb-2">Professional</button>
+<button class="font-section-title text-section-title text-on-surface-variant hover:text-primary transition-colors pb-2">Modern</button>
+<button class="font-section-title text-section-title text-on-surface-variant hover:text-primary transition-colors pb-2">Minimalist</button>
+<button class="font-section-title text-section-title text-on-surface-variant hover:text-primary transition-colors pb-2">Technical</button>
+<button class="font-section-title text-section-title text-on-surface-variant hover:text-primary transition-colors pb-2">Creative</button>
+<div class="ml-auto relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-all text-sm w-48" placeholder="Search templates..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Template Grid (Bento/Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter-column">
+<!-- Template Item 1: The Scholar -->
+<div class="template-card group relative flex flex-col cursor-pointer">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-surface-container" data-alt="A detailed digital preview of a professional academic CV template titled 'The Scholar'. It features a classic two-column layout with a prominent left sidebar in deep charcoal, serif typography for headings, and a crisp white main body. The lighting is bright and clean, emphasizing a sophisticated, high-end document feel with soft grey accents." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBbSs7xYTrMpMsX7NUiDSxi-ZQdCCMQfCA6vGLDUam3vuACYwSIJxXdzJujO14vL2TmMQK_hSdccqqjF4osDtYNMlh4kF7KE1FX1kfBnNEdEc5J1Jq3joP9Jj_Do0j7AQV7WzTKH_SnxGxvpqJ2_SArHHTRCoNBRLJgWuP7bqJG7YhZ3ecz4NJQtpwbn7QSXxA4I8Zs_YD7sfjWYZAanWgEcJ-drWuLPzHshgIW9r9iaZFacQSZBjl9Aw')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+<div class="absolute top-4 left-4">
+<span class="bg-primary text-on-primary text-[10px] font-meta-label px-2 py-1 tracking-wider uppercase">Best Seller</span>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Scholar</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Professional • Executive</p>
+</div>
+</div>
+<!-- Template Item 2: The Innovator -->
+<div class="template-card group relative flex flex-col cursor-pointer lg:mt-12">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-surface-container-high" data-alt="A high-resolution preview of a modern 'The Innovator' CV template. It showcases a bold asymmetric layout with a signature secondary color accent bar in teal. San-serif typography is used throughout with varying weights to create hierarchy. The aesthetic is clean, energetic, and professional, perfectly suited for tech or design roles." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBtX1gK7ViHrxtzjLH_jzBsn8o-05rtGu-V9wn8OIWLZcojI28LmultNL-A3tbw9hYK04RBmE8DZ9hjhNlJNl32XlyPz-bHVjRc78HCxe9Mgr9PeLTwp_goHN3K9TD_KYChO9xRJ0NDidkn3KGrC7kfAAq8lGb8oX37T9NBiQMhZmOQatMbcZDvBBZVWzWDPot48cCltDB3yEFTxAAElCh1jlos1dwOOppBRROaAJr_ZqGirAi9QxAIXQ')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Innovator</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Modern • Technology</p>
+</div>
+</div>
+<!-- Template Item 3: The Zen -->
+<div class="template-card group relative flex flex-col cursor-pointer">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-white" data-alt="A minimalist CV template titled 'The Zen' displayed on a clean white background. The design is characterized by extreme whitespace, light grey horizontal rules, and elegant thin typography. It uses a single-column layout with centered headings and delicate dot markers for skill levels, evoking a sense of calm and clarity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDeOT4dcxhBI6UNg4ysM6sOWdYlsyarXg0fNC8YTpL8yDshBHofCpRkFWKrk2WW_3AD_E7nveuOcCfnrfDOIHLWU9R0h_EgC-ocQ-Pj4EMUK_f91rwdK82J0brfviukm_1PcQCQFjZ01UGby_RmFuCKgo6OVzcYu3vIDpmw1kk1XF2ThSkn6gfseuWFjg8HD4lzXKpP8CcVnXM6DFnshOTPoOeX9wEk1-61iF_qBCzxKHa03Pcajg_a8Q')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Zen</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Minimalist • Creative</p>
+</div>
+</div>
+<!-- Template Item 4: The Architect -->
+<div class="template-card group relative flex flex-col cursor-pointer">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-surface-container-low" data-alt="A technical CV template called 'The Architect' with a dense, structured 12-column grid visible in the layout's alignment. It features custom SVG markers for bullet points and a multi-column skill section. The design is precise and data-heavy, using a palette of slate greys and professional blues for a structured, engineering-focused look." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAXqSv3_04KMB6m_ar3_4EyE9OA5FZ8c9l486zLIZeKMjVjg24QNNugH4YPZC65r-2JAKCFXIES-woeqPjg371YxElFqxLLVawP6BXjN_BWnw2Ku7UvyIK21lTnIKhtWdKpP1iaQa2YzPdhRlpiuY08mymzT3-yspqofd7l198J2TRZgnyB9Qch1tKUYubIJmVcI_FCrQi0orWKlsYdHymzq8YY40SHULp6FVfi6FW4JsgivGxauHlNrw')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Architect</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Technical • Engineering</p>
+</div>
+</div>
+<!-- Template Item 5: The Vanguard -->
+<div class="template-card group relative flex flex-col cursor-pointer lg:mt-12">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-primary text-white" data-alt="A striking creative vanguard CV template featuring a 'hard shadow' brutalist aesthetic. The header uses massive, bold serif typography for the name, while the rest of the document uses high-contrast primary color blocks. It feels editorial and avant-garde, designed for someone in the creative arts or high-fashion industries." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7BD4IWVRWQilqUtPsb8RcRcpM9mhsIwURhO37OU0djfkZbBfnPMnZqqxruthEkwu05dHJMpYvaVWZxKrXqiDBpfrQD1-ELMRRm8LWmcSJ0i_Y7NmnCedHcI8mlp-moQktTZUUucJPEeE1bWgwiFf3UlG4SXuskgkrZ80XayHgRHFehQmFK86nrShOn45mj8bk2nw7JWuJYVy_OfGcXXAVkG3xheGMi6NzjsxCvc7VIyW0j4UYIlb7Sw')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary text-on-secondary text-[10px] font-meta-label px-2 py-1 tracking-wider uppercase">New</span>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Vanguard</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Creative • Editorial</p>
+</div>
+</div>
+<!-- Template Item 6: The Standard -->
+<div class="template-card group relative flex flex-col cursor-pointer">
+<div class="relative aspect-[3/4] bg-white shadow-md rounded-lg overflow-hidden border border-outline-variant/20 mb-4">
+<div class="template-preview w-full h-full transition-transform duration-500 ease-out bg-surface" data-alt="A high-end, traditional CV template called 'The Standard' that targets C-suite executives. It features a centered header with contact details separated by elegant dots. The font is a premium serif for names and sans-serif for the body. The layout is perfectly balanced with wide margins and clear, underlined section dividers." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDtYP9H4isUc7tV9_qK-s67Te2c5bmQEGCcMLe6QQlw2aNFzbtILYqF9GOyKa1pUB8VL7tQPTqFP8jGZ3mXg-tRGFkpfxKwFRmiu2ErC1PdqQAbFcxUxfQmUJWjfHx_Zw_gVa0HDafPcQDuzus-1y9yNPOKNX0TLaH0Mwr0Yp47ZMy-ZIFoj7dWsK4mTAWIfeFTWJY1k_0CknY3LhQ0xIT-JgMRq8Ai3CoSQESF0ZbCq-hBtL5a8TjPEw')">
+</div>
+<div class="template-overlay absolute inset-0 bg-primary/60 opacity-0 transition-opacity duration-300 flex items-center justify-center gap-4">
+<button class="px-6 py-2 bg-white text-primary font-section-title text-section-title rounded shadow-lg hover:scale-105 transition-transform">Apply Template</button>
+<button class="p-2 bg-surface-container-lowest text-primary rounded-full hover:bg-white transition-colors"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</div>
+</div>
+<div>
+<h4 class="font-section-title text-section-title text-primary group-hover:underline">The Standard</h4>
+<p class="text-meta-label font-meta-label text-on-surface-variant uppercase">Professional • Management</p>
+</div>
+</div>
+</div>
+<!-- Empty State / Load More (Subtle) -->
+<div class="mt-20 text-center">
+<p class="text-on-surface-variant mb-6 italic">Looking for something even more specific?</p>
+<button class="px-8 py-3 border border-outline text-primary font-section-title text-section-title hover:bg-surface-container-low transition-all">
+                    Load More Templates
+                </button>
+</div>
+</div>
+</main>
+<!-- FAB for quick action (Only for home/dashboard, but added for context) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform z-50">
+<span class="material-symbols-outlined" data-icon="brush">brush</span>
+</button>
+<script>
+        // Micro-interaction for template selection
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    const name = card.querySelector('h4').textContent;
+                    console.log('Template clicked:', name);
+                    // Add active class or trigger navigation
+                }
+            });
+        });
+
+        // Filter interaction simulation
+        const filterBtns = document.querySelectorAll('.font-section-title.pb-2');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('text-primary', 'border-b-2', 'border-primary');
+                    b.classList.add('text-on-surface-variant');
+                });
+                btn.classList.add('text-primary', 'border-b-2', 'border-primary');
+                btn.classList.remove('text-on-surface-variant');
+            });
+        });
+
+        // Theme switching helper (simplified for the demo)
+        const toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+</body></html>

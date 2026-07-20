@@ -1,0 +1,33 @@
+# Nuxt dev, build, and nitro outputs
+.nuxt/
+.output/
+.nitro/
+.cache/
+.data/
+dist/
+
+# Node dependencies
+node_modules/
+
+# Local environment files (Never commit actual secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# System and IDE overrides
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

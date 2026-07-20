@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&amp;family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for editor side-nav */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-bg-teal { background-color: #006a61 !important; -webkit-print-color-adjust: exact; }
+            .print-text-white { color: white !important; -webkit-print-color-adjust: exact; }
+        }
+
+        /* Micro-interactions */
+        .progress-bar-fill {
+            transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#0b1c30",
+                    "surface-tint": "#545f73",
+                    "on-tertiary-container": "#ff4e69",
+                    "on-primary-fixed-variant": "#3c475a",
+                    "inverse-primary": "#bcc7de",
+                    "primary": "#091426",
+                    "secondary-fixed": "#89f5e7",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c5c6cd",
+                    "primary-fixed-dim": "#bcc7de",
+                    "surface-container-low": "#eff4ff",
+                    "primary-fixed": "#d8e3fb",
+                    "surface-variant": "#d3e4fe",
+                    "on-surface-variant": "#45474c",
+                    "primary-container": "#1e293b",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary-container": "#8590a6",
+                    "on-primary-fixed": "#111c2d",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "on-secondary-fixed": "#00201d",
+                    "tertiary-container": "#590016",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb2b7",
+                    "tertiary": "#330009",
+                    "on-tertiary-fixed-variant": "#92002a",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-secondary-fixed-variant": "#005049",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#ffdadb",
+                    "on-background": "#0b1c30",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary": "#006a61",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-container-high": "#dce9ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-tertiary-fixed": "#40000d",
+                    "background": "#f8f9ff",
+                    "on-secondary-container": "#006f66",
+                    "secondary-container": "#86f2e4",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-secondary": "#ffffff",
+                    "outline": "#75777d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-item": "1rem",
+                    "gutter-column": "1.5rem",
+                    "margin-page": "2.5rem",
+                    "stack-compact": "0.5rem",
+                    "stack-section": "2rem"
+            },
+            "fontFamily": {
+                    "name-display-mobile": ["Playfair Display"],
+                    "body-compact": ["Inter"],
+                    "name-display": ["Inter"],
+                    "section-title": ["Inter"],
+                    "body-main": ["Inter"],
+                    "meta-label": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "name-display": ["48px", {"lineHeight": "1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                    "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                    "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-main selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Top Navigation Bar (Application Shell) -->
+<nav class="bg-surface dark:bg-on-primary-fixed text-primary dark:text-primary-fixed flex justify-between items-center px-margin-page py-4 w-full docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows no-print z-50 sticky">
+<div class="flex items-center gap-4">
+<span class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">ResumeBuilder AI</span>
+</div>
+<div class="hidden md:flex items-center gap-8 font-section-title text-section-title">
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Templates</a>
+<a class="text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 cursor-pointer active:opacity-80" href="#">My Resumes</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Resources</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Pricing</a>
+</div>
+<button class="bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-section-title text-section-title hover:opacity-90 transition-all">Create New</button>
+</nav>
+<div class="flex min-h-screen relative">
+<!-- Editor Side Bar (Editor Mode Only) -->
+<aside class="hidden lg:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-screen w-64 left-0 top-16 sticky border-r border-outline-variant no-print overflow-y-auto custom-scrollbar">
+<div class="px-4 py-6 border-b border-outline-variant/30">
+<h2 class="font-name-display text-name-display-mobile text-on-surface dark:text-on-primary-fixed leading-none">Editor Mode</h2>
+<p class="text-on-surface-variant text-meta-label mt-1">Professional Template</p>
+</div>
+<div class="flex flex-col gap-1 p-2">
+<!-- Nav Item: Personal Info -->
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-full cursor-pointer transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-main text-body-main">Personal Info</span>
+</div>
+<!-- Nav Item: Experience -->
+<div class="flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full cursor-pointer transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+<span class="font-body-main text-body-main">Experience</span>
+</div>
+<!-- Nav Item: Education -->
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-full cursor-pointer transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="font-body-main text-body-main">Education</span>
+</div>
+<!-- Nav Item: Skills -->
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-full cursor-pointer transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="Construction">construction</span>
+<span class="font-body-main text-body-main">Skills</span>
+</div>
+<!-- Nav Item: Finish -->
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant rounded-full cursor-pointer transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-body-main text-body-main">Finish</span>
+</div>
+</div>
+<div class="mt-auto p-4">
+<button class="w-full bg-secondary text-on-secondary py-4 rounded-xl font-section-title text-section-title flex items-center justify-center gap-2 shadow-lg shadow-secondary/20 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas (The Template) -->
+<main class="flex-1 bg-surface-container py-12 px-4 md:px-12 flex justify-center items-start overflow-x-hidden">
+<!-- CV PAPER START -->
+<div class="bg-white w-full max-w-[850px] shadow-2xl flex flex-col md:flex-row min-h-[1100px] relative overflow-hidden" id="cv-canvas">
+<!-- ASYMMETRIC SIDEBAR (TEAL) -->
+<div class="w-full md:w-[320px] bg-secondary print-bg-teal p-10 flex flex-col justify-between text-white print-text-white relative z-10">
+<div>
+<!-- LARGE SANS-SERIF NAME -->
+<h1 class="font-name-display text-white text-[64px] leading-[0.9] mb-8 uppercase break-words">
+                            Julian<br/>Moraes
+                        </h1>
+<div class="space-y-6 mt-12">
+<!-- CONTACT SECTION -->
+<div>
+<h3 class="font-section-title text-[10px] uppercase tracking-[0.2em] opacity-60 mb-3 border-b border-white/20 pb-1">Contact</h3>
+<ul class="space-y-2 font-meta-label">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="mail">mail</span>
+                                        hello@julianmoraes.design
+                                    </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="call">call</span>
+                                        +44 7700 900077
+                                    </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                                        London, UK
+                                    </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px]" data-icon="language">language</span>
+                                        julianmoraes.design
+                                    </li>
+</ul>
+</div>
+<!-- EDUCATION SECTION -->
+<div>
+<h3 class="font-section-title text-[10px] uppercase tracking-[0.2em] opacity-60 mb-3 border-b border-white/20 pb-1">Education</h3>
+<div class="space-y-4">
+<div>
+<p class="font-bold text-[12px]">MA Design Strategy</p>
+<p class="text-[10px] opacity-80">Royal College of Art, 2018</p>
+</div>
+<div>
+<p class="font-bold text-[12px]">BFA Graphic Design</p>
+<p class="text-[10px] opacity-80">Parsons School of Design, 2014</p>
+</div>
+</div>
+</div>
+<!-- AWARDS SECTION -->
+<div>
+<h3 class="font-section-title text-[10px] uppercase tracking-[0.2em] opacity-60 mb-3 border-b border-white/20 pb-1">Recognition</h3>
+<div class="space-y-2 text-[10px] font-meta-label italic opacity-80">
+<p>— Red Dot Design Award 2022</p>
+<p>— Awwwards Site of the Year 2021</p>
+<p>— Cannes Lions Bronze 2020</p>
+</div>
+</div>
+</div>
+</div>
+<!-- SOCIAL LINKS -->
+<div class="mt-12 pt-8 border-t border-white/10 flex gap-4 opacity-70">
+<span class="material-symbols-outlined" data-icon="star">star</span>
+<span class="material-symbols-outlined" data-icon="share">share</span>
+<span class="material-symbols-outlined" data-icon="link">link</span>
+</div>
+</div>
+<!-- MAIN CONTENT AREA -->
+<div class="flex-1 bg-white p-12 flex flex-col gap-10">
+<!-- EXECUTIVE SUMMARY -->
+<section>
+<div class="flex items-baseline gap-4 mb-4">
+<h2 class="font-section-title text-secondary uppercase">Creative Director</h2>
+<div class="h-[2px] flex-1 bg-secondary opacity-10"></div>
+</div>
+<p class="text-[14px] leading-relaxed text-on-surface-variant italic">
+                            Visionary Creative Director with over 10 years of experience shaping brand identities for Fortune 500 tech companies. Specialized in merging high-end editorial aesthetics with scalable digital systems. Expert at leading cross-functional teams to deliver award-winning multi-platform campaigns.
+                        </p>
+</section>
+<!-- EXPERIENCE SECTION -->
+<section>
+<div class="flex items-baseline gap-4 mb-6">
+<h2 class="font-section-title text-secondary uppercase">Professional Experience</h2>
+<div class="h-[2px] flex-1 bg-secondary opacity-10"></div>
+</div>
+<div class="space-y-8">
+<!-- Job 1 -->
+<div class="relative pl-6 border-l-2 border-secondary/20">
+<div class="absolute -left-[7px] top-0 w-3 h-3 rounded-full bg-secondary"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-[16px] text-primary">Global Design Lead</h4>
+<p class="text-secondary font-semibold text-[12px]">Vanguard Systems</p>
+</div>
+<span class="font-meta-label text-on-surface-variant text-[10px] bg-surface-container px-2 py-1">2021 — PRESENT</span>
+</div>
+<ul class="text-body-main text-on-surface-variant space-y-2 mt-3 list-none">
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Orchestrated a total brand overhaul resulting in a 45% increase in organic user engagement across digital touchpoints.</span>
+</li>
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Managing an international team of 25+ designers, copywriters, and motion artists across three time zones.</span>
+</li>
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Established a unified Design Language System (DLS) that reduced development cycles by 30%.</span>
+</li>
+</ul>
+</div>
+<!-- Job 2 -->
+<div class="relative pl-6 border-l-2 border-secondary/20">
+<div class="absolute -left-[7px] top-0 w-3 h-3 rounded-full bg-secondary/40"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-[16px] text-primary">Senior Art Director</h4>
+<p class="text-secondary font-semibold text-[12px]">Lumina Digital Agency</p>
+</div>
+<span class="font-meta-label text-on-surface-variant text-[10px] bg-surface-container px-2 py-1">2017 — 2021</span>
+</div>
+<ul class="text-body-main text-on-surface-variant space-y-2 mt-3 list-none">
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Led visual strategy for the Nike "Run Future" campaign, earning a Grand Prix at the Clio Awards.</span>
+</li>
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Pioneered interactive storytelling methods using WebGL and 3D web technologies for luxury automotive clients.</span>
+</li>
+</ul>
+</div>
+<!-- Job 3 -->
+<div class="relative pl-6 border-l-2 border-secondary/20">
+<div class="absolute -left-[7px] top-0 w-3 h-3 rounded-full bg-secondary/40"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-[16px] text-primary">Brand Designer</h4>
+<p class="text-secondary font-semibold text-[12px]">Studio Helvetica</p>
+</div>
+<span class="font-meta-label text-on-surface-variant text-[10px] bg-surface-container px-2 py-1">2014 — 2017</span>
+</div>
+<ul class="text-body-main text-on-surface-variant space-y-2 mt-3 list-none">
+<li class="flex gap-2">
+<span class="text-secondary">—</span>
+<span>Developed identity systems for over 15 high-growth startups in the FinTech sector.</span>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- SKILLS SECTION (PROGRESS BARS) -->
+<section>
+<div class="flex items-baseline gap-4 mb-6">
+<h2 class="font-section-title text-secondary uppercase">Expertise</h2>
+<div class="h-[2px] flex-1 bg-secondary opacity-10"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+<!-- Skill 1 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-[11px] uppercase tracking-wider text-primary">Art Direction</span>
+<span class="font-meta-label text-[10px] text-secondary">95%</span>
+</div>
+<div class="h-1 w-full bg-secondary-container rounded-full overflow-hidden">
+<div class="progress-bar-fill h-full bg-secondary w-[95%]"></div>
+</div>
+</div>
+<!-- Skill 2 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-[11px] uppercase tracking-wider text-primary">Product Strategy</span>
+<span class="font-meta-label text-[10px] text-secondary">88%</span>
+</div>
+<div class="h-1 w-full bg-secondary-container rounded-full overflow-hidden">
+<div class="progress-bar-fill h-full bg-secondary w-[88%]"></div>
+</div>
+</div>
+<!-- Skill 3 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-[11px] uppercase tracking-wider text-primary">Brand Identity</span>
+<span class="font-meta-label text-[10px] text-secondary">92%</span>
+</div>
+<div class="h-1 w-full bg-secondary-container rounded-full overflow-hidden">
+<div class="progress-bar-fill h-full bg-secondary w-[92%]"></div>
+</div>
+</div>
+<!-- Skill 4 -->
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-bold text-[11px] uppercase tracking-wider text-primary">Team Leadership</span>
+<span class="font-meta-label text-[10px] text-secondary">90%</span>
+</div>
+<div class="h-1 w-full bg-secondary-container rounded-full overflow-hidden">
+<div class="progress-bar-fill h-full bg-secondary w-[90%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- SIGNATURE AREA -->
+<div class="mt-auto pt-10 flex justify-end">
+<div class="text-right">
+<p class="font-name-display text-[24px] text-secondary leading-none">Julian Moraes</p>
+<p class="text-meta-label text-on-surface-variant opacity-50 mt-1 uppercase">Creative Director</p>
+</div>
+</div>
+</div>
+<!-- STYLISH ACCENT DECORATION -->
+<div class="absolute bottom-0 right-0 w-64 h-64 opacity-5 pointer-events-none translate-x-1/3 translate-y-1/3">
+<svg class="fill-secondary" viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<path d="M47.7,-59.5C59.9,-51.2,66.6,-34.5,70.1,-17.5C73.6,-0.5,73.8,16.8,66.9,31.4C59.9,46,45.8,57.9,30.3,64.2C14.7,70.5,-2.2,71.2,-19.1,66.9C-36,62.6,-52.9,53.3,-62.7,38.9C-72.5,24.6,-75.2,5.1,-71.4,-12.3C-67.6,-29.7,-57.2,-44.9,-43.8,-53.1C-30.4,-61.2,-15.2,-62.3,1.3,-64C17.7,-65.7,35.4,-67.8,47.7,-59.5Z" transform="translate(100 100)"></path>
+</svg>
+</div>
+</div>
+<!-- CV PAPER END -->
+</main>
+</div>
+<!-- FOOTER -->
+<footer class="no-print bg-on-surface dark:bg-on-primary-fixed text-on-primary dark:text-primary-fixed flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact full-width bottom relative z-50">
+<div class="flex items-center gap-4">
+<span class="font-name-display text-section-title text-on-primary">ResumeBuilder AI</span>
+</div>
+<p class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container">© 2024 ResumeBuilder AI. Precise &amp; Authoritative Design.</p>
+<div class="flex gap-6 font-meta-label text-meta-label">
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed opacity-90 hover:opacity-100 transition-all" href="#">Privacy Policy</a>
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed opacity-90 hover:opacity-100 transition-all" href="#">Terms of Service</a>
+<a class="text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed opacity-90 hover:opacity-100 transition-all" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        // Simple animation to re-trigger bar widths on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.progress-bar-fill');
+            bars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 300);
+            });
+        });
+    </script>
+</body></html>

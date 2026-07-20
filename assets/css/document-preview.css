@@ -1,0 +1,359 @@
+/* Shared resume/cover-letter preview — Word/Google Docs style A4 pagination */
+
+/* Explicit A4 page geometry (96dpi ≈ 794×1123; CSS mm preferred for print) */
+:root {
+  --pdf-page-width: 210mm;
+  --pdf-page-height: 297mm;
+}
+
+.pdf-page {
+  box-sizing: border-box;
+  width: var(--pdf-page-width);
+  min-height: var(--pdf-page-height);
+  max-width: var(--pdf-page-width);
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+.pdf-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/*
+ * Atomic blocks — only short chips / headers. Do NOT avoid-break whole jobs,
+ * lists, or sections (that leaves large empty bottoms on A4 sheets).
+ */
+.pdf-avoid-break,
+.preview-content .pdf-avoid-break {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  -webkit-column-break-inside: avoid !important;
+}
+
+.preview-content li,
+.preview-content article,
+.preview-content section,
+.preview-content .preview-block,
+.preview-content ul,
+.preview-content ol {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+/* Section flow — allow breaks between sections, not through headings alone */
+.preview-content section,
+.preview-content header {
+  page-break-before: auto;
+  page-break-after: auto;
+  break-before: auto;
+  break-after: auto;
+}
+
+.preview-content h1,
+.preview-content h2,
+.preview-content h3 {
+  break-after: avoid;
+  page-break-after: avoid;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Split-theme sidebars: stretch with content height (full column chrome) */
+.preview-content .theme-creative-director,
+.preview-content .theme-digital-nomad,
+.preview-content .theme-engineer,
+.preview-content .theme-strategist {
+  align-items: stretch !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.preview-content .theme-sidebar {
+  align-self: stretch !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100% !important;
+}
+
+.preview-content {
+  color: #0f172a;
+  /* Transparent so full-bleed sidebar chrome shows through on pages 2+ */
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Paged A4 sheets: keep brand column continuous across page breaks */
+.pdf-preview-stack .preview-content {
+  background: transparent !important;
+}
+
+.pdf-preview-stack .preview-content .theme-creative-director,
+.pdf-preview-stack .preview-content .theme-digital-nomad,
+.pdf-preview-stack .preview-content .theme-engineer,
+.pdf-preview-stack .preview-content .theme-strategist {
+  min-height: 100%;
+  align-items: stretch !important;
+}
+
+.pdf-preview-stack .preview-content .theme-sidebar {
+  align-self: stretch !important;
+  min-height: 100% !important;
+  /* Do not force height:100% — it overrides JS full-doc stretch and collapses
+     the brand column on page 2+ slices. */
+  max-height: none !important;
+}
+
+/* Split themes: keep brand column continuous; white paper lives on the main pane */
+.pdf-preview-stack .preview-content .theme-creative-director,
+.pdf-preview-stack .preview-content .theme-digital-nomad {
+  background-color: transparent !important;
+}
+
+.preview-content h1 {
+  font-size: 1.65rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em;
+}
+
+.preview-content header h2 {
+  font-size: 0.95rem !important;
+}
+
+.preview-content section > h2,
+.preview-content .preview-section-title {
+  font-size: 0.78rem !important;
+  letter-spacing: 0.12em;
+  margin-top: 0.85rem !important;
+  margin-bottom: 0.4rem !important;
+  padding-bottom: 0.15rem !important;
+}
+
+.preview-content > *:first-child section > h2:first-child,
+.preview-content section:first-of-type > h2:first-child,
+.preview-content .preview-section-title:first-child {
+  margin-top: 0 !important;
+}
+
+.preview-content .rich-text-content,
+.preview-content .ql-editor {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.preview-content .rich-text-content p,
+.preview-content .ql-editor p {
+  margin: 0.2rem 0;
+  width: 100%;
+}
+
+.preview-content .rich-text-content .ql-ui,
+.preview-content .ql-editor .ql-ui {
+  display: none !important;
+}
+
+.preview-content .rich-text-content ul,
+.preview-content .rich-text-content ol,
+.preview-content .ql-editor ul,
+.preview-content .ql-editor ol,
+.preview-content ul:not(.list-none),
+.preview-content ol {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 0 !important;
+  margin-left: 0;
+  list-style: none !important;
+}
+
+.preview-content ul.list-none {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.preview-content .rich-text-content li,
+.preview-content .ql-editor li,
+.preview-content ul:not(.list-none) > li,
+.preview-content ol > li {
+  position: relative;
+  display: block !important;
+  list-style: none !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0.15rem 0;
+  padding-left: 1.15em;
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.45 !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  /* Allow long bullets to split rather than leave empty page bottoms */
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.preview-content ul:not(.list-none) > li::before,
+.preview-content ol > li::before {
+  position: absolute;
+  left: 0;
+  /* Optical center with first line (not cap-top, not block-center) */
+  top: 0.3em;
+  width: 1em;
+  text-align: center;
+  line-height: 1;
+  font-size: 0.95em;
+  color: inherit;
+  transform: none;
+}
+
+.preview-content ul:not(.list-none) > li::before {
+  content: '•';
+}
+
+.preview-content ol {
+  counter-reset: preview-ol;
+}
+
+.preview-content ol > li {
+  counter-increment: preview-ol;
+}
+
+.preview-content ol > li::before {
+  content: counter(preview-ol) '.';
+  font-size: 0.85em;
+}
+
+.preview-content ul.list-none > li {
+  list-style: none !important;
+  padding-left: 0 !important;
+}
+
+.preview-content ul.list-none > li::before {
+  content: none !important;
+}
+
+.preview-content .rich-text-content li[data-list='bullet'],
+.preview-content .ql-editor li[data-list='bullet'] {
+  list-style-type: disc !important;
+}
+
+.preview-content .rich-text-content li[data-list='ordered'],
+.preview-content .ql-editor li[data-list='ordered'] {
+  list-style-type: decimal !important;
+}
+
+.preview-content .rich-text-content strong,
+.preview-content .ql-editor strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* ── Print: multi-page A4, zero chrome margins ──────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body,
+  #__nuxt {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .preview-content,
+  .preview-content *,
+  .pdf-page,
+  .pdf-page * {
+    visibility: visible !important;
+  }
+
+  .preview-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .pdf-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    page-break-after: always !important;
+  }
+
+  .pdf-page:last-child {
+    page-break-after: auto !important;
+  }
+
+  /* Match screen rules: only chips/headers — not whole lists or jobs */
+  .pdf-avoid-break,
+  h1,
+  h2,
+  h3 {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .preview-block,
+  article,
+  li,
+  ul,
+  ol,
+  section,
+  header {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .ql-toolbar,
+  .no-print {
+    display: none !important;
+  }
+
+  .ql-container,
+  .ql-editor {
+    border: none !important;
+    box-shadow: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}

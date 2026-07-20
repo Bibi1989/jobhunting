@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ResumeBuilder AI - The Researcher Template</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom print-like scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d3e4fe; border-radius: 10px; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .cv-page { box-shadow: none !important; border: none !important; margin: 0 !important; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#0b1c30",
+                        "surface-tint": "#545f73",
+                        "on-tertiary-container": "#ff4e69",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "inverse-primary": "#bcc7de",
+                        "primary": "#091426",
+                        "secondary-fixed": "#89f5e7",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c5c6cd",
+                        "primary-fixed-dim": "#bcc7de",
+                        "surface-container-low": "#eff4ff",
+                        "primary-fixed": "#d8e3fb",
+                        "surface-variant": "#d3e4fe",
+                        "on-surface-variant": "#45474c",
+                        "primary-container": "#1e293b",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-container": "#8590a6",
+                        "on-primary-fixed": "#111c2d",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "on-secondary-fixed": "#00201d",
+                        "tertiary-container": "#590016",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "tertiary": "#330009",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "on-secondary-fixed-variant": "#005049",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffdadb",
+                        "on-background": "#0b1c30",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary": "#006a61",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-fixed": "#40000d",
+                        "background": "#f8f9ff",
+                        "on-secondary-container": "#006f66",
+                        "secondary-container": "#86f2e4",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "outline": "#75777d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-item": "1rem",
+                        "gutter-column": "1.5rem",
+                        "margin-page": "2.5rem",
+                        "stack-compact": "0.5rem",
+                        "stack-section": "2rem"
+                    },
+                    "fontFamily": {
+                        "name-display-mobile": ["Playfair Display"],
+                        "body-compact": ["Inter"],
+                        "name-display": ["Playfair Display"],
+                        "section-title": ["Inter"],
+                        "body-main": ["Inter"],
+                        "meta-label": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "name-display-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-compact": ["10px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "name-display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "section-title": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-main": ["11px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "meta-label": ["9px", {"lineHeight": "12px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-main selection:bg-secondary-container">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-on-primary-fixed border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-page py-4 w-full sticky top-0 z-50 no-print">
+<div class="flex items-center gap-4">
+<span class="font-name-display text-name-display-mobile tracking-tighter text-primary dark:text-primary-fixed">ResumeBuilder AI</span>
+</div>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Templates</a>
+<a class="font-section-title text-section-title text-primary dark:text-secondary-fixed border-b-2 border-primary dark:border-secondary-fixed pb-1 cursor-pointer active:opacity-80" href="#">My Resumes</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Resources</a>
+<a class="font-section-title text-section-title text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-secondary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Pricing</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">search</span>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-section-title text-section-title hover:opacity-90 transition-opacity">Create New</button>
+</div>
+</header>
+<div class="flex h-[calc(100vh-72px)] overflow-hidden">
+<!-- SideNavBar (Editor Controls) -->
+<aside class="hidden lg:flex flex-col gap-stack-item p-stack-compact bg-surface-container-low dark:bg-inverse-surface h-full w-64 border-r border-outline-variant no-print">
+<div class="p-4 border-b border-outline-variant/30">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a university professor in a library, wearing a charcoal blazer. The lighting is soft and academic, with warm wood tones from books in the background. The aesthetic is clean, intellectual, and high-end, matching a professional researcher's persona." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZsp6VsK_Egd2LguZme12Dq1j3P3gbmv-P0fSvFTg8jv5JQOy602fIrtdSUH6iV6cIGsMo5jPzXA7PCWVY1AlKZIhW4NMlCKiqYcFY6bPCiKW2_hytAw9vsdBHrYkYseRmDLIae8NQSuWIiVHDRnTCVtgheJlERHgqYQHbLH53vqscrF4lP8yPvs9WQOe18AjRFBtTo2wp5xPM4UVNijzZ1hfyYSO3tduEzTC5yfcnz02Wp2A2JVrKlQ"/>
+</div>
+<div>
+<h3 class="font-body-main text-[12px] font-bold text-on-surface dark:text-on-primary-fixed">Editor Mode</h3>
+<p class="font-meta-label text-meta-label text-on-surface-variant">Professional Template</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-2 space-y-1 overflow-y-auto">
+<button class="w-full flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-full scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-main text-body-main">Personal Info</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined">work</span>
+<span class="font-body-main text-body-main">Experience</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined">school</span>
+<span class="font-body-main text-body-main">Education</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined">construction</span>
+<span class="font-body-main text-body-main">Skills</span>
+</button>
+<button class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-variant dark:hover:bg-on-primary-fixed-variant rounded-full transition-all scale-95 active:scale-90">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-body-main text-body-main">Finish</span>
+</button>
+</nav>
+<div class="p-4">
+<button class="w-full bg-secondary text-on-secondary font-section-title text-section-title py-3 rounded-lg hover:opacity-90 transition-opacity">
+                    Download PDF
+                </button>
+</div>
+</aside>
+<!-- Main Content Area (CV Canvas) -->
+<main class="flex-1 overflow-y-auto bg-surface-dim/30 p-8 md:p-12 scroll-smooth">
+<!-- The "Researcher" Document Canvas -->
+<div class="cv-page max-w-[210mm] mx-auto bg-white shadow-2xl p-margin-page min-h-[297mm] flex flex-col gap-stack-section border border-outline-variant/10">
+<!-- CV Header -->
+<header class="text-center">
+<h1 class="font-name-display text-name-display text-primary mb-2">Dr. Eleanor Thorne</h1>
+<div class="flex justify-center items-center gap-4 text-on-surface-variant">
+<span class="font-meta-label text-meta-label">e.thorne@university.edu</span>
+<span class="text-[8px] opacity-30">•</span>
+<span class="font-meta-label text-meta-label">+1 (555) 012-3456</span>
+<span class="text-[8px] opacity-30">•</span>
+<span class="font-meta-label text-meta-label">Cambridge, MA</span>
+<span class="text-[8px] opacity-30">•</span>
+<span class="font-meta-label text-meta-label">linkedin.com/in/ethorne-research</span>
+</div>
+</header>
+<!-- Academic Summary -->
+<section>
+<div class="flex items-baseline justify-between mb-1">
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest">Research Profile</h2>
+</div>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<p class="font-body-main text-body-main leading-relaxed text-on-surface-variant text-justify">
+                        Senior Research Fellow specializing in Computational Neuroscience and Neural Plasticity. Over 12 years of experience leading multi-disciplinary teams in high-impact academic environments. Principal investigator for three NIH-funded projects focusing on the intersection of deep learning architectures and hippocampal memory consolidation. Author of 40+ peer-reviewed publications with over 1,500 citations (h-index: 22). Dedicated to advancing the boundaries of cognitive modeling through rigorous empirical validation and theoretical innovation.
+                    </p>
+</section>
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: Core Experience & Education -->
+<div class="col-span-8 flex flex-col gap-stack-section">
+<!-- Academic Appointments -->
+<section>
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Academic Appointments</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-body-main font-bold text-[12px]">Senior Research Fellow, Brain &amp; Cognitive Sciences</h3>
+<span class="font-meta-label text-meta-label text-primary">2018 — Present</span>
+</div>
+<p class="font-meta-label text-[10px] text-on-surface-variant italic mb-2">Massachusetts Institute of Technology (MIT)</p>
+<ul class="list-none space-y-2">
+<li class="flex gap-3">
+<span class="text-primary mt-1 text-[8px]">▪</span>
+<span class="font-body-main text-body-main text-on-surface-variant">Directed the Neural Computation Lab, supervising a team of 8 doctoral candidates and 4 post-doctoral researchers.</span>
+</li>
+<li class="flex gap-3">
+<span class="text-primary mt-1 text-[8px]">▪</span>
+<span class="font-body-main text-body-main text-on-surface-variant">Secured $4.2M in cumulative research funding through R01 grants and private foundation fellowships.</span>
+</li>
+</ul>
+</div>
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-body-main font-bold text-[12px]">Assistant Professor of Neuroscience</h3>
+<span class="font-meta-label text-meta-label text-primary">2014 — 2018</span>
+</div>
+<p class="font-meta-label text-[10px] text-on-surface-variant italic mb-2">Stanford University School of Medicine</p>
+<ul class="list-none space-y-2">
+<li class="flex gap-3">
+<span class="text-primary mt-1 text-[8px]">▪</span>
+<span class="font-body-main text-body-main text-on-surface-variant">Developed novel optogenetic protocols for monitoring large-scale cortical activity in vivo.</span>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Selected Publications (The Researcher's Meat) -->
+<section>
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Selected Peer-Reviewed Publications</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="space-y-4">
+<div class="flex gap-4">
+<span class="font-meta-label text-meta-label text-on-surface-variant pt-1 shrink-0">2023</span>
+<p class="font-body-main text-body-main text-on-surface-variant">
+<span class="font-bold">Thorne, E.</span>, Arisaka, K., &amp; Miller, J. (2023). "Hierarchical Latent Representations in Primate Visual Cortex: A Computational Approach." <span class="italic text-primary">Nature Neuroscience</span>, 26(4), 589-601. doi:10.1038/nn.4852.
+                                    </p>
+</div>
+<div class="flex gap-4">
+<span class="font-meta-label text-meta-label text-on-surface-variant pt-1 shrink-0">2022</span>
+<p class="font-body-main text-body-main text-on-surface-variant">
+                                        Zhang, L., <span class="font-bold">Thorne, E.</span>, &amp; Gupta, S. (2022). "Ablation of PV+ Interneurons Disrupts Hippocampal Sequence Replay." <span class="italic text-primary">Journal of Neuroscience</span>, 42(15), 3144-3158.
+                                    </p>
+</div>
+<div class="flex gap-4">
+<span class="font-meta-label text-meta-label text-on-surface-variant pt-1 shrink-0">2021</span>
+<p class="font-body-main text-body-main text-on-surface-variant">
+<span class="font-bold">Thorne, E.</span> (2021). "The Computational Cost of Plasticity: Energy Constraints on Synaptic Scaling." <span class="italic text-primary">Trends in Cognitive Sciences</span>, 25(8), 642-655.
+                                    </p>
+</div>
+<div class="flex gap-4">
+<span class="font-meta-label text-meta-label text-on-surface-variant pt-1 shrink-0">2020</span>
+<p class="font-body-main text-body-main text-on-surface-variant">
+                                        Rivera, M., <span class="font-bold">Thorne, E.</span>, &amp; Petrov, P. (2020). "Reinforcement Learning in Sparse Reward Environments: A Neurobiological Perspective." <span class="italic text-primary">Current Biology</span>, 30(11), R620-R633.
+                                    </p>
+</div>
+</div>
+</section><section class="mt-8">
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Research Projects</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-body-main font-bold text-[12px]">Neural Mapping Initiative</h3>
+<span class="font-meta-label text-meta-label text-primary">2021 – 2023</span>
+</div>
+<p class="font-meta-label text-[10px] text-on-surface-variant italic mb-2">Lead Investigator</p>
+<p class="font-body-main text-body-main text-on-surface-variant">
+Orchestrated a cross-departmental study to map synaptic connectivity in the hippocampal region using advanced optogenetic tools.
+</p>
+</div>
+<div>
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-body-main font-bold text-[12px]">Cognitive Plasticity Framework</h3>
+<span class="font-meta-label text-meta-label text-primary">2019 – 2021</span>
+</div>
+<p class="font-meta-label text-[10px] text-on-surface-variant italic mb-2">Co-Investigator</p>
+<p class="font-body-main text-body-main text-on-surface-variant">
+Developed a computational model for predicting plasticity changes in response to environmental stimuli, resulting in a 15% increase in prediction accuracy.
+</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Skills, Education, Awards -->
+<div class="col-span-4 flex flex-col gap-stack-section">
+<!-- Education -->
+<section>
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Education</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="space-y-4">
+<div>
+<h3 class="font-body-main font-bold text-[11px]">Ph.D. in Neuroscience</h3>
+<p class="font-meta-label text-meta-label text-on-surface-variant">Johns Hopkins University</p>
+<p class="font-meta-label text-meta-label text-primary mt-1">2009 — 2014</p>
+</div>
+<div>
+<h3 class="font-body-main font-bold text-[11px]">B.S. in Cognitive Science</h3>
+<p class="font-meta-label text-meta-label text-on-surface-variant">Stanford University</p>
+<p class="font-meta-label text-meta-label text-primary mt-1">2005 — 2009</p>
+</div>
+</div>
+</section>
+<!-- Technical Skills -->
+<section>
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Methodology</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="flex flex-wrap gap-2">
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">PyTorch &amp; TensorFlow</span>
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">MATLAB Analysis</span>
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">Single-Unit Recording</span>
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">Two-Photon Imaging</span>
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">Bayesian Statistics</span>
+<span class="font-meta-label text-meta-label px-2 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/30">SQL / Data Lakes</span>
+</div>
+</section>
+<!-- Honors & Awards -->
+<section>
+<h2 class="font-section-title text-section-title text-primary uppercase tracking-widest mb-1">Honors</h2>
+<div class="h-[1px] bg-primary w-full mb-4"></div>
+<div class="space-y-4">
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0">military_tech</span>
+<div>
+<p class="font-body-main font-bold text-[10px]">NIH Director's New Innovator Award</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant">2021</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0">military_tech</span>
+<div>
+<p class="font-body-main font-bold text-[10px]">Sloan Research Fellowship</p>
+<p class="font-meta-label text-meta-label text-on-surface-variant">2019</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer Page Indicator -->
+<footer class="mt-auto pt-8 border-t border-outline-variant/20 flex justify-between items-center opacity-50">
+<span class="font-meta-label text-[8px] uppercase tracking-tighter italic">Official Academic Curriculum Vitae</span>
+<span class="font-meta-label text-[8px]">Page 1 of 4</span>
+</footer>
+</div>
+<!-- Page 2 Placeholder (Preview) -->
+<div class="cv-page max-w-[210mm] mx-auto bg-white shadow-2xl p-margin-page min-h-[297mm] mt-8 flex flex-col gap-stack-section opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all cursor-not-allowed">
+<header class="text-center opacity-30">
+<h1 class="font-name-display text-[24px] text-primary">Dr. Eleanor Thorne</h1>
+<div class="h-[1px] bg-outline-variant w-1/4 mx-auto mt-2"></div>
+</header>
+<div class="flex flex-col gap-8 py-10 items-center justify-center border-2 border-dashed border-outline-variant rounded-lg">
+<span class="material-symbols-outlined text-4xl text-outline-variant">description</span>
+<p class="font-section-title text-section-title text-on-surface-variant">Extended Publication List &amp; Conference Presentations</p>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer Area -->
+<footer class="bg-on-surface dark:bg-on-primary-fixed text-on-primary dark:text-primary-fixed flex flex-col md:flex-row justify-between items-center px-margin-page py-8 gap-stack-compact no-print">
+<div class="flex flex-col items-center md:items-start">
+<span class="font-name-display text-section-title text-on-primary mb-2">ResumeBuilder AI</span>
+<p class="font-meta-label text-meta-label opacity-70">© 2024 ResumeBuilder AI. Precise &amp; Authoritative Design.</p>
+</div>
+<div class="flex gap-8">
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-meta-label text-meta-label text-surface-variant dark:text-on-primary-container hover:text-secondary dark:hover:text-secondary-fixed transition-all opacity-90 hover:opacity-100" href="#">Help Center</a>
+</div>
+</footer>
+<script>
+        // Micro-interaction for navigation
+        document.querySelectorAll('nav a, aside button').forEach(elem => {
+            elem.addEventListener('click', (e) => {
+                if(elem.tagName === 'BUTTON') {
+                    document.querySelectorAll('aside button').forEach(b => {
+                        b.classList.remove('bg-primary-container', 'dark:bg-primary', 'text-on-primary-container', 'dark:text-on-primary', 'font-bold');
+                        b.classList.add('text-on-surface-variant', 'dark:text-surface-variant');
+                    });
+                    elem.classList.add('bg-primary-container', 'dark:bg-primary', 'text-on-primary-container', 'dark:text-on-primary', 'font-bold');
+                    elem.classList.remove('text-on-surface-variant', 'dark:text-surface-variant');
+                }
+            });
+        });
+
+        // Floating action button behavior
+        const fab = document.createElement('div');
+        fab.className = "fixed bottom-8 right-8 bg-primary text-on-primary p-4 rounded-full shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all no-print z-50 flex items-center justify-center group";
+        fab.innerHTML = `
+            <span class="material-symbols-outlined">print</span>
+            <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out font-section-title text-section-title ml-0 group-hover:ml-2">Print CV</span>
+        `;
+        fab.onclick = () => window.print();
+        document.body.appendChild(fab);
+    </script>
+</body></html>

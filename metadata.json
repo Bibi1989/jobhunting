@@ -1,0 +1,6 @@
+{
+  "name": "AI Job Scraper",
+  "description": "An AI-powered job board scraper that extracts and filters job listings by location and salary from any careers page URL.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
