@@ -1,9 +1,14 @@
-# Deploy from the web/ package as the site root (set Base directory = web in Netlify UI,
-# or use the repo-root netlify.toml).
+# This package is the Netlify site root (repo Bibi1989/jobhunting = web/).
 [build]
   command = "npm run build"
   publish = ".output/public"
 
 [build.environment]
   NODE_VERSION = "22"
+  NITRO_PRESET = "netlify"
   NUXT_PUBLIC_API_BACKEND = "nuxt"
+
+# Required in Netlify UI → Environment variables:
+#   DATABASE_URL
+#   NUXT_SESSION_PASSWORD  (≥32 chars)
+#   NUXT_PUBLIC_API_BACKEND=nuxt

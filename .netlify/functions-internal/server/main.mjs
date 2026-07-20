@@ -1,0 +1,24 @@
+import process from 'node:process';globalThis._importMeta_={url:import.meta.url,env:process.env};export { aQ as default } from './chunks/nitro/nitro.mjs';
+import '@google/genai';
+import 'node:fs/promises';
+import 'node:path';
+import 'mammoth';
+import 'cheerio';
+import '@react-pdf/primitives';
+import 'buffer';
+import '@react-pdf/font';
+import '@react-pdf/render';
+import '@react-pdf/pdfkit';
+import '@react-pdf/layout';
+import '@react-pdf/fns';
+import '@react-pdf/reconciler';
+import 'node:stream';
+import 'stripe';
+import 'pg';
+import 'node:crypto';
+import 'node:http';
+import 'node:https';
+import 'node:events';
+import 'node:buffer';
+import 'node:fs';
+//# sourceMappingURL=main.mjs.map
