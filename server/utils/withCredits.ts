@@ -35,6 +35,7 @@ export function withCredits<T extends EventHandlerRequest = EventHandlerRequest>
 
   return defineEventHandler(async (event: H3Event) => {
     const user = await requireUser(event)
+    event.context.user = user
 
     if (user.role === 'admin') {
       return handler(event)

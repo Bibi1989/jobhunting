@@ -4,6 +4,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type pg from 'pg'
 
+/**
+ * Resolve package-local migrations: web/server/db/migrations
+ * (override with MIGRATIONS_DIR for Docker / production builds).
+ */
 function migrationsDir(): string {
   if (process.env.MIGRATIONS_DIR && existsSync(process.env.MIGRATIONS_DIR)) {
     return process.env.MIGRATIONS_DIR
@@ -11,11 +15,10 @@ function migrationsDir(): string {
 
   const here = dirname(fileURLToPath(import.meta.url))
   const candidates = [
-    join(here, '../../../db/migrations'), // repo root from web/server/utils
-    join(here, '../db/migrations'), // web/server/db/migrations
-    join(process.cwd(), 'db/migrations'),
-    join(process.cwd(), '../db/migrations'),
-    join(process.cwd(), 'migrations'),
+    join(here, '../db/migrations'), // web/server/db/migrations (dev)
+    join(process.cwd(), 'server/db/migrations'),
+    join(process.cwd(), 'web/server/db/migrations'),
+    join(process.cwd(), 'migrations'), // Docker image layout
   ]
 
   for (const path of candidates) {
@@ -23,7 +26,7 @@ function migrationsDir(): string {
   }
 
   throw new Error(
-    'No migrations directory found. Set MIGRATIONS_DIR or add db/migrations at the repo root.',
+    'No migrations directory found. Expected web/server/db/migrations (or set MIGRATIONS_DIR).',
   )
 }
 

@@ -31,12 +31,17 @@ export function getPool() {
     pool = new Pool({
       connectionString: config.databaseUrl,
       connectionTimeoutMillis: 3000,
+      // Avoid holding idle connections (reduces Postgres connection bleed / cost).
+      max: 10,
+      min: 0,
+      idleTimeoutMillis: 60_000,
+      allowExitOnIdle: true,
     })
   }
   return pool
 }
 
-/** Detect pending SQL migrations under db/migrations and apply them. */
+/** Detect pending SQL migrations under web/server/db/migrations and apply them. */
 export async function ensureSchema() {
   if (schemaReady) return
 
@@ -213,7 +218,14 @@ export async function decrementCreditAtomic(
       [userId, -cost, reason],
     )
     await client.query('COMMIT')
-    return mapUser(updated.rows[0])
+    const mapped = mapUser(updated.rows[0])
+    try {
+      const { invalidateAuthUserCache } = await import('~/server/utils/auth')
+      invalidateAuthUserCache(userId)
+    } catch {
+      /* ignore */
+    }
+    return mapped
   } catch (error) {
     await client.query('ROLLBACK')
     throw error
@@ -255,6 +267,12 @@ export async function setPlanAndCredits(
       [userId, credits - prev, reason],
     )
     await client.query('COMMIT')
+    try {
+      const { invalidateAuthUserCache } = await import('~/server/utils/auth')
+      invalidateAuthUserCache(userId)
+    } catch {
+      /* ignore */
+    }
     return mapUser(updated.rows[0])
   } catch (error) {
     await client.query('ROLLBACK')

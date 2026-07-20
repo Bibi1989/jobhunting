@@ -94,7 +94,13 @@ export default withCredits(
 
     jobs = await enrichJobsWithFullDescriptions(ai, models, jobs, finalUrl)
 
+    const user = event.context.user
+    if (!user?.id) {
+      throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+    }
+
     const scrapeRunId = await createScrapeRun({
+      userId: user.id,
       sourceUrl: url,
       finalUrl,
       usedSearch,
@@ -102,7 +108,7 @@ export default withCredits(
       jobCount: jobs.length,
     })
 
-    const savedJobs = await upsertJobs(jobs, scrapeRunId, url)
+    const savedJobs = await upsertJobs(jobs, scrapeRunId, url, user.id)
 
     return {
       jobs: savedJobs,

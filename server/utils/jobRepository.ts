@@ -3,12 +3,14 @@ import { query } from './db'
 
 export interface StoredJob extends Job {
   id: string
+  userId?: string
   descriptionSource?: string
   sourceUrl?: string
   scrapeRunId?: string
 }
 
 export async function createScrapeRun(input: {
+  userId: string
   sourceUrl: string
   finalUrl: string
   usedSearch: boolean
@@ -16,10 +18,11 @@ export async function createScrapeRun(input: {
   jobCount: number
 }) {
   const result = await query<{ id: string }>(
-    `INSERT INTO scrape_runs (source_url, final_url, used_search, source_status, job_count)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO scrape_runs (user_id, source_url, final_url, used_search, source_status, job_count)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id`,
     [
+      input.userId,
       input.sourceUrl,
       input.finalUrl,
       input.usedSearch,
@@ -30,12 +33,18 @@ export async function createScrapeRun(input: {
   return result.rows[0].id
 }
 
-export async function upsertJobs(jobs: Job[], scrapeRunId: string, sourceUrl: string) {
+export async function upsertJobs(
+  jobs: Job[],
+  scrapeRunId: string,
+  sourceUrl: string,
+  userId: string,
+) {
   const saved: StoredJob[] = []
 
   for (const job of jobs) {
     const result = await query<{
       id: string
+      user_id: string
       title: string
       company: string | null
       location: string
@@ -49,10 +58,10 @@ export async function upsertJobs(jobs: Job[], scrapeRunId: string, sourceUrl: st
       scrape_run_id: string | null
     }>(
       `INSERT INTO jobs (
-         scrape_run_id, title, company, location, salary_min, salary_max,
+         user_id, scrape_run_id, title, company, location, salary_min, salary_max,
          currency, url, description, description_source, source_url, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW())
-       ON CONFLICT (url) DO UPDATE SET
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, NOW())
+       ON CONFLICT (user_id, url) DO UPDATE SET
          scrape_run_id = EXCLUDED.scrape_run_id,
          title = EXCLUDED.title,
          company = COALESCE(EXCLUDED.company, jobs.company),
@@ -70,6 +79,7 @@ export async function upsertJobs(jobs: Job[], scrapeRunId: string, sourceUrl: st
          updated_at = NOW()
        RETURNING *`,
       [
+        userId,
         scrapeRunId,
         job.title,
         job.company || null,
@@ -91,9 +101,10 @@ export async function upsertJobs(jobs: Job[], scrapeRunId: string, sourceUrl: st
   return saved
 }
 
-export async function listRecentJobs(limit = 100) {
+export async function listRecentJobs(userId: string, limit = 100) {
   const result = await query<{
     id: string
+    user_id: string
     title: string
     company: string | null
     location: string
@@ -107,17 +118,19 @@ export async function listRecentJobs(limit = 100) {
     scrape_run_id: string | null
   }>(
     `SELECT * FROM jobs
+     WHERE user_id = $1
      ORDER BY updated_at DESC
-     LIMIT $1`,
-    [limit],
+     LIMIT $2`,
+    [userId, limit],
   )
 
   return result.rows.map(mapJobRow)
 }
 
-export async function getJobById(id: string) {
+export async function getJobById(id: string, userId: string) {
   const result = await query<{
     id: string
+    user_id: string
     title: string
     company: string | null
     location: string
@@ -129,19 +142,25 @@ export async function getJobById(id: string) {
     description_source: string | null
     source_url: string | null
     scrape_run_id: string | null
-  }>(`SELECT * FROM jobs WHERE id = $1`, [id])
+  }>(`SELECT * FROM jobs WHERE id = $1 AND user_id = $2`, [id, userId])
 
   return result.rows[0] ? mapJobRow(result.rows[0]) : null
 }
 
-export async function deleteJob(input: { id?: string; url?: string }) {
+export async function deleteJob(input: { userId: string; id?: string; url?: string }) {
   if (input.id) {
-    const result = await query(`DELETE FROM jobs WHERE id = $1 RETURNING id`, [input.id])
+    const result = await query(`DELETE FROM jobs WHERE id = $1 AND user_id = $2 RETURNING id`, [
+      input.id,
+      input.userId,
+    ])
     return (result.rowCount || 0) > 0
   }
 
   if (input.url) {
-    const result = await query(`DELETE FROM jobs WHERE url = $1 RETURNING id`, [input.url])
+    const result = await query(`DELETE FROM jobs WHERE url = $1 AND user_id = $2 RETURNING id`, [
+      input.url,
+      input.userId,
+    ])
     return (result.rowCount || 0) > 0
   }
 
@@ -150,6 +169,7 @@ export async function deleteJob(input: { id?: string; url?: string }) {
 
 function mapJobRow(row: {
   id: string
+  user_id?: string
   title: string
   company: string | null
   location: string
@@ -164,6 +184,7 @@ function mapJobRow(row: {
 }): StoredJob {
   return {
     id: row.id,
+    userId: row.user_id || undefined,
     title: row.title,
     company: row.company || undefined,
     location: row.location,

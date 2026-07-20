@@ -31,7 +31,11 @@ export default withCredits(async (event) => {
   let job = body?.job
 
   if ((!job || !job.title) && body?.jobId) {
-    job = (await getJobById(body.jobId)) || undefined
+    const user = event.context.user
+    if (!user?.id) {
+      throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+    }
+    job = (await getJobById(body.jobId, user.id)) || undefined
   }
 
   if (!job?.title) {

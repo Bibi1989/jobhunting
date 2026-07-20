@@ -20,6 +20,33 @@ declare module 'h3' {
   }
 }
 
+/** Short in-process cache so requireUser does not hit Postgres on every request. */
+const USER_CACHE_TTL_MS = 20_000
+const userCache = new Map<string, { user: AppUser; expires: number }>()
+
+export function invalidateAuthUserCache(userId?: string) {
+  if (!userId) {
+    userCache.clear()
+    return
+  }
+  userCache.delete(userId)
+}
+
+function cacheUser(user: AppUser): AppUser {
+  userCache.set(user.id, { user, expires: Date.now() + USER_CACHE_TTL_MS })
+  return user
+}
+
+function getCachedUser(userId: string): AppUser | null {
+  const hit = userCache.get(userId)
+  if (!hit) return null
+  if (Date.now() >= hit.expires) {
+    userCache.delete(userId)
+    return null
+  }
+  return hit.user
+}
+
 export async function getSessionUser(event: H3Event): Promise<SessionUser | null> {
   const session = await getUserSession(event)
   const user = session?.user as SessionUser | undefined
@@ -59,14 +86,19 @@ export async function requireUser(event: H3Event): Promise<AppUser> {
     throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
   }
 
-  let user = await getUserById(sessionUser.id)
+  let user = getCachedUser(sessionUser.id)
   if (!user) {
-    await clearUserSession(event).catch(() => undefined)
-    throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+    user = await getUserById(sessionUser.id)
+    if (!user) {
+      await clearUserSession(event).catch(() => undefined)
+      throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
+    }
+    // Role/credit heals are occasional; skip on cache hits to reduce DB chatter.
+    user = await syncAdminRole(user)
+    user = await syncProCredits(user)
+    cacheUser(user)
   }
 
-  user = await syncAdminRole(user)
-  user = await syncProCredits(user)
   event.context.user = user
   return user
 }
@@ -80,6 +112,7 @@ export async function requireAdmin(event: H3Event): Promise<AppUser> {
 }
 
 export async function setAuthSession(event: H3Event, user: AppUser) {
+  cacheUser(user)
   await setUserSession(event, {
     user: {
       id: user.id,

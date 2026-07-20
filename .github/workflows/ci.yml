@@ -5,11 +5,9 @@ on:
     branches: [main, master]
     paths:
       - "web/**"
-      - "db/**"
   pull_request:
     paths:
       - "web/**"
-      - "db/**"
 
 defaults:
   run:
@@ -35,4 +33,4 @@ jobs:
           NUXT_SESSION_PASSWORD: ci-session-password-at-least-32-chars
           DATABASE_URL: postgresql://scraper:scraper@localhost:5432/job_scraper
           NUXT_PUBLIC_API_BACKEND: nuxt
-          MIGRATIONS_DIR: ${{ github.workspace }}/db/migrations
+          MIGRATIONS_DIR: ${{ github.workspace }}/web/server/db/migrations

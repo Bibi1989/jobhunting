@@ -1,6 +1,8 @@
+import { requireUser } from '~/server/utils/auth'
 import { deleteJob } from '../../utils/jobRepository'
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
   const id = getRouterParam(event, 'id')
   const queryParams = getQuery(event)
   const url = typeof queryParams.url === 'string' ? queryParams.url : undefined
@@ -11,6 +13,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const deleted = await deleteJob({
+      userId: user.id,
       id: id && id !== 'by-url' ? id : undefined,
       url,
     })
