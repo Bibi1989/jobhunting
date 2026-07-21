@@ -216,15 +216,7 @@ onMounted(async () => {
       if (!resumeData.value.language) resumeData.value.language = 'en'
 
       if (data.coverLetter) {
-        coverLetter.value = {
-          additionalInstructions: '',
-          jobDescription: '',
-          companyName: '',
-          hiringManager: '',
-          tone: 'professional',
-          content: '',
-          ...data.coverLetter,
-        }
+        Object.assign(coverLetter.value, data.coverLetter)
       } else {
         resumeData.value.coverLetter = coverLetter.value
       }

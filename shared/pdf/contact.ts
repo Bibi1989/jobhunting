@@ -40,7 +40,7 @@ export function formatLinkedIn(raw?: string | null): ContactEntry | null {
   return {
     kind: 'linkedin',
     label: 'LinkedIn',
-    display: path,
+    display: `https://${path}`,
     href: `https://www.${path.replace(/^linkedin\.com/i, 'linkedin.com')}`,
   }
 }
@@ -60,7 +60,7 @@ export function formatGitHub(raw?: string | null): ContactEntry | null {
   return {
     kind: 'github',
     label: 'GitHub',
-    display: path,
+    display: `https://${path}`,
     href: `https://${path}`,
   }
 }

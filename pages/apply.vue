@@ -139,7 +139,7 @@ async function generate() {
       <div class="mb-10 flex flex-wrap items-start justify-between gap-4 border-b border-slate-900 pb-8">
         <div>
           <NuxtLink
-            to="/"
+            to="/scraper"
             class="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors"
           >
             <ArrowLeft :size="14" /> Back to scraper

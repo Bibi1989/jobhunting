@@ -48,7 +48,7 @@ useHead(() => {
       <p class="text-slate-400">
         {{ (error as any)?.statusMessage || 'This portfolio may have been removed or the link is incorrect.' }}
       </p>
-      <NuxtLink to="/" class="mt-2 rounded-lg bg-indigo-500 px-5 py-2.5 font-semibold text-white hover:bg-indigo-400">
+      <NuxtLink to="/scraper" class="mt-2 rounded-lg bg-indigo-500 px-5 py-2.5 font-semibold text-white hover:bg-indigo-400">
         Go home
       </NuxtLink>
     </div>

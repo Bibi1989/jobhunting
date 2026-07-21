@@ -560,7 +560,7 @@ function applyToJob() {
       <header class="flex justify-between items-center mb-4 md:mb-6 gap-3 shrink-0 border-b border-slate-900 pb-4 md:pb-5">
         <div class="flex items-center gap-3 md:gap-4 min-w-0">
           <NuxtLink
-            to="/"
+            to="/scraper"
             class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all duration-300 border border-slate-800 flex items-center justify-center shrink-0"
             title="Back to Dashboard"
           >
@@ -573,7 +573,7 @@ function applyToJob() {
 
         <div class="flex items-center gap-3 shrink-0">
           <NuxtLink
-            to="/"
+            to="/scraper"
             class="text-xs font-bold text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-all duration-300"
           >
             <span class="hidden sm:inline">Back to Jobs</span>
@@ -591,7 +591,7 @@ function applyToJob() {
         <AlertCircle class="text-red-400 mb-4 animate-pulse" :size="48" />
         <h2 class="text-lg font-bold text-slate-200">Job Not Found</h2>
         <p class="text-slate-400 text-sm mt-1 mb-6">The job you are looking for does not exist or has been removed.</p>
-        <NuxtLink to="/" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all duration-300">
+        <NuxtLink to="/scraper" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all duration-300">
           Return to Dashboard
         </NuxtLink>
       </div>
