@@ -10,6 +10,8 @@ export interface Job {
   description?: string
   descriptionSource?: string
   sourceUrl?: string
+  responsibilities?: string
+  requirements?: string
 }
 
 export interface TailoredMaterials {

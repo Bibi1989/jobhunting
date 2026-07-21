@@ -95,8 +95,24 @@ ${extraInstructions}
     jd ? 'a job description is available — tailor to it' : 'no job description — emphasize transferable strengths and interest in the role/company',
   ].join('; ')
 
+  let presetRules = ''
+  if (body?.tailoringPreset === 'ats-first') {
+    presetRules = `
+- PERSONALITY PRESET: ATS-First. Optimize the cover letter for strict keyword alignment with the job description. Directly incorporate key skills and requirement phrases from the job description. Keep the tone highly direct and objective.`
+  } else if (body?.tailoringPreset === 'impact-first') {
+    presetRules = `
+- PERSONALITY PRESET: Impact/Metrics-First. Focus heavily on quantitative achievements, metrics, and business outcomes. Highlight achievements with clear percentages, statistics, or scale values in the middle paragraphs.`
+  } else if (body?.tailoringPreset === 'leadership') {
+    presetRules = `
+- PERSONALITY PRESET: Leadership. Showcase mentoring, project leadership, strategic vision, initiative, and cross-functional collaboration. Highlight experience taking ownership and guiding teams.`
+  } else if (body?.tailoringPreset === 'tech-expert') {
+    presetRules = `
+- PERSONALITY PRESET: Tech Expert. Deepen technical descriptions. Highlight specific libraries, databases, frameworks, system reliability, or complex architecture decisions.`
+  }
+
   const prompt = withCareerExpertPrompt(`Your task is to produce a highly persuasive, customized cover letter for a job applicant.
 Context: ${sourceNote}.
+${presetRules}
 
 Applicant Information (from their Resume):
 Name: ${personalInfo.fullName || 'Applicant'}

@@ -17,8 +17,10 @@ import {
   type ResumeSectionId,
 } from '~/shared/pdf/schema'
 import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
+import { extractKeywordsFromText } from '~/utils/keywordExtractor'
 
 const toast = useAppToast()
+const confirmDialog = useAppConfirm()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
 
 definePageMeta({ middleware: 'auth' })
@@ -34,6 +36,7 @@ const draftFileInput = ref<HTMLInputElement | null>(null)
 const uploadedResumeName = ref('')
 const rawResumeText = ref('')
 const alsoGenerateCoverLetter = ref(false)
+const tailoringPreset = ref<'ats-first' | 'impact-first' | 'leadership' | 'tech-expert'>('ats-first')
 
 function newId() {
   return crypto.randomUUID()
@@ -57,7 +60,152 @@ function selectTemplate(templateId: string) {
   resumeData.value.templateSlug = id
 }
 
-const activeTab = ref('targetRole')
+const activeTab = ref<string>('targetRole')
+const expandedHeatmap = ref(false)
+const selectedHeatmapKeyword = ref<string | null>(null)
+
+const activeKeywords = computed(() => {
+  if (atsResult.value?.keywordsAnalysis?.length) {
+    return atsResult.value.keywordsAnalysis.map(k => k.keyword)
+  }
+  const jd = resumeData.value.targetJobDescription || ''
+  return extractKeywordsFromText(jd)
+})
+
+function stripHtmlToPlain(html?: string | null): string {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function htmlToBulletsList(html?: string | null): string[] {
+  if (!html) return []
+  const match = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi)
+  if (!match) return [stripHtmlToPlain(html)]
+  return match.map(li => stripHtmlToPlain(li))
+}
+
+type LiveKeywordMatch = {
+  keyword: string
+  isCovered: boolean
+  locations: {
+    section: string
+    title: string
+    bulletIndex?: number
+    text?: string
+  }[]
+}
+
+const liveKeywordMatches = computed<LiveKeywordMatch[]>(() => {
+  const keywords = activeKeywords.value
+  const data = resumeData.value
+  if (!keywords.length) return []
+
+  const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  return keywords.map(kw => {
+    const escaped = escapeRegExp(kw)
+    let regex: RegExp
+    if (/[+#.a-zA-Z0-9]+/.test(kw)) {
+      regex = new RegExp(`(?:\\b|\\s|^)${escaped}(?:\\b|\\s|$|\\.)`, 'i')
+    } else {
+      regex = new RegExp(escaped, 'i')
+    }
+
+    const locations: LiveKeywordMatch['locations'] = []
+
+    // 1. Check Summary
+    const summaryText = stripHtmlToPlain(data.personalInfo?.summary || '')
+    if (regex.test(summaryText)) {
+      locations.push({
+        section: 'Summary',
+        title: 'Professional Summary',
+        text: summaryText
+      })
+    }
+
+    // 2. Check Skills
+    const skillsList = data.skills || []
+    skillsList.forEach(s => {
+      if (regex.test(s.name || '')) {
+        locations.push({
+          section: 'Skills',
+          title: `Skill: ${s.name}`
+        })
+      }
+    })
+
+    // 3. Check Experience
+    const experienceList = data.experience || []
+    experienceList.forEach((job) => {
+      const jobTitle = job.title || 'Role'
+      const jobCompany = job.company || 'Company'
+      if (regex.test(jobTitle)) {
+        locations.push({
+          section: 'Experience',
+          title: `${jobTitle} at ${jobCompany}`
+        })
+      }
+      
+      const bullets = htmlToBulletsList(job.description)
+      bullets.forEach((bText, bIdx) => {
+        if (regex.test(bText)) {
+          locations.push({
+            section: 'Experience',
+            title: `${jobTitle} at ${jobCompany}`,
+            bulletIndex: bIdx + 1,
+            text: bText
+          })
+        }
+      })
+    })
+
+    // 4. Check Projects
+    const projectsList = data.projects || []
+    projectsList.forEach((proj) => {
+      const projTitle = proj.title || 'Project'
+      if (regex.test(projTitle)) {
+        locations.push({
+          section: 'Projects',
+          title: projTitle
+        })
+      }
+      if (proj.projectDescription && regex.test(proj.projectDescription)) {
+        locations.push({
+          section: 'Projects',
+          title: projTitle,
+          text: proj.projectDescription
+        })
+      }
+      
+      const bullets = htmlToBulletsList(proj.description)
+      bullets.forEach((bText, bIdx) => {
+        if (regex.test(bText)) {
+          locations.push({
+            section: 'Projects',
+            title: projTitle,
+            bulletIndex: bIdx + 1,
+            text: bText
+          })
+        }
+      })
+    })
+
+    return {
+      keyword: kw,
+      isCovered: locations.length > 0,
+      locations
+    }
+  })
+})
+
+const liveCoverageCount = computed(() => {
+  return liveKeywordMatches.value.filter(k => k.isCovered).length
+})
+
+const liveCoverageTotal = computed(() => {
+  return liveKeywordMatches.value.length
+})
+
 const activePopoverId = ref<string | null>(null)
 const mobileNavOpen = ref(false)
 const mobilePane = ref<'edit' | 'preview'>('edit')
@@ -74,6 +222,7 @@ const builderTabs = [
   { id: 'achievements', label: 'Achievements', icon: 'emoji_events' },
   { id: 'custom', label: 'Custom Sections', icon: 'dashboard_customize' },
   { id: 'atsCheck', label: 'ATS Check', icon: 'fact_check' },
+  { id: 'history', label: 'History', icon: 'history' },
 ] as const
 
 function selectBuilderTab(id: string) {
@@ -158,6 +307,22 @@ type AtsIssue = {
   message: string
   suggestion: string
 }
+type AtsKeywordAnalysis = {
+  keyword: string
+  status: 'missing' | 'found'
+  count: number
+  foundInSection: 'experience' | 'projects' | 'skills' | 'summary' | 'none'
+}
+type AtsSuggestedRewrite = {
+  original: string
+  suggested: string
+  explanation: string
+}
+type AtsSectionChangeProposal = {
+  section: 'experience' | 'projects' | 'skills' | 'summary'
+  relevanceReason: string
+  suggestedRewrites: AtsSuggestedRewrite[]
+}
 type AtsCheckResult = {
   score: number
   grade: string
@@ -166,6 +331,8 @@ type AtsCheckResult = {
   issues: AtsIssue[]
   keywordGaps: string[]
   quickWins: string[]
+  keywordsAnalysis?: AtsKeywordAnalysis[]
+  sectionChanges?: AtsSectionChangeProposal[]
 }
 
 const atsRunning = ref(false)
@@ -205,6 +372,7 @@ async function draftResumeWithAi() {
         additionalInstructions: resumeData.value.additionalInstructions || '',
         rawResumeText: rawResumeText.value || undefined,
         targetRole: resumeData.value.personalInfo.jobTitle,
+        tailoringPreset: tailoringPreset.value,
       },
     })
 
@@ -214,9 +382,9 @@ async function draftResumeWithAi() {
       next.templateSlug = next.templateId
       next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
       next.targetJobDescription =
-        next.targetJobDescription ?? resumeData.value.targetJobDescription
+          next.targetJobDescription ?? resumeData.value.targetJobDescription
       next.additionalInstructions =
-        next.additionalInstructions ?? resumeData.value.additionalInstructions
+          next.additionalInstructions ?? resumeData.value.additionalInstructions
       if (alsoGenerateCoverLetter.value) {
         toast.info('Drafting cover letter…')
         try {
@@ -231,6 +399,7 @@ async function draftResumeWithAi() {
               currentContent: '',
               additionalInstructions: resumeData.value.additionalInstructions || '',
               rawResumeText: rawResumeText.value || undefined,
+              tailoringPreset: tailoringPreset.value,
             },
           })
           if (clResponse?.content) {
@@ -438,14 +607,11 @@ async function fixAtsIssues() {
       next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
       next.templateSlug = next.templateId
       next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
-      next.targetJobDescription =
-        next.targetJobDescription ?? resumeData.value.targetJobDescription
-      next.additionalInstructions =
-        next.additionalInstructions ?? resumeData.value.additionalInstructions
       resumeData.value = next
       atsResult.value = null
       await refreshCredits()
-      toast.success('ATS fixes applied. Re-run the check to confirm your new score.')
+      await saveDraftWithLabel('ATS Fix')
+      toast.success('ATS fixes applied and saved. Re-run the check to confirm your new score.')
     }
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
@@ -598,6 +764,7 @@ onMounted(async () => {
         customSections: data.customSections || [],
         skills: data.skills || [],
       })
+      await fetchVersions()
     } catch (e) {
       console.error(e)
     } finally {
@@ -682,6 +849,82 @@ async function applyJobPrefillFromRoute() {
   }
 }
 
+const versions = ref<Array<{ id: string; label: string; createdAt: string; content: any }>>([])
+const loadingVersions = ref(false)
+const reverting = ref(false)
+const selectedVersionId = ref<string | null>(null)
+
+const selectedVersion = computed(() => {
+  return versions.value.find((v) => v.id === selectedVersionId.value)
+})
+
+async function fetchVersions() {
+  if (!resumeId || resumeId === 'new') return
+  loadingVersions.value = true
+  try {
+    const data = await $fetch<any[]>(`/api/builder/resume/${resumeId}/versions`)
+    versions.value = data
+  } catch (e) {
+    console.error('Failed to load version history:', e)
+  } finally {
+    loadingVersions.value = false
+  }
+}
+
+async function revertToVersion(versionId: string) {
+  const ok = await confirmDialog.confirm({
+    title: 'Revert Document',
+    message: 'Are you sure you want to revert your resume to this version? Any unsaved manual changes will be lost.',
+    confirmLabel: 'Revert',
+    danger: true,
+  })
+  if (!ok) return
+
+  reverting.value = true
+  try {
+    const result = await $fetch<any>(`/api/builder/resume/${resumeId}/revert`, {
+      method: 'POST',
+      body: { versionId }
+    })
+    if (result.success && result.content) {
+      resumeData.value = result.content
+      toast.success('Successfully reverted to selected version!')
+      selectedVersionId.value = null
+      await fetchVersions()
+    }
+  } catch (e) {
+    console.error(e)
+    toast.error('Failed to revert to the selected version.')
+  } finally {
+    reverting.value = false
+  }
+}
+
+async function saveDraftWithLabel(label: string) {
+  saving.value = true
+  try {
+    const payload = withLayoutState(resumeData.value)
+    resumeData.value = payload
+    if (resumeId === 'new') {
+      const { id } = await $fetch<{ id: string }>('/api/builder/resume', {
+        method: 'POST',
+        body: { ...payload, versionLabel: label },
+      })
+      router.replace(`/builder/resume/${id}`)
+    } else {
+      await $fetch(`/api/builder/resume/${resumeId}`, {
+        method: 'PUT',
+        body: { ...payload, versionLabel: label },
+      })
+    }
+    void fetchVersions()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    saving.value = false
+  }
+}
+
 async function saveDraft() {
   saving.value = true
   try {
@@ -690,16 +933,17 @@ async function saveDraft() {
     if (resumeId === 'new') {
       const { id } = await $fetch<{ id: string }>('/api/builder/resume', {
         method: 'POST',
-        body: payload,
+        body: { ...payload, versionLabel: 'Initial Draft' },
       })
       router.replace(`/builder/resume/${id}`)
     } else {
       await $fetch(`/api/builder/resume/${resumeId}`, {
         method: 'PUT',
-        body: payload,
+        body: { ...payload, versionLabel: 'Manual Edit' },
       })
     }
     toast.success('Saved successfully.')
+    void fetchVersions()
   } catch (e) {
     console.error(e)
     toast.error('Failed to save draft.')
@@ -852,6 +1096,44 @@ function addCustomItem(section: BuilderCustomSection) {
 }
 function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
   section.items.splice(itemIndex, 1)
+}
+
+function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | 'summary', original: string, suggested: string) {
+  if (section === 'summary') {
+    resumeData.value.personalInfo.summary = suggested
+    toast.success('Summary updated with suggested rewrite.')
+  } else if (section === 'experience') {
+    const cleanOriginal = original.replace(/<[^>]+>/g, '').trim()
+    for (let i = 0; i < resumeData.value.experience.length; i++) {
+      const exp = resumeData.value.experience[i]
+      if (exp.description.includes(original) || exp.description.replace(/<[^>]+>/g, '').includes(cleanOriginal)) {
+        exp.description = exp.description.replace(original, suggested)
+        toast.success('Experience bullet updated.')
+        return
+      }
+    }
+    // Try word-based matching if direct replacement fails
+    toast.error('Could not find the exact matching bullet in experience, but you can copy/paste it.')
+  } else if (section === 'projects') {
+    const cleanOriginal = original.replace(/<[^>]+>/g, '').trim()
+    for (let i = 0; i < resumeData.value.projects.length; i++) {
+      const proj = resumeData.value.projects[i]
+      if (proj.description && (proj.description.includes(original) || proj.description.replace(/<[^>]+>/g, '').includes(cleanOriginal))) {
+        proj.description = proj.description.replace(original, suggested)
+        toast.success('Project bullet updated.')
+        return
+      }
+    }
+    toast.error('Could not find the exact matching bullet in projects, but you can copy/paste it.')
+  } else if (section === 'skills') {
+    const exists = resumeData.value.skills.some(s => s.name.toLowerCase() === suggested.toLowerCase())
+    if (!exists) {
+      resumeData.value.skills.push({ id: newId(), name: suggested })
+      toast.success(`Added skill: ${suggested}`)
+    } else {
+      toast.info(`Skill "${suggested}" already exists.`)
+    }
+  }
 }
 
 </script>
@@ -1026,6 +1308,49 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 </div>
               </button>
             </div>
+            <!-- Spacing & Typography Presets -->
+            <div class="mt-8 pt-6 border-t border-white/10 space-y-4 text-left">
+              <div>
+                <h3 class="font-bold text-lg text-white mb-0.5">Spacing & Typography</h3>
+                <p class="text-blue-200/60 text-xs">Configure spacing and font scale rules optimized for ATS parsing or space constraints.</p>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  @click="resumeData.spacingPreset = 'ats-stable'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'ats-stable' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                >
+                  ATS Stable
+                </button>
+                <button
+                  type="button"
+                  @click="resumeData.spacingPreset = 'balanced'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'balanced' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                >
+                  Balanced
+                </button>
+                <button
+                  type="button"
+                  @click="resumeData.spacingPreset = 'compact'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'compact' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                >
+                  Compact
+                </button>
+              </div>
+
+              <p class="text-[11px] text-slate-400 leading-relaxed">
+                <span v-if="(resumeData.spacingPreset || 'balanced') === 'ats-stable'">
+                  <strong>ATS Stable Preset:</strong> Generous margins (36pt), larger font size (10pt), and taller line height (1.4) to maximize reliability across parser engines.
+                </span>
+                <span v-if="(resumeData.spacingPreset || 'balanced') === 'balanced'">
+                  <strong>Balanced Preset:</strong> standard margins (32pt), standard font size (9.5pt), and line height (1.35) for a polished executive print.
+                </span>
+                <span v-if="(resumeData.spacingPreset || 'balanced') === 'compact'">
+                  <strong>Compact Preset:</strong> Tight margins (24pt) and smaller font size (8.5pt) to fit maximum content on a single page without breaking layout structure.
+                </span>
+              </p>
+            </div>
           </div>
 
           <div v-if="activeTab === 'layout'" class="space-y-6">
@@ -1112,6 +1437,25 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     v-model="resumeData.personalInfo.summary"
                   />
                 </div>
+
+                <!-- Summary Keyword Assistance -->
+                <div class="mt-3 space-y-1.5 text-left">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in Summary</span>
+                    <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(k => k.isCovered && k.locations.some(loc => loc.section === 'Summary')).length }} covered</span>
+                  </div>
+                  <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                  <div v-else class="flex flex-wrap gap-1">
+                    <span
+                      v-for="m in liveKeywordMatches"
+                      :key="`sum-kw-${m.keyword}`"
+                      class="text-[9px] px-2 py-0.5 rounded-full border transition-all"
+                      :class="m.locations.some(loc => loc.section === 'Summary') ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800/40 text-slate-500 border-white/5'"
+                    >
+                      {{ m.keyword }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1172,6 +1516,49 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   placeholder="Optional. Example: Emphasize leadership and TypeScript. Keep bullets concise."
                 />
                 <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
+              </div>
+
+              <!-- Tailoring Preset Selector -->
+              <div class="space-y-2 text-left">
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-500 block">
+                  Tailoring Personality / Preset
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    @click="tailoringPreset = 'ats-first'"
+                    :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'ats-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                  >
+                    ATS-First
+                  </button>
+                  <button
+                    type="button"
+                    @click="tailoringPreset = 'impact-first'"
+                    :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'impact-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                  >
+                    Impact/Metrics
+                  </button>
+                  <button
+                    type="button"
+                    @click="tailoringPreset = 'leadership'"
+                    :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'leadership' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                  >
+                    Leadership
+                  </button>
+                  <button
+                    type="button"
+                    @click="tailoringPreset = 'tech-expert'"
+                    :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'tech-expert' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
+                  >
+                    Tech Expert
+                  </button>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-snug">
+                  <span v-if="tailoringPreset === 'ats-first'">Optimized for parsing and strict keyword density. Uses objective phrasing.</span>
+                  <span v-if="tailoringPreset === 'impact-first'">Places high-impact quantitative achievements, percentages, and metrics first.</span>
+                  <span v-if="tailoringPreset === 'leadership'">Showcases management, mentorship, communication, and project ownership.</span>
+                  <span v-if="tailoringPreset === 'tech-expert'">Focuses on engineering depth, architecture, and tool mastery.</span>
+                </p>
               </div>
 
               <div class="flex items-center gap-2 py-1 select-none">
@@ -1298,6 +1685,25 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                         v-model="resumeData.experience[index].description"
                       />
                     </div>
+
+                    <!-- Experience Bullet Keyword Assistance -->
+                    <div class="mt-3 space-y-1.5 text-left">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in this Role</span>
+                        <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Experience' && loc.title.includes(exp.title || 'Role'))).length }} covered</span>
+                      </div>
+                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                      <div v-else class="flex flex-wrap gap-1">
+                        <span
+                          v-for="m in liveKeywordMatches"
+                          :key="`exp-kw-${exp.id}-${m.keyword}`"
+                          class="text-[9px] px-2 py-0.5 rounded-full border transition-all"
+                          :class="m.locations.some(loc => loc.section === 'Experience' && loc.title.includes(exp.title || 'Role')) ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800/40 text-slate-500 border-white/5'"
+                        >
+                          {{ m.keyword }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1390,6 +1796,25 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                         v-model="resumeData.projects[index].description"
                       />
                     </div>
+
+                    <!-- Project Bullet Keyword Assistance -->
+                    <div class="mt-3 space-y-1.5 text-left">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in this Project</span>
+                        <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Projects' && loc.title.includes(proj.title || 'Project'))).length }} covered</span>
+                      </div>
+                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                      <div v-else class="flex flex-wrap gap-1">
+                        <span
+                          v-for="m in liveKeywordMatches"
+                          :key="`proj-kw-${proj.id}-${m.keyword}`"
+                          class="text-[9px] px-2 py-0.5 rounded-full border transition-all"
+                          :class="m.locations.some(loc => loc.section === 'Projects' && loc.title.includes(proj.title || 'Project')) ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800/40 text-slate-500 border-white/5'"
+                        >
+                          {{ m.keyword }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1457,6 +1882,29 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
               <div v-for="(skill, index) in resumeData.skills" :key="skill.id" class="flex items-center gap-2 bg-white/5 p-2 px-3 rounded-lg border border-white/10 group hover:border-white/20 transition-colors">
                 <input v-model="skill.name" type="text" class="flex-1 bg-transparent border-none text-sm outline-none text-white" placeholder="e.g. TypeScript" />
                 <button @click="removeSkill(index)" class="text-red-400 material-symbols-outlined text-sm hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">close</button>
+              </div>
+            </div>
+
+            <!-- Skills Keyword Assistance -->
+            <div class="mt-4 pt-4 border-t border-white/10 space-y-2.5 text-left pb-10">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Target Keywords in Skills</span>
+                <span class="text-xs text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Skills')).length }} / {{ liveKeywordMatches.length }} covered</span>
+              </div>
+              <div v-if="!liveKeywordMatches.length" class="text-xs text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+              <div v-else class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="m in liveKeywordMatches"
+                  :key="`sk-kw-${m.keyword}`"
+                  type="button"
+                  @click="!m.locations.some(loc => loc.section === 'Skills') && resumeData.skills.push({ id: newId(), name: m.keyword })"
+                  class="text-xs px-2.5 py-1 rounded-lg border transition-all text-left flex items-center gap-1.5 cursor-pointer"
+                  :class="m.locations.some(loc => loc.section === 'Skills') ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800/40 text-slate-400 border-white/5 hover:border-blue-400/50 hover:text-white'"
+                >
+                  <span class="material-symbols-outlined text-[12px] text-emerald-400" v-if="m.locations.some(loc => loc.section === 'Skills')">check_circle</span>
+                  <span class="material-symbols-outlined text-[12px] text-blue-400" v-else>add</span>
+                  {{ m.keyword }}
+                </button>
               </div>
             </div>
           </div>
@@ -1675,7 +2123,34 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 </div>
               </div>
 
-              <div v-if="atsResult.keywordGaps.length" class="flex flex-wrap gap-2">
+              <!-- Detailed Keyword Explainability -->
+              <div v-if="atsResult.keywordsAnalysis && atsResult.keywordsAnalysis.length" class="space-y-3">
+                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Keyword Alignment Analysis</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    v-for="(k, i) in atsResult.keywordsAnalysis"
+                    :key="`kwa-${i}`"
+                    class="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]"
+                  >
+                    <div class="text-left">
+                      <p class="text-sm font-semibold text-white">{{ k.keyword }}</p>
+                      <p v-if="k.status === 'found'" class="text-[10px] text-slate-400">
+                        Found in: <span class="text-blue-300 capitalize font-medium">{{ k.foundInSection }}</span> ({{ k.count }}x)
+                      </p>
+                      <p v-else class="text-[10px] text-slate-400">Not found in resume</p>
+                    </div>
+                    <span
+                      class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+                      :class="k.status === 'found' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'"
+                    >
+                      {{ k.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fallback Legacy Keyword Gaps -->
+              <div v-else-if="atsResult.keywordGaps.length" class="flex flex-wrap gap-2">
                 <h3 class="w-full text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Keyword gaps</h3>
                 <span
                   v-for="(kw, i) in atsResult.keywordGaps"
@@ -1684,11 +2159,196 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 >{{ kw }}</span>
               </div>
 
+              <!-- Suggested Section Changes & Rewrites -->
+              <div v-if="atsResult.sectionChanges && atsResult.sectionChanges.length" class="space-y-4">
+                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Suggested Section Rewrites</h3>
+                <div class="space-y-4">
+                  <div
+                    v-for="(sc, i) in atsResult.sectionChanges"
+                    :key="`sc-${i}`"
+                    class="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3"
+                  >
+                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                      <h4 class="text-xs font-bold text-blue-300 uppercase tracking-wider capitalize text-left">
+                        {{ sc.section }} Section
+                      </h4>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed italic text-left">
+                      {{ sc.relevanceReason }}
+                    </p>
+
+                    <div class="space-y-3 pt-2">
+                      <div
+                        v-for="(rw, rwIdx) in sc.suggestedRewrites"
+                        :key="`rw-${rwIdx}`"
+                        class="space-y-2 border-t border-white/5 pt-3 first:border-t-0 first:pt-0 text-left"
+                      >
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded text-xs text-rose-200">
+                            <span class="text-[9px] uppercase font-bold text-rose-400 block mb-1">Original</span>
+                            <p class="italic">{{ rw.original }}</p>
+                          </div>
+                          <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-xs text-emerald-200 relative">
+                            <span class="text-[9px] uppercase font-bold text-emerald-400 block mb-1">Suggested</span>
+                            <p class="italic pr-14">{{ rw.suggested }}</p>
+                            <button
+                              type="button"
+                              class="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-white rounded text-[10px] font-semibold hover:bg-emerald-400 transition duration-200 cursor-pointer"
+                              @click="applySuggestedRewrite(sc.section, rw.original, rw.suggested)"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                          <strong class="text-slate-300">Why this rewrite:</strong> {{ rw.explanation }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div v-if="atsResult.quickWins.length">
                 <h3 class="text-xs uppercase tracking-widest text-blue-300/80 font-semibold mb-2">Quick wins</h3>
                 <ol class="list-decimal list-inside space-y-1.5 text-sm text-slate-300">
                   <li v-for="(w, i) in atsResult.quickWins" :key="`qw-${i}`">{{ w }}</li>
                 </ol>
+              </div>
+            </div>
+          </div>
+
+          <!-- History & Version Diff tab -->
+          <div v-if="activeTab === 'history'" class="pb-12 space-y-6">
+            <div class="mb-6">
+              <h1 class="font-bold text-2xl text-white mb-1">Version History & Diff Mode</h1>
+              <p class="text-blue-200/60 text-sm">
+                View previous snapshots of your resume, compare changes, and revert if needed.
+              </p>
+            </div>
+
+            <!-- Loading indicator -->
+            <div v-if="loadingVersions && !versions.length" class="flex items-center gap-2 text-sm text-slate-400">
+              <span class="material-symbols-outlined animate-spin text-[18px]">refresh</span>
+              <span>Loading version history...</span>
+            </div>
+
+            <!-- Version List -->
+            <div v-if="!selectedVersionId" class="space-y-3">
+              <div v-if="!versions.length" class="text-slate-500 italic text-sm py-4">
+                No saved versions yet. Changes are recorded when you save drafts or run AI improvements.
+              </div>
+              <div
+                v-for="v in versions"
+                :key="v.id"
+                class="group p-4 bg-white/5 border border-white/10 hover:border-blue-500/50 rounded-xl transition duration-200 cursor-pointer flex items-center justify-between gap-4"
+                @click="selectedVersionId = v.id"
+              >
+                <div class="text-left">
+                  <p class="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">
+                    {{ v.label }}
+                  </p>
+                  <p class="text-[11px] text-slate-400">
+                    {{ new Date(v.createdAt).toLocaleString() }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs transition duration-200 cursor-pointer font-semibold"
+                  >
+                    Compare Diff
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 bg-blue-500/20 text-blue-300 hover:bg-blue-600 hover:text-white rounded text-xs transition duration-200 cursor-pointer font-semibold"
+                    @click.stop="revertToVersion(v.id)"
+                  >
+                    Restore
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comparison Diff View -->
+            <div v-else-if="selectedVersion" class="space-y-6">
+              <div class="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
+                <div class="text-left">
+                  <p class="text-xs text-slate-400 font-medium">Comparing with version from {{ new Date(selectedVersion.createdAt).toLocaleString() }}</p>
+                  <p class="text-sm font-semibold text-white">Label: {{ selectedVersion.label }}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 font-semibold text-xs transition duration-200 cursor-pointer"
+                    :disabled="reverting"
+                    @click="revertToVersion(selectedVersion.id)"
+                  >
+                    Restore This Version
+                  </button>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded font-semibold text-xs transition duration-200 cursor-pointer"
+                    @click="selectedVersionId = null"
+                  >
+                    Clear Comparison
+                  </button>
+                </div>
+              </div>
+
+              <!-- Summary Diff -->
+              <div class="space-y-2">
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Professional Summary</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
+                    <p class="font-semibold text-rose-400 mb-1">Previous Version</p>
+                    <p class="whitespace-pre-wrap">{{ selectedVersion.content.personalInfo?.summary || '(Empty)' }}</p>
+                  </div>
+                  <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
+                    <p class="font-semibold text-emerald-400 mb-1">Current Version</p>
+                    <p class="whitespace-pre-wrap">{{ resumeData.personalInfo.summary || '(Empty)' }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Experience Diff -->
+              <div class="space-y-2">
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Work Experience</h3>
+                <div class="space-y-4">
+                  <div v-for="(exp, idx) in resumeData.experience" :key="exp.id" class="border-b border-white/5 pb-4 last:border-b-0">
+                    <h4 class="text-xs font-semibold text-white mb-2 text-left">{{ exp.title }} @ {{ exp.company }}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
+                        <p class="font-semibold text-rose-400 mb-1">Previous Description</p>
+                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.experience?.[idx]?.description || '(Not present)'"></p>
+                      </div>
+                      <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
+                        <p class="font-semibold text-emerald-400 mb-1">Current Description</p>
+                        <p class="whitespace-pre-wrap" v-html="exp.description"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Projects Diff -->
+              <div class="space-y-2">
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Projects</h3>
+                <div class="space-y-4">
+                  <div v-for="(proj, idx) in resumeData.projects" :key="proj.id" class="border-b border-white/5 pb-4 last:border-b-0">
+                    <h4 class="text-xs font-semibold text-white mb-2 text-left">{{ proj.title }}</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
+                        <p class="font-semibold text-rose-400 mb-1">Previous Description</p>
+                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.projects?.[idx]?.description || '(Not present)'"></p>
+                      </div>
+                      <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
+                        <p class="font-semibold text-emerald-400 mb-1">Current Description</p>
+                        <p class="whitespace-pre-wrap" v-html="proj.description"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1705,6 +2365,143 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
           </div>
         </section>
       </main>
+
+      <!-- Floating Keyword Heatmap Widget -->
+      <div
+        class="fixed bottom-6 right-6 z-30 transition-all duration-300 ease-in-out select-none flex flex-col items-end"
+      >
+        <!-- Collapsed Badge -->
+        <button
+          v-if="!expandedHeatmap"
+          type="button"
+          @click="expandedHeatmap = true"
+          class="flex items-center gap-3.5 px-4 py-3 rounded-full bg-slate-900/90 border border-white/10 text-white font-semibold text-xs shadow-2xl hover:bg-slate-800 hover:border-blue-400/50 hover:shadow-blue-500/10 hover:scale-105 transition-all duration-200 cursor-pointer"
+        >
+          <!-- Circular progress indicator -->
+          <div class="relative w-5 h-5 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full transform -rotate-90">
+              <circle cx="10" cy="10" r="8" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2" />
+              <circle
+                cx="10"
+                cy="10"
+                r="8"
+                fill="none"
+                stroke="#10b981"
+                stroke-width="2"
+                :stroke-dasharray="2 * Math.PI * 8"
+                :stroke-dashoffset="2 * Math.PI * 8 * (1 - (liveCoverageCount / Math.max(1, liveCoverageTotal)))"
+              />
+            </svg>
+            <span class="text-[8px] font-black text-slate-300">{{ Math.round((liveCoverageCount / Math.max(1, liveCoverageTotal)) * 100) }}%</span>
+          </div>
+          <div class="text-left leading-none">
+            <p class="font-bold text-white text-[11px]">Keyword Coverage</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">{{ liveCoverageCount }} / {{ liveCoverageTotal }} present</p>
+          </div>
+          <span class="material-symbols-outlined text-[16px] text-slate-400">expand_less</span>
+        </button>
+
+        <!-- Expanded Drawer Panel -->
+        <div
+          v-else
+          class="w-80 sm:w-96 max-h-[500px] flex flex-col bg-slate-950/95 border border-white/15 shadow-2xl rounded-2xl p-4 backdrop-blur-2xl transition-all duration-300"
+        >
+          <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+            <div class="text-left">
+              <h3 class="font-bold text-sm text-white">Keyword Coverage Heatmap</h3>
+              <p class="text-[10px] text-slate-400 mt-0.5">{{ liveCoverageCount }} of {{ liveCoverageTotal }} skills identified in resume</p>
+            </div>
+            <button
+              type="button"
+              @click="expandedHeatmap = false; selectedHeatmapKeyword = null"
+              class="text-slate-400 hover:text-white material-symbols-outlined text-sm bg-white/5 hover:bg-white/10 p-1 rounded-md transition-colors cursor-pointer"
+            >
+              close
+            </button>
+          </div>
+
+          <!-- Heatmap Progress Bar -->
+          <div class="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden mb-4 border border-white/5 flex">
+            <div
+              class="bg-emerald-500 h-full rounded-full transition-all duration-300"
+              :style="{ width: `${(liveCoverageCount / Math.max(1, liveCoverageTotal)) * 100}%` }"
+            />
+          </div>
+
+          <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0 space-y-4">
+            <!-- Keyword Clouds -->
+            <div>
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 text-left">Click a keyword to inspect location</p>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="m in liveKeywordMatches"
+                  :key="`hm-${m.keyword}`"
+                  type="button"
+                  @click="selectedHeatmapKeyword = selectedHeatmapKeyword === m.keyword ? null : m.keyword"
+                  class="text-[11px] px-2.5 py-1 rounded-lg border transition-all text-center flex items-center gap-1 cursor-pointer font-medium"
+                  :class="[
+                    m.isCovered ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/10 text-rose-300/85 border-rose-500/20',
+                    selectedHeatmapKeyword === m.keyword ? 'ring-2 ring-blue-500 border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : ''
+                  ]"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" :class="m.isCovered ? 'bg-emerald-400' : 'bg-rose-400'" />
+                  {{ m.keyword }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Inspect Panel -->
+            <div
+              v-if="selectedHeatmapKeyword"
+              class="bg-white/5 border border-white/10 rounded-xl p-3.5 space-y-2 text-left text-xs transition-all duration-200"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white text-xs">Inspecting: {{ selectedHeatmapKeyword }}</span>
+                <span
+                  class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded"
+                  :class="liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered ? 'bg-emerald-500/25 text-emerald-300' : 'bg-rose-500/25 text-rose-300'"
+                >
+                  {{ liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered ? 'Present' : 'Missing' }}
+                </span>
+              </div>
+
+              <!-- Found Locations -->
+              <div v-if="liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered">
+                <p class="text-[10px] text-slate-400 font-semibold mb-1">Found in these locations:</p>
+                <ul class="space-y-1.5">
+                  <li
+                    v-for="(loc, lIdx) in liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.locations"
+                    :key="`loc-${lIdx}`"
+                    class="bg-slate-900/60 p-2 rounded border border-white/5 space-y-1"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-blue-300 text-[10px] uppercase tracking-wider">{{ loc.section }}</span>
+                      <span v-if="loc.bulletIndex" class="text-[9px] text-slate-400">Bullet {{ loc.bulletIndex }}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-200 italic leading-relaxed" v-if="loc.text">
+                      "{{ loc.text }}"
+                    </p>
+                    <p class="text-[10px] text-slate-400" v-else>
+                      Mentioned in {{ loc.title }}
+                    </p>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Missing Instructions -->
+              <div v-else class="space-y-1.5">
+                <p class="text-[10px] text-slate-400">Not yet covered in your resume drafts. Suggestions:</p>
+                <div class="bg-blue-500/10 border border-blue-500/20 p-2.5 rounded text-blue-200 space-y-1">
+                  <p class="font-semibold text-[10px]">Guided Suggestion:</p>
+                  <p class="text-[10px] leading-relaxed">
+                    Try adding this keyword to your <strong class="text-white">Skills section</strong> or draft a bullet in <strong class="text-white">Experience</strong> showing how you solved problems using {{ selectedHeatmapKeyword }}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

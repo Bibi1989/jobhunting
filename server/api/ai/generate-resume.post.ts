@@ -71,6 +71,21 @@ ${extraInstructions}
 `
     : ''
 
+  let presetRules = ''
+  if (body?.tailoringPreset === 'ats-first') {
+    presetRules = `
+- PERSONALITY PRESET: ATS-First. Optimize the resume draft for maximum keyword alignment with the job description. Rephrase summary, experience bullet points, and skills list to directly match terms in the target job description. Avoid subjective claims and maintain a standardized tone.`
+  } else if (body?.tailoringPreset === 'impact-first') {
+    presetRules = `
+- PERSONALITY PRESET: Impact/Metrics-First. Emphasize numeric results, metrics, and business outcomes. Frame experience bullets strictly in the Google XYZ structure: "Accomplished [X], as measured by [Y], by doing [Z]" with numeric success indicators. Ensure every single job highlights quantifiable outcomes.`
+  } else if (body?.tailoringPreset === 'leadership') {
+    presetRules = `
+- PERSONALITY PRESET: Leadership. Showcase mentoring, project leadership, strategic vision, technical ownership, and stakeholder coordination. Highlight ownership and mentoring duties in experience descriptions.`
+  } else if (body?.tailoringPreset === 'tech-expert') {
+    presetRules = `
+- PERSONALITY PRESET: Tech Expert. Focus on deep engineering detail. Highlight specific libraries, databases, frameworks, infrastructure details, API design patterns, and complexity. Make the technical implementation details prominent.`
+  }
+
   const ai = createGeminiClient()
   const models = resolveGeminiModelChain()
 
@@ -88,6 +103,7 @@ Target job description:
 ${jd || '(Not provided — polish and structure the resume from available profile/resume text alone.)'}
 """
 ${userTasksBlock}
+${presetRules}
 
 Rules:
 - Return ONLY a valid JSON object with the FULL updated resume (same keys/shape as input).

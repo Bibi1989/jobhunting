@@ -22,6 +22,7 @@ export default withCredits(async (event) => {
     coverLetterText?: string
     useSavedDocuments?: boolean
     cvFormat?: string
+    tailoringPreset?: 'ats-first' | 'impact-first' | 'leadership' | 'tech-expert'
     candidateProfile?: Partial<CandidateProfile> & {
       skillsText?: string
       experienceText?: string
@@ -84,6 +85,7 @@ export default withCredits(async (event) => {
     coverLetterText || undefined,
     body.cvFormat,
     candidateProfile,
+    body.tailoringPreset,
   )
 
   return {

@@ -16,6 +16,14 @@ export default defineEventHandler(async (event) => {
      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
     [user.id, documentKind, name, 'application/json', content],
   )
+  const newId = result.rows[0].id
 
-  return { id: result.rows[0].id }
+  // Create initial version
+  await query(
+    `INSERT INTO user_document_versions (document_id, content_text, version_label)
+     VALUES ($1, $2, $3)`,
+    [newId, content, 'Initial Draft']
+  )
+
+  return { id: newId }
 })

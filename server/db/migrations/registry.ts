@@ -169,5 +169,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS user_documents_upload_unique
   WHERE user_id IS NOT NULL
     AND mime_type IS DISTINCT FROM 'application/json';
 `,
+  },
+  {
+    id: "004_document_versions.sql",
+    sql: `-- 004_document_versions: create user_document_versions table for resume/cover letter history
+CREATE TABLE IF NOT EXISTS user_document_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id UUID NOT NULL REFERENCES user_documents(id) ON DELETE CASCADE,
+  content_text TEXT NOT NULL,
+  version_label TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS user_document_versions_doc_idx
+  ON user_document_versions (document_id, created_at DESC);
+`,
+  },
+  {
+    id: "005_job_structured_fields.sql",
+    sql: `-- 005_job_structured_fields: add responsibilities and requirements columns to jobs table
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS responsibilities TEXT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS requirements TEXT;
+`,
   }
 ]

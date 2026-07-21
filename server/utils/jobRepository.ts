@@ -56,11 +56,13 @@ export async function upsertJobs(
       description_source: string | null
       source_url: string | null
       scrape_run_id: string | null
+      responsibilities: string | null
+      requirements: string | null
     }>(
       `INSERT INTO jobs (
          user_id, scrape_run_id, title, company, location, salary_min, salary_max,
-         currency, url, description, description_source, source_url, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, NOW())
+         currency, url, description, description_source, source_url, responsibilities, requirements, updated_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, NOW())
        ON CONFLICT (user_id, url) DO UPDATE SET
          scrape_run_id = EXCLUDED.scrape_run_id,
          title = EXCLUDED.title,
@@ -76,6 +78,8 @@ export async function upsertJobs(
          END,
          description_source = COALESCE(EXCLUDED.description_source, jobs.description_source),
          source_url = EXCLUDED.source_url,
+         responsibilities = COALESCE(EXCLUDED.responsibilities, jobs.responsibilities),
+         requirements = COALESCE(EXCLUDED.requirements, jobs.requirements),
          updated_at = NOW()
        RETURNING *`,
       [
@@ -91,6 +95,8 @@ export async function upsertJobs(
         job.description || null,
         job.descriptionSource || null,
         sourceUrl,
+        job.responsibilities || null,
+        job.requirements || null,
       ],
     )
 
@@ -116,6 +122,8 @@ export async function listRecentJobs(userId: string, limit = 100) {
     description_source: string | null
     source_url: string | null
     scrape_run_id: string | null
+    responsibilities: string | null
+    requirements: string | null
   }>(
     `SELECT * FROM jobs
      WHERE user_id = $1
@@ -142,6 +150,8 @@ export async function getJobById(id: string, userId: string) {
     description_source: string | null
     source_url: string | null
     scrape_run_id: string | null
+    responsibilities: string | null
+    requirements: string | null
   }>(`SELECT * FROM jobs WHERE id = $1 AND user_id = $2`, [id, userId])
 
   return result.rows[0] ? mapJobRow(result.rows[0]) : null
@@ -167,7 +177,7 @@ export async function deleteJob(input: { userId: string; id?: string; url?: stri
   return false
 }
 
-function mapJobRow(row: {
+export function mapJobRow(row: {
   id: string
   user_id?: string
   title: string
@@ -181,6 +191,8 @@ function mapJobRow(row: {
   description_source: string | null
   source_url: string | null
   scrape_run_id: string | null
+  responsibilities?: string | null
+  requirements?: string | null
 }): StoredJob {
   return {
     id: row.id,
@@ -196,5 +208,7 @@ function mapJobRow(row: {
     descriptionSource: row.description_source || undefined,
     sourceUrl: row.source_url || undefined,
     scrapeRunId: row.scrape_run_id || undefined,
+    responsibilities: row.responsibilities || undefined,
+    requirements: row.requirements || undefined,
   }
 }

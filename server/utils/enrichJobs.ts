@@ -20,6 +20,14 @@ const DESCRIPTION_SCHEMA = {
     salaryMin: { type: Type.NUMBER },
     salaryMax: { type: Type.NUMBER },
     currency: { type: Type.STRING },
+    responsibilities: {
+      type: Type.STRING,
+      description: 'Key job duties, responsibilities, and tasks. Format as a clean, readable multiline list.'
+    },
+    requirements: {
+      type: Type.STRING,
+      description: 'Qualifications, education, technical requirements, and years of experience. Format as a clean, readable multiline list.'
+    }
   },
   required: ['description'],
 } as const
@@ -126,6 +134,8 @@ async function enrichSingleJob(
       salaryMax: details.salaryMax ?? job.salaryMax,
       currency: details.currency || job.currency,
       description: description || undefined,
+      responsibilities: details.responsibilities?.trim() || job.responsibilities,
+      requirements: details.requirements?.trim() || job.requirements,
       descriptionSource: detailDescription
         ? 'detail_page'
         : listingDescription
@@ -191,6 +201,8 @@ ${html.slice(0, 90000)}`,
     salaryMin?: number
     salaryMax?: number
     currency?: string
+    responsibilities?: string
+    requirements?: string
   }
 }
 

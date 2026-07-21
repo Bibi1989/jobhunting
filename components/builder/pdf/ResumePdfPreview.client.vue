@@ -20,7 +20,51 @@ const url = ref('')
 const loading = ref(false)
 const error = ref('')
 
+const blobCache = new Map<string, string>()
+
+function getResumeCacheKey() {
+  const layout = withLayoutState(props.resume)
+  const templateSlug = resolveTemplateSlug(layout)
+  const sectionsOrder = normalizeSectionsOrder(
+    layout.sectionsOrder,
+    layout.customSections || [],
+  )
+  return JSON.stringify({
+    personalInfo: layout.personalInfo,
+    experience: layout.experience,
+    projects: layout.projects,
+    education: layout.education,
+    skills: layout.skills,
+    achievements: layout.achievements,
+    customSections: layout.customSections,
+    spacingPreset: layout.spacingPreset,
+    templateSlug,
+    sectionsOrder,
+  })
+}
+
+function addToCache(key: string, blobUrl: string) {
+  if (blobCache.size > 20) {
+    const firstKey = blobCache.keys().next().value
+    if (firstKey) {
+      const firstUrl = blobCache.get(firstKey)
+      if (firstUrl) URL.revokeObjectURL(firstUrl)
+      blobCache.delete(firstKey)
+    }
+  }
+  blobCache.set(key, blobUrl)
+}
+
 async function refreshPreview() {
+  const cacheKey = getResumeCacheKey()
+  if (blobCache.has(cacheKey)) {
+    const cachedUrl = blobCache.get(cacheKey)!
+    if (url.value !== cachedUrl) {
+      url.value = cachedUrl
+    }
+    return
+  }
+
   loading.value = true
   error.value = ''
   try {
@@ -57,7 +101,7 @@ async function refreshPreview() {
 
     const blob = await response.blob()
     const next = URL.createObjectURL(blob)
-    if (url.value) URL.revokeObjectURL(url.value)
+    addToCache(cacheKey, next)
     url.value = next
   } catch (e) {
     console.error(e)
@@ -67,17 +111,32 @@ async function refreshPreview() {
   }
 }
 
-const debouncedRefresh = useDebounceFn(refreshPreview, 450)
+let refreshTimeout: any = null
+
+function triggerRefresh() {
+  if (refreshTimeout) clearTimeout(refreshTimeout)
+  const active = typeof document !== 'undefined' ? document.activeElement : null
+  const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')
+  const delay = isTyping ? 2500 : 450
+  refreshTimeout = setTimeout(() => {
+    void refreshPreview()
+  }, delay)
+}
 
 watch(
   () => props.resume,
   () => {
-    void debouncedRefresh()
+    triggerRefresh()
   },
   { deep: true, immediate: true },
 )
 
 onBeforeUnmount(() => {
+  if (refreshTimeout) clearTimeout(refreshTimeout)
+  for (const blobUrl of blobCache.values()) {
+    URL.revokeObjectURL(blobUrl)
+  }
+  blobCache.clear()
   if (url.value) URL.revokeObjectURL(url.value)
 })
 </script>

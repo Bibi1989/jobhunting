@@ -109,6 +109,43 @@ function removeTech(project: PortfolioProject, tech: string) {
   project.tech_stack = project.tech_stack.filter((t) => t !== tech)
 }
 
+const projectAnalyses = ref<Record<number, any>>({})
+const analyzingProjectIdx = ref<number | null>(null)
+
+async function analyzeProject(index: number) {
+  const project = form.value?.formatted_projects[index]
+  if (!project || !project.title || !project.description) {
+    toast.info('Enter a title and description before analyzing.')
+    return
+  }
+  analyzingProjectIdx.value = index
+  try {
+    const result = await $fetch<any>('/api/portfolio/analyze-project', {
+      method: 'POST',
+      body: {
+        title: project.title,
+        description: project.description,
+        tech_stack: project.tech_stack,
+      },
+    })
+    projectAnalyses.value[index] = result
+    toast.success('Project case study analyzed successfully!')
+  } catch (e) {
+    console.error(e)
+    toast.error('Failed to analyze project description.')
+  } finally {
+    analyzingProjectIdx.value = null
+  }
+}
+
+function applyProjectRewrite(index: number) {
+  const analysis = projectAnalyses.value[index]
+  if (analysis && form.value?.formatted_projects[index]) {
+    form.value.formatted_projects[index].description = analysis.suggestedRewrite
+    toast.success('Suggested rewrite applied to project description.')
+  }
+}
+
 // ---- Sections (reorder + custom) ----
 type SectionEntry = { key: string; kind: 'projects' | 'skills' | 'custom'; label: string }
 
@@ -489,6 +526,91 @@ const inputClass =
                     placeholder="Add a technology, press Enter"
                     @keyup.enter="addTech(project, i)"
                   />
+                </div>
+
+                <!-- Case Study Quality Scoring & Feedback -->
+                <div class="mt-4 border-t border-white/5 pt-4">
+                  <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-300 text-lg">analytics</span>
+                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Case Study Quality Check</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="px-3 py-1 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white border border-blue-500/30 rounded text-xs transition duration-200 cursor-pointer flex items-center gap-1"
+                      :disabled="analyzingProjectIdx === i"
+                      @click="analyzeProject(i)"
+                    >
+                      <span class="material-symbols-outlined text-[14px]" :class="{'animate-spin': analyzingProjectIdx === i}">
+                        {{ analyzingProjectIdx === i ? 'sync' : 'auto_awesome' }}
+                      </span>
+                      {{ analyzingProjectIdx === i ? 'Analyzing...' : 'Analyze Case Study' }}
+                    </button>
+                  </div>
+
+                  <div v-if="projectAnalyses[i]" class="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
+                    <!-- Overall Score & Breakdown -->
+                    <div class="flex flex-wrap items-center gap-4 justify-between">
+                      <div class="flex items-center gap-3">
+                        <div class="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 border-indigo-400/60 bg-indigo-500/10">
+                          <span class="text-sm font-black text-white">{{ projectAnalyses[i].score }}</span>
+                          <span class="text-[8px] uppercase tracking-widest text-indigo-300">/ 100</span>
+                        </div>
+                        <div>
+                          <p class="text-xs font-semibold text-white">Completeness Score</p>
+                          <p class="text-[10px] text-slate-400 leading-none">Measures depth and impact</p>
+                        </div>
+                      </div>
+
+                      <!-- Breakdown bars -->
+                      <div class="flex-1 max-w-[280px] grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-400">
+                        <div class="flex items-center justify-between">
+                          <span>Problem:</span>
+                          <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.problem }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Action:</span>
+                          <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.action }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Results:</span>
+                          <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.results }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Tech Spec:</span>
+                          <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.tech }}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Targeted Improvements -->
+                    <div v-if="projectAnalyses[i].improvements?.length" class="space-y-1.5 border-t border-white/5 pt-3">
+                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Targeted Improvements:</h4>
+                      <ul class="space-y-1 text-xs text-slate-300">
+                        <li v-for="(imp, impIdx) in projectAnalyses[i].improvements" :key="impIdx" class="flex gap-2 items-start text-left">
+                          <span class="material-symbols-outlined text-[14px] text-amber-400 mt-0.5 shrink-0">warning</span>
+                          <span>{{ imp }}</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <!-- Suggested Rewrite -->
+                    <div v-if="projectAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
+                      <div class="flex justify-between items-center">
+                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
+                        <button
+                          type="button"
+                          class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                          @click="applyProjectRewrite(i)"
+                        >
+                          Apply Rewrite
+                        </button>
+                      </div>
+                      <p class="text-xs text-slate-300 bg-black/30 p-2.5 rounded border border-white/5 italic text-left">
+                        {{ projectAnalyses[i].suggestedRewrite }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

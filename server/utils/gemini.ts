@@ -378,6 +378,7 @@ export async function tailorApplicationMaterials(
   coverLetterText?: string,
   cvFormatId?: string,
   candidateProfile?: CandidateProfile | null,
+  tailoringPreset?: 'ats-first' | 'impact-first' | 'leadership' | 'tech-expert',
 ): Promise<TailoredMaterials> {
   const format = getCvFormat(cvFormatId)
   const profile = resolveCandidateProfileSync({
@@ -396,6 +397,21 @@ Website: ${profile.website || ''}
 Resume H1 and cover-letter signature MUST be "${profile.fullName}". Never use Jordan Ellis or other sample names.`
     : 'Copy name, email, phone, and location exactly from the uploaded resume. Never invent sample contact details.'
 
+  let presetRules = ''
+  if (tailoringPreset === 'ats-first') {
+    presetRules = `
+- PERSONALITY PRESET: ATS-First. Focus on maximum keyword alignment with the job description. Rewrite experience and summary sentences using exact matching terminology. Maintain a highly direct, standard style. Keep achievements objective and grounded in specific keywords.`
+  } else if (tailoringPreset === 'impact-first') {
+    presetRules = `
+- PERSONALITY PRESET: Impact/Metrics-First. Emphasize numeric results, scale, speedups, and business outcomes. Use the Google XYZ structure for experience bullets: "Accomplished [X], as measured by [Y], by doing [Z]". Every single role MUST highlight a quantifiable achievement.`
+  } else if (tailoringPreset === 'leadership') {
+    presetRules = `
+- PERSONALITY PRESET: Leadership. Showcase mentoring, project management, technical design ownership, stakeholder coordination, and cross-functional leadership. Frame achievements in terms of team coordination, code review stewardship, or roadmap influence.`
+  } else if (tailoringPreset === 'tech-expert') {
+    presetRules = `
+- PERSONALITY PRESET: Tech Expert. Deepen technical descriptions. Highlight specific libraries, frameworks, architecture paradigms, database query plans, API structures, or performance optimization techniques. Emphasize tech stack implementation details.`
+  }
+
   const prompt = `Write a tailored resume and cover letter in Markdown JSON {"resume":"...","coverLetter":"..."}.
 
 CV format: ${format.name} — ${format.description}
@@ -408,7 +424,7 @@ Rules:
 - Work experience MUST use "-" bullet points (3–6 per role). Never paragraph experience.
 - Cover letter: 4–5 short paragraphs grounded in specific roles/projects, signed with the real name.
 - Do not invent employers, degrees, or skills not in the source materials.
-- Keep formatting clean and presentable (clear headings, bullets, short lines).
+- Keep formatting clean and presentable (clear headings, bullets, short lines).${presetRules}
 
 Resume outline:
 ${PROFESSIONAL_RESUME_STRUCTURE}

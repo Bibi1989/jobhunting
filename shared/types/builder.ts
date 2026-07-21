@@ -113,6 +113,7 @@ export interface BuilderResumeData {
   sectionsOrder?: BuilderSectionId[]
   themeColor?: string
   language?: 'en' | 'de' | 'fr' | 'es'
+  spacingPreset?: 'ats-stable' | 'compact' | 'balanced'
   /** Optional JD used for AI draft / ATS (JD and/or resume is enough to draft). */
   targetJobDescription?: string
   /** Extra instructions for AI resume draft (e.g. emphasize leadership). */

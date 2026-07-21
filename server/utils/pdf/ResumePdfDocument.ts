@@ -23,30 +23,78 @@ function sx(...parts: Array<object | false | null | undefined>): any {
 
 const S = StyleSheet.create(tokenStyles as any)
 
-function themed(theme: PdfTemplateTheme) {
-  return {
-    page: { ...S.page, color: theme.ink, backgroundColor: theme.paper },
-    h1: { ...S.h1, color: theme.ink },
-    h2: { ...S.h2, color: theme.brand, borderBottomColor: `${theme.accent}33` },
-    subtitle: { ...S.subtitle, color: theme.brand },
-    body: { ...S.body, color: theme.ink },
-    muted: { ...S.muted, color: theme.muted },
-    itemTitle: { ...S.itemTitle, color: theme.ink },
-    itemMeta: { ...S.itemMeta, color: theme.brand },
-    contactLine: { ...S.contactLine, color: theme.muted },
-    techPage: { ...S.techPage, color: theme.ink, backgroundColor: theme.paper },
-    techSidebar: { ...S.techSidebar, backgroundColor: theme.sidebar, color: theme.sidebarText },
-    techMain: { ...S.techMain, backgroundColor: theme.paper },
-    techName: { ...S.techName, color: theme.sidebarText },
-    techRole: { ...S.techRole, color: theme.sidebarMuted },
+function themed(theme: PdfTemplateTheme, spacingPreset?: 'ats-stable' | 'compact' | 'balanced') {
+  let baseFontSize = 9.5
+  let baseLineHeight = 1.35
+  let atomMargin = 10
+  let sectionMargin = 14
+  let pagePaddingValue = 32
+
+  if (spacingPreset === 'compact') {
+    baseFontSize = 8.5
+    baseLineHeight = 1.25
+    atomMargin = 6
+    sectionMargin = 10
+    pagePaddingValue = 24
+  } else if (spacingPreset === 'ats-stable') {
+    baseFontSize = 10
+    baseLineHeight = 1.4
+    atomMargin = 12
+    sectionMargin = 16
+    pagePaddingValue = 36
+  }
+
+  const dynamicStyles = StyleSheet.create({
+    page: {
+      ...tokenStyles.page,
+      paddingTop: pagePaddingValue,
+      paddingBottom: pagePaddingValue,
+      paddingLeft: pagePaddingValue,
+      paddingRight: pagePaddingValue,
+      color: theme.ink,
+      backgroundColor: theme.paper
+    },
+    h1: { ...tokenStyles.h1, color: theme.ink },
+    h2: {
+      ...tokenStyles.h2,
+      color: theme.brand,
+      borderBottomColor: `${theme.accent}33`,
+      marginTop: sectionMargin,
+      marginBottom: atomMargin / 2
+    },
+    subtitle: { ...tokenStyles.subtitle, color: theme.brand },
+    body: { ...tokenStyles.body, color: theme.ink, fontSize: baseFontSize, lineHeight: baseLineHeight },
+    muted: { ...tokenStyles.muted, color: theme.muted },
+    itemTitle: { ...tokenStyles.itemTitle, color: theme.ink, fontSize: baseFontSize + 1 },
+    itemMeta: { ...tokenStyles.itemMeta, color: theme.brand },
+    contactLine: { ...tokenStyles.contactLine, color: theme.muted },
+    techPage: { ...tokenStyles.techPage, color: theme.ink, backgroundColor: theme.paper, paddingTop: pagePaddingValue, paddingBottom: pagePaddingValue },
+    techSidebar: { ...tokenStyles.techSidebar, backgroundColor: theme.sidebar, color: theme.sidebarText },
+    techMain: { ...tokenStyles.techMain, backgroundColor: theme.paper },
+    techName: { ...tokenStyles.techName, color: theme.sidebarText },
+    techRole: { ...tokenStyles.techRole, color: theme.sidebarMuted },
     techHeading: {
-      ...S.techHeading,
+      ...tokenStyles.techHeading,
       color: theme.sidebarMuted,
       borderBottomColor: `${theme.sidebarMuted}55`,
     },
-    techText: { ...S.techText, color: theme.sidebarText },
-    modernRight: { ...S.modernRight, borderLeftColor: `${theme.accent}44` },
-  }
+    techText: { ...tokenStyles.techText, color: theme.sidebarText },
+    modernRight: { ...tokenStyles.modernRight, borderLeftColor: `${theme.accent}44` },
+    // Dynamic layout/atom properties
+    atom: { ...tokenStyles.atom, marginBottom: atomMargin },
+    section: { ...tokenStyles.section },
+    rowBetween: { ...tokenStyles.rowBetween },
+    bulletRow: { ...tokenStyles.bulletRow },
+    bulletGlyph: { ...tokenStyles.bulletGlyph, fontSize: baseFontSize },
+    bulletText: { ...tokenStyles.bulletText, fontSize: baseFontSize, lineHeight: baseLineHeight },
+    chipRow: { ...tokenStyles.chipRow },
+    chip: { ...tokenStyles.chip },
+    techChip: { ...tokenStyles.techChip },
+    techChipText: { ...tokenStyles.techChipText },
+    modernLeft: { ...tokenStyles.modernLeft }
+  } as any)
+
+  return dynamicStyles as any
 }
 
 type T = ReturnType<typeof themed>
@@ -94,7 +142,7 @@ function RichText({
   )
 }
 
-function Blocks({ html, light = false, theme }: { html?: string; light?: boolean; theme: PdfTemplateTheme }) {
+function Blocks({ html, light = false, theme, t }: { html?: string; light?: boolean; theme: PdfTemplateTheme; t: T }) {
   const blocks = htmlToBlocks(html)
   if (!blocks.length) return null
 
@@ -108,14 +156,14 @@ function Blocks({ html, light = false, theme }: { html?: string; light?: boolean
       if (block.type === 'bullet') {
         return React.createElement(
           View,
-          { key: `b-${index}`, style: S.bulletRow, wrap: false },
+          { key: `b-${index}`, style: t.bulletRow, wrap: false },
           React.createElement(Text, {
-            style: sx(S.bulletGlyph, light && { color: theme.sidebarMuted }),
+            style: sx(t.bulletGlyph, light && { color: theme.sidebarMuted }),
           }, '•'),
           React.createElement(RichText, {
             html: block.html,
             plain: block.text,
-            style: sx(S.bulletText, { color }),
+            style: sx(t.bulletText, { color }),
           }),
         )
       }
@@ -125,7 +173,7 @@ function Blocks({ html, light = false, theme }: { html?: string; light?: boolean
         React.createElement(RichText, {
           html: block.html,
           plain: block.text,
-          style: sx(S.body, { color }),
+          style: sx(t.body, { color }),
         }),
       )
     }),
@@ -140,19 +188,19 @@ function ExperienceList({ data, theme, t }: { data: BuilderResumeData; theme: Pd
     ...data.experience.map((job) =>
       React.createElement(
         View,
-        { key: job.id, style: S.atom },
+        { key: job.id, style: t.atom },
         React.createElement(
           View,
           { style: { flexDirection: 'column', width: '100%', marginBottom: 2 } },
           React.createElement(
             View,
-            { style: S.rowBetween },
+            { style: t.rowBetween },
             React.createElement(Text, { style: t.itemTitle }, job.title || 'Role'),
             React.createElement(Text, { style: t.muted }, formatDateRange(job.startDate, job.endDate, job.isCurrent)),
           ),
           React.createElement(Text, { style: t.itemMeta }, [job.company, job.location].filter(Boolean).join(' · ')),
         ),
-        React.createElement(Blocks, { html: cleanDescriptionHtml(job.description), theme }),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(job.description), theme, t }),
       ),
     ),
   )
@@ -176,7 +224,7 @@ function EducationList({
     ...data.education.map((edu) =>
       React.createElement(
         View,
-        { key: edu.id, style: S.atom },
+        { key: edu.id, style: t.atom },
         React.createElement(Text, {
           style: sx(t.itemTitle, light && { color: theme.sidebarText, fontSize: 9 }),
         }, edu.degree || 'Degree'),
@@ -202,13 +250,13 @@ function ProjectsList({ data, theme, t }: { data: BuilderResumeData; theme: PdfT
       const range = formatDateRange(project.startDate, project.endDate, project.isCurrent)
       return React.createElement(
         View,
-        { key: project.id, style: S.atom },
+        { key: project.id, style: t.atom },
         React.createElement(
           View,
           { style: { flexDirection: 'column', width: '100%', marginBottom: 2 } },
           React.createElement(
             View,
-            { style: S.rowBetween },
+            { style: t.rowBetween },
             React.createElement(Text, { style: t.itemTitle }, project.title || 'Project'),
             range ? React.createElement(Text, { style: t.muted }, range) : null,
           ),
@@ -227,7 +275,7 @@ function ProjectsList({ data, theme, t }: { data: BuilderResumeData; theme: PdfT
               )
             )
           : null,
-        React.createElement(Blocks, { html: cleanDescriptionHtml(project.description), theme }),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(project.description), theme, t }),
       )
     }),
   )
@@ -241,18 +289,18 @@ function AchievementsList({ data, theme, t }: { data: BuilderResumeData; theme: 
     ...data.achievements.map((item) =>
       React.createElement(
         View,
-        { key: item.id, style: S.atom },
+        { key: item.id, style: t.atom },
         React.createElement(Text, { style: t.itemTitle }, item.title || 'Achievement'),
         item.issuer || item.date
           ? React.createElement(Text, { style: t.itemMeta }, [item.issuer, item.date].filter(Boolean).join(' · '))
           : null,
-        React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme }),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme, t }),
       ),
     ),
   )
 }
 
-function SkillsChips({ data, theme, tech = false }: { data: BuilderResumeData; theme: PdfTemplateTheme; tech?: boolean }) {
+function SkillsChips({ data, theme, t, tech = false }: { data: BuilderResumeData; theme: PdfTemplateTheme; t: T; tech?: boolean }) {
   if (!data.skills?.length) return null
   if (tech) {
     return React.createElement(
@@ -265,26 +313,26 @@ function SkillsChips({ data, theme, tech = false }: { data: BuilderResumeData; t
             key: skill.id,
             wrap: false,
             style: {
-              ...S.techChip,
+              ...t.techChip,
               borderColor: theme.sidebarMuted,
               backgroundColor: theme.sidebar,
             },
           },
-          React.createElement(Text, { style: { ...S.techChipText, color: theme.sidebarText } }, skill.name),
+          React.createElement(Text, { style: { ...t.techChipText, color: theme.sidebarText } }, skill.name),
         ),
       ),
     )
   }
   return React.createElement(
     View,
-    { style: S.chipRow },
+    { style: t.chipRow },
     ...data.skills.map((skill) =>
       React.createElement(
         Text,
         {
           key: skill.id,
           wrap: false,
-          style: { ...S.chip, color: theme.ink, borderColor: `${theme.accent}55` },
+          style: { ...t.chip, color: theme.ink, borderColor: `${theme.accent}55` },
         },
         skill.name,
       ),
@@ -327,35 +375,35 @@ function renderOrderedSection(
     case 'summary':
       return React.createElement(
         View,
-        { key: id, wrap: false, style: S.section },
+        { key: id, wrap: false, style: t.section },
         React.createElement(Text, { style: t.h2 }, options.heading || 'Summary'),
         React.createElement(Text, { style: t.body }, stripHtmlToPlain(data.personalInfo.summary)),
       )
     case 'experience':
       return React.createElement(
         View,
-        { key: id, style: S.section },
+        { key: id, style: t.section },
         React.createElement(Text, { style: t.h2 }, options.heading || 'Experience'),
         React.createElement(ExperienceList, { data, theme, t }),
       )
     case 'projects':
       return React.createElement(
         View,
-        { key: id, style: S.section },
+        { key: id, style: t.section },
         React.createElement(Text, { style: t.h2 }, options.heading || 'Projects'),
         React.createElement(ProjectsList, { data, theme, t }),
       )
     case 'education':
       return React.createElement(
         View,
-        { key: id, style: S.section },
+        { key: id, style: t.section },
         React.createElement(Text, { style: options.techLight ? t.techHeading : t.h2 }, options.heading || 'Education'),
         React.createElement(EducationList, { data, theme, t, light: options.techLight }),
       )
     case 'skills':
       return React.createElement(
         View,
-        { key: id, wrap: false, style: S.section },
+        { key: id, wrap: false, style: t.section },
         React.createElement(Text, { style: options.techLight ? t.techHeading : t.h2 }, options.heading || 'Skills'),
         options.listSkills
           ? React.createElement(
@@ -369,12 +417,12 @@ function renderOrderedSection(
                 ),
               ),
             )
-          : React.createElement(SkillsChips, { data, theme, tech: options.techLight }),
+          : React.createElement(SkillsChips, { data, theme, t, tech: options.techLight }),
       )
     case 'achievements':
       return React.createElement(
         View,
-        { key: id, style: S.section },
+        { key: id, style: t.section },
         React.createElement(Text, { style: t.h2 }, options.heading || 'Achievements'),
         React.createElement(AchievementsList, { data, theme, t }),
       )
@@ -384,15 +432,15 @@ function renderOrderedSection(
       if (!section) return null
       return React.createElement(
         View,
-        { key: id, style: S.section },
+        { key: id, style: t.section },
         React.createElement(Text, { style: t.h2 }, section.title || 'Custom'),
         ...section.items.map((item) =>
           React.createElement(
             View,
-            { key: item.id, style: S.atom },
+            { key: item.id, style: t.atom },
             React.createElement(Text, { style: t.itemTitle }, item.title),
             item.subtitle ? React.createElement(Text, { style: t.itemMeta }, item.subtitle) : null,
-            React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme }),
+            React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme, t }),
           ),
         ),
       )
@@ -480,7 +528,7 @@ function ModernResume({
         View,
         { 
           style: [
-            S.modernLeft, 
+            t.modernLeft, 
             { 
               position: 'absolute', 
               top: 0, 
@@ -611,7 +659,7 @@ export function createResumePdfDocument(raw: BuilderResumeData) {
   const templateSlug = resolveTemplateSlug(data)
   const profile: PdfTemplateProfile = getPdfTemplateProfile(templateSlug)
   const order = normalizeSectionsOrder(data.sectionsOrder, data.customSections || [])
-  const t = themed(profile.theme)
+  const t = themed(profile.theme, data.spacingPreset)
   const theme = profile.theme
 
   let page: React.ReactElement

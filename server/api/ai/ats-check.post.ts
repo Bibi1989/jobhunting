@@ -10,6 +10,25 @@ export type AtsIssue = {
   suggestion: string
 }
 
+export type AtsKeywordAnalysis = {
+  keyword: string
+  status: 'missing' | 'found'
+  count: number
+  foundInSection: 'experience' | 'projects' | 'skills' | 'summary' | 'none'
+}
+
+export type AtsSuggestedRewrite = {
+  original: string
+  suggested: string
+  explanation: string
+}
+
+export type AtsSectionChangeProposal = {
+  section: 'experience' | 'projects' | 'skills' | 'summary'
+  relevanceReason: string
+  suggestedRewrites: AtsSuggestedRewrite[]
+}
+
 export type AtsCheckResult = {
   score: number
   grade: string
@@ -18,6 +37,8 @@ export type AtsCheckResult = {
   issues: AtsIssue[]
   keywordGaps: string[]
   quickWins: string[]
+  keywordsAnalysis?: AtsKeywordAnalysis[]
+  sectionChanges?: AtsSectionChangeProposal[]
 }
 
 export default withCredits(async (event) => {
@@ -67,6 +88,9 @@ ${markdown.slice(0, 12000)}
 Score 0–100 for ATS readiness. Be practical and specific.
 Focus on: contact fields, section clarity, keyword alignment, measurable bullets, formatting risks (tables/graphics), length, and missing essentials.
 
+Provide a thorough analysis of the keywords: identify which key technical skills, tools, and terminology from the job description are missing, which ones are found, and in which section of the resume (experience, projects, skills, summary, or none) they appear.
+Also specify what sections should change and suggest exact rewrites for 1-2 bullets/paragraphs per section to demonstrate how they can incorporate missing keywords or transition to the Google XYZ bullet format.
+
 Return ONLY valid JSON matching this schema (no markdown fences):
 {
   "score": number,
@@ -75,7 +99,22 @@ Return ONLY valid JSON matching this schema (no markdown fences):
   "strengths": string[],
   "issues": [{ "severity": "critical"|"warning"|"info", "category": string, "message": string, "suggestion": string }],
   "keywordGaps": string[],
-  "quickWins": string[]
+  "quickWins": string[],
+  "keywordsAnalysis": [{
+    "keyword": string,
+    "status": "missing" | "found",
+    "count": number,
+    "foundInSection": "experience" | "projects" | "skills" | "summary" | "none"
+  }],
+  "sectionChanges": [{
+    "section": "experience" | "projects" | "skills" | "summary",
+    "relevanceReason": string,
+    "suggestedRewrites": [{
+      "original": string,
+      "suggested": string,
+      "explanation": string
+    }]
+  }]
 }`)
 
   try {
@@ -83,7 +122,7 @@ Return ONLY valid JSON matching this schema (no markdown fences):
       model,
       contents: prompt,
       config: careerExpertGenerateConfig({
-        temperature: 0.35,
+        temperature: 0.3,
         responseMimeType: 'application/json',
       }),
     })
@@ -116,6 +155,31 @@ Return ONLY valid JSON matching this schema (no markdown fences):
         : [],
       quickWins: Array.isArray(parsed.quickWins)
         ? parsed.quickWins.map(String).slice(0, 8)
+        : [],
+      keywordsAnalysis: Array.isArray(parsed.keywordsAnalysis)
+        ? parsed.keywordsAnalysis.map((k) => ({
+            keyword: String(k.keyword || ''),
+            status: (['missing', 'found'].includes(k.status) ? k.status : 'missing') as 'missing' | 'found',
+            count: Number(k.count) || 0,
+            foundInSection: (['experience', 'projects', 'skills', 'summary', 'none'].includes(k.foundInSection)
+              ? k.foundInSection
+              : 'none') as 'experience' | 'projects' | 'skills' | 'summary' | 'none',
+          }))
+        : [],
+      sectionChanges: Array.isArray(parsed.sectionChanges)
+        ? parsed.sectionChanges.map((sc) => ({
+            section: (['experience', 'projects', 'skills', 'summary'].includes(sc.section)
+              ? sc.section
+              : 'experience') as 'experience' | 'projects' | 'skills' | 'summary',
+            relevanceReason: String(sc.relevanceReason || ''),
+            suggestedRewrites: Array.isArray(sc.suggestedRewrites)
+              ? sc.suggestedRewrites.map((sr) => ({
+                  original: String(sr.original || ''),
+                  suggested: String(sr.suggested || ''),
+                  explanation: String(sr.explanation || ''),
+                }))
+              : [],
+          }))
         : [],
     } satisfies AtsCheckResult
   } catch (error: unknown) {

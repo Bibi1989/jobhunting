@@ -198,6 +198,68 @@ const fileBase = computed(() => {
   return `${slugifyFilename(job.value.title)}${company}`
 })
 
+const editableJob = ref<any>({
+  title: '',
+  company: '',
+  location: '',
+  salaryMin: null,
+  salaryMax: null,
+  currency: 'USD',
+  description: '',
+  responsibilities: '',
+  requirements: '',
+})
+
+watch(
+  () => job.value,
+  (newJob) => {
+    if (newJob) {
+      editableJob.value = {
+        title: newJob.title || '',
+        company: newJob.company || '',
+        location: newJob.location || '',
+        salaryMin: newJob.salaryMin ?? null,
+        salaryMax: newJob.salaryMax ?? null,
+        currency: newJob.currency || 'USD',
+        description: newJob.description || '',
+        responsibilities: newJob.responsibilities || '',
+        requirements: newJob.requirements || '',
+      }
+    }
+  },
+  { immediate: true }
+)
+
+const isEditingJob = ref(false)
+const savingJob = ref(false)
+const tailoringPreset = ref<'ats-first' | 'impact-first' | 'leadership' | 'tech-expert'>('ats-first')
+
+async function saveJobEdits() {
+  savingJob.value = true
+  error.value = null
+  try {
+    const data = await $fetch<{ job: Job }>(`/api/jobs/${jobId}`, {
+      method: 'PUT',
+      body: editableJob.value
+    })
+    if (jobData.value) {
+      jobData.value.job = data.job
+    }
+    isEditingJob.value = false
+    toastMessage.value = 'Job details updated successfully!'
+    setTimeout(() => {
+      if (toastMessage.value === 'Job details updated successfully!') {
+        toastMessage.value = null
+      }
+    }, 3000)
+  } catch (err: any) {
+    console.error(err)
+    error.value = err.data?.statusMessage || err.message || 'Failed to update job details.'
+  } finally {
+    savingJob.value = false
+  }
+}
+
 async function uploadDocument(event: Event, type: 'resume' | 'cover_letter') {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -281,6 +343,7 @@ async function handleTailor() {
         coverLetterText: coverLetterText.value,
         useSavedDocuments: useSavedDocuments.value,
         cvFormat: cvFormat.value,
+        tailoringPreset: tailoringPreset.value,
         candidateProfile: {
           ...profile,
           skillsText: candidateProfile.value.skillsText,
@@ -616,60 +679,219 @@ function applyToJob() {
 
         <!-- Scrollable content -->
         <div class="p-4 md:p-6 overflow-y-auto flex-grow text-slate-300 leading-relaxed bg-slate-950/50">
-          <div v-if="activeTab === 'description'" class="space-y-4">
-            <div class="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4 text-sm">
-              <p class="font-bold text-emerald-400 text-xs uppercase tracking-widest mb-2">How to apply</p>
-              <ol class="list-decimal list-inside space-y-1 text-slate-300 text-sm">
-                <li>Generate tailored resume & cover letter (AI Tailoring tab).</li>
-                <li>Or open the <strong>Resume Builder</strong> — scraped job description and your uploaded CV are copied in.</li>
-                <li>Preview, edit, then <strong>Save for this job</strong> so they stick with the saved role.</li>
-                <li>Open <strong>Application Q&amp;A</strong>, then apply on the company site.</li>
-              </ol>
-            </div>
-
-            <div class="rounded-2xl border border-blue-500/25 bg-blue-950/25 p-4 space-y-3">
+          <div v-if="activeTab === 'description'" class="space-y-6 text-left">
+            <!-- Structured Review and Edit Mode header -->
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
-                <p class="font-bold text-blue-300 text-xs uppercase tracking-widest mb-1">Open in builders</p>
-                <p class="text-xs text-slate-400">
-                  Carries this job’s description into Target Role, and loads your uploaded CV when available.
-                </p>
+                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Scrape Confirmation</h3>
+                <p class="text-xs text-slate-400">Review and edit extracted fields before generating tailored materials.</p>
               </div>
-              <div class="flex flex-wrap gap-2">
-                <NuxtLink
-                  :to="builderResumePath()"
-                  class="px-3 py-2 rounded-xl text-xs font-bold border border-blue-500/40 bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1.5 transition-all"
+              <button
+                type="button"
+                @click="isEditingJob = !isEditingJob"
+                class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:text-white transition duration-200 flex items-center gap-1.5 cursor-pointer"
+              >
+                <span class="material-symbols-outlined text-[14px]">{{ isEditingJob ? 'close' : 'edit' }}</span>
+                {{ isEditingJob ? 'Cancel Edits' : 'Edit Fields' }}
+              </button>
+            </div>
+
+            <!-- Edit Mode Form -->
+            <div v-if="isEditingJob" class="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
+                  <input
+                    v-model="editableJob.title"
+                    type="text"
+                    class="bg-slate-950 border border-white/10 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Company Name</label>
+                  <input
+                    v-model="editableJob.company"
+                    type="text"
+                    class="bg-slate-950 border border-white/10 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                  <input
+                    v-model="editableJob.location"
+                    type="text"
+                    class="bg-slate-950 border border-white/10 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="flex flex-col col-span-1">
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Currency</label>
+                    <input
+                      v-model="editableJob.currency"
+                      type="text"
+                      class="bg-slate-950 border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div class="flex flex-col col-span-1">
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Min Salary</label>
+                    <input
+                      v-model.number="editableJob.salaryMin"
+                      type="number"
+                      class="bg-slate-950 border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div class="flex flex-col col-span-1">
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Max Salary</label>
+                    <input
+                      v-model.number="editableJob.salaryMax"
+                      type="number"
+                      class="bg-slate-950 border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Responsibilities</label>
+                <textarea
+                  v-model="editableJob.responsibilities"
+                  rows="4"
+                  class="bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
+                  placeholder="Summarize key responsibilities or duties here…"
+                />
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Requirements & Qualifications</label>
+                <textarea
+                  v-model="editableJob.requirements"
+                  rows="4"
+                  class="bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
+                  placeholder="Summarize required qualifications, tools, or education here…"
+                />
+              </div>
+
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Raw Description</label>
+                <textarea
+                  v-model="editableJob.description"
+                  rows="6"
+                  class="bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
+                />
+              </div>
+
+              <div class="flex justify-end pt-2">
+                <button
+                  type="button"
+                  @click="saveJobEdits"
+                  :disabled="savingJob"
+                  class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50"
                 >
-                  <LayoutTemplate :size="14" />
-                  Resume builder
-                </NuxtLink>
-                <NuxtLink
-                  :to="builderCoverLetterPath()"
-                  class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-950/40 text-indigo-200 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 transition-all"
-                >
-                  <FileText :size="14" />
-                  Cover letter builder
-                </NuxtLink>
-                <NuxtLink
-                  :to="builderPortfolioPath()"
-                  class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
-                >
-                  Portfolio
-                </NuxtLink>
+                  <span class="material-symbols-outlined text-[18px] animate-spin" v-if="savingJob">sync</span>
+                  {{ savingJob ? 'Saving Changes…' : 'Save Details' }}
+                </button>
               </div>
             </div>
 
-            <p
-              v-if="job.descriptionSource"
-              class="text-[10px] uppercase tracking-widest text-slate-500 font-bold"
-            >
-              Source: {{ job.descriptionSource === 'detail_page' ? 'Full job page' : 'Listing page' }}
-            </p>
-            <p class="text-sm whitespace-pre-wrap pb-6">
-              {{
-                job.description ||
-                "No detailed description was extracted for this role. Click 'Apply on company site' to read the full details."
-              }}
-            </p>
+            <!-- Read Only Structured Confirmation View -->
+            <div v-else class="space-y-6">
+              <!-- Quick Info Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                  <div class="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
+                    <span class="material-symbols-outlined text-[20px]">business_center</span>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">Job Title & Company</p>
+                    <p class="text-sm font-semibold text-white">{{ job.title }}</p>
+                    <p class="text-xs text-slate-400">{{ job.company || 'Unknown' }}</p>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                  <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg">
+                    <span class="material-symbols-outlined text-[20px]">location_on</span>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">Location</p>
+                    <p class="text-sm font-semibold text-white">{{ job.location || 'Remote / Unknown' }}</p>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                  <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">Compensation</p>
+                    <p class="text-sm font-semibold text-white" v-if="job.salaryMin || job.salaryMax">
+                      {{ job.currency || '$' }}{{ job.salaryMin?.toLocaleString() || '0' }} - {{ job.salaryMax?.toLocaleString() || 'N/A' }}
+                    </p>
+                    <p class="text-sm font-semibold text-slate-400" v-else>Not specified</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Open In Builders Shortcuts -->
+              <div class="rounded-xl border border-blue-500/20 bg-blue-950/20 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h4 class="text-sm font-bold text-blue-300">Ready to build or tailor?</h4>
+                  <p class="text-xs text-blue-200/60">Take this verified job description into the professional document editors.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <NuxtLink
+                    :to="builderResumePath()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 transition duration-200 cursor-pointer shadow-[0_0_12px_rgba(37,99,235,0.25)]"
+                  >
+                    <LayoutTemplate :size="14" />
+                    Open Resume Builder
+                  </NuxtLink>
+                  <NuxtLink
+                    :to="builderCoverLetterPath()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 flex items-center gap-1.5 transition duration-200 cursor-pointer"
+                  >
+                    <FileText :size="14" />
+                    Open Cover Letter Builder
+                  </NuxtLink>
+                </div>
+              </div>
+
+              <!-- Responsibilities & Requirements lists -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Responsibilities -->
+                <div class="space-y-2 text-left">
+                  <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-blue-400">task_alt</span>
+                    Core Responsibilities
+                  </h4>
+                  <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm min-h-[120px] whitespace-pre-wrap leading-relaxed">
+                    {{ job.responsibilities || 'No structured responsibilities extracted yet. Edit fields to add.' }}
+                  </div>
+                </div>
+
+                <!-- Requirements -->
+                <div class="space-y-2 text-left">
+                  <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px] text-emerald-400">verified</span>
+                    Key Requirements
+                  </h4>
+                  <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm min-h-[120px] whitespace-pre-wrap leading-relaxed">
+                    {{ job.requirements || 'No structured requirements extracted yet. Edit fields to add.' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Raw Description collapsible -->
+              <div class="space-y-2 text-left">
+                <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px] text-slate-400 font-bold">description</span>
+                  Full Scraped Posting
+                </h4>
+                <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm text-slate-400 leading-relaxed max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+                  {{ job.description || 'No description available.' }}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-else-if="activeTab === 'application'">
@@ -797,6 +1019,49 @@ function applyToJob() {
               <input v-model="useSavedDocuments" type="checkbox" class="rounded border-slate-700" />
               Fall back to saved documents from the database when fields are empty
             </label>
+
+             <!-- Tailoring Personality Preset Selector -->
+            <div class="space-y-2 text-left">
+              <label class="text-xs font-bold uppercase tracking-widest text-slate-500 block">
+                Tailoring Personality / Preset
+              </label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  @click="tailoringPreset = 'ats-first'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'ats-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
+                >
+                  ATS-First
+                </button>
+                <button
+                  type="button"
+                  @click="tailoringPreset = 'impact-first'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'impact-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
+                >
+                  Impact/Metrics
+                </button>
+                <button
+                  type="button"
+                  @click="tailoringPreset = 'leadership'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'leadership' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
+                >
+                  Leadership
+                </button>
+                <button
+                  type="button"
+                  @click="tailoringPreset = 'tech-expert'"
+                  :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'tech-expert' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
+                >
+                  Tech Expert
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-500">
+                <span v-if="tailoringPreset === 'ats-first'">Optimized for parsing and strict keyword density. Uses objective phrasing.</span>
+                <span v-if="tailoringPreset === 'impact-first'">Places high-impact quantitative achievements, percentages, and metrics first.</span>
+                <span v-if="tailoringPreset === 'leadership'">Showcases management, mentorship, communication, and project ownership.</span>
+                <span v-if="tailoringPreset === 'tech-expert'">Focuses on engineering depth, architecture, and tool mastery.</span>
+              </p>
+            </div>
 
             <div class="space-y-2">
               <label class="text-xs font-bold uppercase tracking-widest text-slate-500">
