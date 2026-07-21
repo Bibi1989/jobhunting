@@ -194,8 +194,16 @@ function pad(index: number): string {
 
     <template v-for="section in sections" :key="section.key">
       <!-- Work / Leadership Highlights -->
+      
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="light"
+      />
       <section
-        v-if="section.kind === 'projects'"
+        v-else-if="section.kind === 'projects'"
         id="work"
         class="border-t border-primary-400/10 px-6 py-24 sm:px-10 sm:py-28"
       >
@@ -250,9 +258,7 @@ function pad(index: number): string {
                 >
                   {{ project.title }}
                 </h3>
-                <p v-if="project.description" class="mb-6 text-[15px] leading-relaxed text-primary-400">
-                  {{ project.description }}
-                </p>
+                <PortfolioRichText v-if="project.description" class="mb-6 text-[15px] leading-relaxed text-primary-400" :content="project.description" />
                 <div
                   v-if="project.tech_stack && project.tech_stack.length"
                   class="flex flex-wrap gap-2"

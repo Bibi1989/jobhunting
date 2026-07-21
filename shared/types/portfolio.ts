@@ -5,11 +5,28 @@
 
 export interface PortfolioProject {
   title: string
+  /** Project summary — plain text or rich HTML (paragraphs and/or bullets). */
   description: string
   /** Technologies / tools used on the project. */
   tech_stack: string[]
   /** Optional live / case-study URL. */
   url?: string
+}
+
+/** Work history / employment roles — separate from showcase projects. */
+export interface PortfolioExperience {
+  title: string
+  company: string
+  location?: string
+  start_date?: string
+  end_date?: string
+  is_current?: boolean
+  /** Role summary — plain text or rich HTML (paragraphs and/or bullets). */
+  description: string
+  /** Technologies / tools used in the role. */
+  tech_stack?: string[]
+  /** Optional highlight bullets. */
+  highlights?: string[]
 }
 
 /** A user-authored section (title + free text) appended to the portfolio body. */
@@ -33,6 +50,8 @@ export interface PortfolioProfileData {
   full_name: string
   professional_bio: string
   formatted_projects: PortfolioProject[]
+  /** Employment / roles — kept separate from projects. */
+  formatted_experience?: PortfolioExperience[]
   core_skills: string[]
   email?: string
   phone?: string
@@ -44,6 +63,7 @@ export interface PortfolioProfileData {
   /** Custom overrides for default section headings. */
   section_titles?: {
     projects?: string
+    experience?: string
     skills?: string
     profile?: string
   }
@@ -54,6 +74,7 @@ export interface PortfolioProfileData {
     hero_cta?: string
     contact_cta?: string
     nav_projects?: string
+    nav_experience?: string
     nav_skills?: string
     nav_contact?: string
   }
@@ -62,7 +83,7 @@ export interface PortfolioProfileData {
   /** User-authored extra sections rendered in the portfolio body. */
   custom_sections?: PortfolioCustomSection[]
   /**
-   * Ordered list of body-section keys: 'projects', 'skills', and any custom
+   * Ordered list of body-section keys: 'experience', 'projects', 'skills', and any custom
    * section id. Controls the render order of the reorderable body region.
    */
   section_order?: string[]
@@ -74,6 +95,7 @@ export interface Portfolio {
   templateSlug: string
   profileData: PortfolioProfileData
   createdAt: string
+  isFavorite?: boolean
 }
 
 /** A selectable visual theme for the generated portfolio. */
@@ -222,10 +244,10 @@ export function absoluteUrl(value?: string | null): string | null {
   return `https://${raw.replace(/^\/\//, '')}`
 }
 
-export type PortfolioSectionKind = 'projects' | 'skills' | 'custom'
+export type PortfolioSectionKind = 'projects' | 'experience' | 'skills' | 'custom'
 
 export interface PortfolioBodySection {
-  /** 'projects' | 'skills' | a custom section id. */
+  /** 'projects' | 'experience' | 'skills' | a custom section id. */
   key: string
   kind: PortfolioSectionKind
   /** Display heading for the section. */
@@ -235,22 +257,29 @@ export interface PortfolioBodySection {
 }
 
 /** Default body order when the profile has no explicit `section_order`. */
-export const DEFAULT_SECTION_ORDER = ['projects', 'skills'] as const
+export const DEFAULT_SECTION_ORDER = ['experience', 'projects', 'skills'] as const
 
 /**
  * Resolve the ordered, renderable body sections for a profile. Shared by every
  * template so reordering + custom sections behave identically across designs.
  * - Honors `section_order`, drops keys with no content, appends any missing.
- * - `projectsTitle` / `skillsTitle` let a template use its own headings.
+ * - `projectsTitle` / `experienceTitle` / `skillsTitle` let a template use its own headings.
  */
 export function orderedBodySections(
   data: PortfolioProfileData,
-  titles: { projects?: string; skills?: string } = {},
+  titles: { projects?: string; experience?: string; skills?: string } = {},
 ): PortfolioBodySection[] {
   const customs = Array.isArray(data.custom_sections) ? data.custom_sections : []
   const customTitles = data.section_titles || {}
 
   const available = new Map<string, PortfolioBodySection>()
+  if (data.formatted_experience?.length) {
+    available.set('experience', {
+      key: 'experience',
+      kind: 'experience',
+      title: customTitles.experience || titles.experience || 'Experience',
+    })
+  }
   if (data.formatted_projects?.length) {
     available.set('projects', {
       key: 'projects',
@@ -259,10 +288,10 @@ export function orderedBodySections(
     })
   }
   if (data.core_skills?.length) {
-    available.set('skills', { 
-      key: 'skills', 
-      kind: 'skills', 
-      title: customTitles.skills || titles.skills || 'Skills' 
+    available.set('skills', {
+      key: 'skills',
+      kind: 'skills',
+      title: customTitles.skills || titles.skills || 'Skills',
     })
   }
   for (const c of customs) {
@@ -332,6 +361,32 @@ export const SAMPLE_PROFILE: PortfolioProfileData = {
         'Built an experimentation framework that lifted activation 18 percent across onboarding funnels.',
       tech_stack: ['Node', 'Redis', 'Python'],
       url: 'https://example.com/signal',
+    },
+  ],
+  formatted_experience: [
+    {
+      title: 'Senior Product Engineer',
+      company: 'Northstar Labs',
+      location: 'San Francisco, CA',
+      start_date: '2021',
+      end_date: 'Present',
+      is_current: true,
+      description:
+        'Lead cross-functional delivery for analytics products used by enterprise teams across three business units.',
+      tech_stack: ['TypeScript', 'Nuxt', 'PostgreSQL'],
+      highlights: [
+        'Shipped Atlas analytics suite to 40+ teams',
+        'Mentored a pod of 5 engineers',
+      ],
+    },
+    {
+      title: 'Full-Stack Engineer',
+      company: 'Orbit Systems',
+      location: 'Remote',
+      start_date: '2018',
+      end_date: '2021',
+      description:
+        'Built customer-facing dashboards and internal tooling for growth and operations.',
     },
   ],
   core_skills: [

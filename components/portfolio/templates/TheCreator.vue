@@ -126,8 +126,14 @@ function accent(idx: number) {
     </section>
 
     <template v-for="section in sections" :key="section.key">
-      <!-- Work -->
-      <section v-if="section.kind === 'projects'" id="work" class="relative z-10 border-t border-white/10 px-6 py-24">
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="dark"
+      />
+      <section v-else-if="section.kind === 'projects'" id="work" class="relative z-10 border-t border-white/10 px-6 py-24">
         <div class="mx-auto max-w-6xl">
           <p class="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary-300">
             Selected Work
@@ -170,9 +176,7 @@ function accent(idx: number) {
                     </span>
                   </div>
                   <h3 class="text-lg font-semibold text-primary-50">{{ project.title }}</h3>
-                  <p v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-300">
-                    {{ project.description }}
-                  </p>
+                  <PortfolioRichText v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-300" :content="project.description" />
                   <div v-if="project.tech_stack?.length" class="mt-5 flex flex-wrap gap-2">
                     <span
                       v-for="tech in project.tech_stack"

@@ -233,8 +233,14 @@ function pad(index: number) {
 
     <!-- Body sections: Projects, Skills, and any custom sections, in user-controlled order -->
     <template v-for="section in sections" :key="section.key">
-      <!-- Work -->
-      <section v-if="section.kind === 'projects'" id="work" class="border-t border-primary-800/15">
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="light"
+      />
+      <section v-else-if="section.kind === 'projects'" id="work" class="border-t border-primary-800/15">
         <div class="mx-auto max-w-6xl px-6 py-24 sm:px-10">
           <div class="mb-16 flex items-end justify-between">
             <div>
@@ -290,9 +296,7 @@ function pad(index: number) {
                       open_in_new
                     </span>
                   </div>
-                  <p class="mt-4 max-w-2xl text-base leading-relaxed text-stone-600" :class="index % 2 === 1 ? 'md:ml-auto' : ''">
-                    {{ project.description }}
-                  </p>
+                  <PortfolioRichText class="mt-4 max-w-2xl text-base leading-relaxed text-stone-600" :class="index % 2 === 1 ? 'md:ml-auto' : ''" :content="project.description" />
                   <div
                     v-if="project.tech_stack && project.tech_stack.length"
                     class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] tracking-[0.25em] text-stone-500 uppercase"

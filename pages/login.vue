@@ -36,8 +36,11 @@ async function onSubmit() {
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100 flex items-center justify-center p-6">
     <div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-xl p-8 shadow-2xl">
+      <div class="mb-6">
+        <AppLogo :show-tagline="false" />
+      </div>
       <h1 class="text-2xl font-bold text-white mb-1">Welcome back</h1>
-      <p class="text-sm text-slate-400 mb-6">Sign in to JobFlow AI to use credits and scraping.</p>
+      <p class="text-sm text-slate-400 mb-6">Sign in to JobFlow to use credits and scraping.</p>
 
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div>

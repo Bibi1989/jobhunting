@@ -195,6 +195,11 @@ onMounted(async () => {
       if (data.coverLetter) {
         coverLetter.value = {
           additionalInstructions: '',
+          jobDescription: '',
+          companyName: '',
+          hiringManager: '',
+          tone: 'professional',
+          content: '',
           ...data.coverLetter,
         }
       } else {
@@ -472,7 +477,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         >
           <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
         </button>
-        <NuxtLink to="/" class="font-serif text-lg sm:text-2xl text-white font-bold hover:text-blue-300 transition-colors truncate">ScrapeEngine</NuxtLink>
+        <AppLogo size="sm" :show-tagline="false" class="truncate" />
         <nav class="hidden lg:flex gap-6 items-center">
           <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
         </nav>
@@ -702,9 +707,36 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Phone</label>
                   <input v-model="resumeData.personalInfo.phone" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
-                <div class="flex flex-col col-span-2">
+                <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
                   <input v-model="resumeData.personalInfo.location" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Portfolio</label>
+                  <input
+                    v-model="resumeData.personalInfo.portfolio"
+                    type="text"
+                    placeholder="yourname.dev"
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">LinkedIn</label>
+                  <input
+                    v-model="resumeData.personalInfo.linkedin"
+                    type="text"
+                    placeholder="linkedin.com/in/you"
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">GitHub</label>
+                  <input
+                    v-model="resumeData.personalInfo.github"
+                    type="text"
+                    placeholder="github.com/you"
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
+                  />
                 </div>
               </div>
             </div>

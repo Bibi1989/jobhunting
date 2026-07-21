@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { prepareEditorHtml } from '~/utils/richText'
+import { prepareEditorHtml, toQuillEditorHtml } from '~/utils/richText'
 
 /**
  * Quill wrapper. External model updates (e.g. AI Enhance) are applied when the
  * editor is not focused. While typing we only emit Quill HTML — never re-paste
  * sanitized HTML back into Quill (that was clearing whole descriptions on delete).
+ *
+ * Stored descriptions use real <ul>/<ol>; Quill 2 needs data-list attrs, so we
+ * convert via toQuillEditorHtml on ingest and prepareEditorHtml on blur.
  */
 const props = withDefaults(
   defineProps<{
@@ -21,11 +24,19 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+type QuillInstance = {
+  root?: HTMLElement
+  setText?: (text: string) => void
+  clipboard?: {
+    dangerouslyPasteHTML?: (index: number, html: string, source?: string) => void
+  }
+}
+
 type QuillApi = {
   setHTML: (html: string) => void
   getHTML: () => string
   pasteHTML: (html: string, source?: string) => void
-  getQuill?: () => { root?: HTMLElement; getSelection?: () => unknown; setSelection?: (...args: unknown[]) => void }
+  getQuill?: () => QuillInstance
 }
 
 const quillRef = ref<QuillApi | null>(null)
@@ -33,10 +44,10 @@ const ready = ref(false)
 const syncing = ref(false)
 const focused = ref(false)
 /** Seed once for Quill; after ready, content is driven by pasteHTML / user input. */
-const initialContent = ref(prepareEditorHtml(props.modelValue || '') || '')
+const initialContent = ref(toQuillEditorHtml(props.modelValue || '') || '')
 
 function normalize(html?: string | null) {
-  return String(html || '')
+  return prepareEditorHtml(html || '')
     .replace(/<p><br\s*\/?><\/p>/gi, '')
     .replace(/<p>\s*<\/p>/gi, '')
     .replace(/\s+/g, ' ')
@@ -55,13 +66,17 @@ function applyExternalHtml(html: string) {
   const editor = quillRef.value
   if (!editor || !ready.value) return
 
-  const cleaned = prepareEditorHtml(html)
+  const cleaned = toQuillEditorHtml(html) || '<p><br></p>'
   syncing.value = true
   try {
-    if (typeof editor.pasteHTML === 'function') {
-      editor.pasteHTML(cleaned || '<p><br></p>', 'api')
+    const quill = editor.getQuill?.()
+    if (quill?.clipboard?.dangerouslyPasteHTML) {
+      quill.setText?.('')
+      quill.clipboard.dangerouslyPasteHTML(0, cleaned, 'api')
+    } else if (typeof editor.pasteHTML === 'function') {
+      editor.pasteHTML(cleaned, 'api')
     } else {
-      editor.setHTML(cleaned || '')
+      editor.setHTML(cleaned)
     }
   } finally {
     window.setTimeout(() => {
@@ -72,7 +87,7 @@ function applyExternalHtml(html: string) {
 
 function onReady() {
   ready.value = true
-  const desired = prepareEditorHtml(props.modelValue || '')
+  const desired = props.modelValue || ''
   if (normalize(getEditorHtml()) !== normalize(desired)) {
     applyExternalHtml(desired)
   }
@@ -111,7 +126,7 @@ function onBlur(event: FocusEvent) {
   // Ignore toolbar / internal Quill focus moves.
   if (root && next && root.contains(next)) return
   focused.value = false
-  // Light cleanup only after the user leaves the field.
+  // Normalize Quill list markup → real <ul>/<ol> for storage + public render.
   const html = getEditorHtml()
   const cleaned = prepareEditorHtml(html)
   if (normalize(cleaned) !== normalize(props.modelValue)) {
@@ -185,7 +200,7 @@ function onBlur(event: FocusEvent) {
   color: #64748b;
   font-style: italic;
 }
-/* Quill 2 already draws bullets via .ql-ui:before — don't add CSS list markers */
+/* Quill 2 draws bullets via .ql-ui:before */
 .builder-rich-text :deep(.ql-editor ul),
 .builder-rich-text :deep(.ql-editor ol) {
   list-style: none !important;
@@ -196,6 +211,15 @@ function onBlur(event: FocusEvent) {
   list-style: none !important;
   padding-left: 1.35rem;
   position: relative;
+}
+/* Fallback when content is still a plain <ul> without Quill chrome */
+.builder-rich-text :deep(.ql-editor ul:not(:has(li[data-list]))) {
+  list-style: disc !important;
+  padding-left: 1.35rem;
+}
+.builder-rich-text :deep(.ql-editor ul:not(:has(li[data-list])) > li) {
+  list-style: disc !important;
+  padding-left: 0.15rem;
 }
 .builder-rich-text :deep(.ql-snow .ql-stroke) {
   stroke: #94a3b8;

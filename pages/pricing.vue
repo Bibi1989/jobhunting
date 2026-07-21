@@ -57,7 +57,7 @@ async function openPortal() {
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100">
     <header class="flex items-center justify-between px-6 h-16 border-b border-white/10">
-      <NuxtLink to="/" class="font-bold text-lg text-white">JobFlow AI</NuxtLink>
+      <AppLogo size="sm" />
       <div class="flex items-center gap-3 text-sm">
         <CreditBadge />
         <NuxtLink

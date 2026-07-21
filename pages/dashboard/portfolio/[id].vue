@@ -5,9 +5,11 @@ import {
   orderedBodySections,
   type Portfolio,
   type PortfolioCustomSection,
+  type PortfolioExperience,
   type PortfolioProfileData,
   type PortfolioProject,
 } from '~/shared/types/portfolio'
+import { htmlToBulletText, normalizeBulletListHtml } from '~/utils/richText'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -28,11 +30,13 @@ const deleting = ref(false)
 const previewSlug = ref<string | null>(null)
 
 const editingProjectsTitle = ref(false)
+const editingExperienceTitle = ref(false)
 const editingSkillsTitle = ref(false)
 const editingCustomSectionTitle = ref<string | null>(null)
 
-// Per-project "add tech" draft inputs, keyed by project index.
+// Per-project / per-role "add tech" draft inputs, keyed by index.
 const techDraft = reactive<Record<number, string>>({})
+const experienceTechDraft = reactive<Record<number, string>>({})
 const skillDraft = ref('')
 
 watchEffect(() => {
@@ -41,6 +45,13 @@ watchEffect(() => {
     form.value = JSON.parse(JSON.stringify(p.profileData)) as PortfolioProfileData
     // Ensure optional arrays exist for the editor.
     form.value.formatted_projects ||= []
+    form.value.formatted_experience ||= []
+    for (const role of form.value.formatted_experience) {
+      role.tech_stack ||= []
+    }
+    for (const project of form.value.formatted_projects) {
+      project.tech_stack ||= []
+    }
     form.value.core_skills ||= []
     form.value.custom_sections ||= []
     form.value.section_titles ||= {}
@@ -84,12 +95,101 @@ function templateName(slug: string) {
   return PORTFOLIO_TEMPLATES.find((t) => t.slug === slug)?.name ?? slug
 }
 
+// ---- Experience ----
+function addExperience() {
+  if (!form.value) return
+  form.value.formatted_experience ||= []
+  form.value.formatted_experience.push({
+    title: '',
+    company: '',
+    description: '',
+    tech_stack: [],
+    highlights: [],
+  })
+  form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
+}
+function removeExperience(index: number) {
+  form.value?.formatted_experience?.splice(index, 1)
+  if (form.value) form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
+}
+function moveExperience(index: number, dir: -1 | 1) {
+  const list = form.value?.formatted_experience
+  if (!list) return
+  const to = index + dir
+  if (to < 0 || to >= list.length) return
+  const [item] = list.splice(index, 1)
+  list.splice(to, 0, item!)
+}
+function ensureExperienceTech(role: PortfolioExperience) {
+  if (!Array.isArray(role.tech_stack)) role.tech_stack = []
+  return role.tech_stack
+}
+function addExperienceTech(role: PortfolioExperience, index: number) {
+  const value = (experienceTechDraft[index] || '').trim()
+  if (!value) return
+  const stack = ensureExperienceTech(role)
+  if (!stack.includes(value)) stack.push(value)
+  experienceTechDraft[index] = ''
+}
+function removeExperienceTech(role: PortfolioExperience, tech: string) {
+  role.tech_stack = ensureExperienceTech(role).filter((t) => t !== tech)
+}
+
+const experienceAnalyses = ref<Record<number, any>>({})
+const analyzingExperienceIdx = ref<number | null>(null)
+
+function descriptionPlainText(htmlOrText: string) {
+  const raw = String(htmlOrText || '').trim()
+  if (!raw) return ''
+  if (/<[a-z][\s\S]*>/i.test(raw)) return htmlToBulletText(raw).trim()
+  return raw
+}
+
+async function analyzeExperience(index: number) {
+  const role = form.value?.formatted_experience?.[index]
+  if (!role) return
+  const title = [role.title, role.company].filter(Boolean).join(' at ')
+  const description = descriptionPlainText(role.description)
+  if (!title || !description) {
+    toast.info('Enter a job title, company, and description before analyzing.')
+    return
+  }
+  analyzingExperienceIdx.value = index
+  try {
+    const result = await $fetch<any>('/api/portfolio/analyze-project', {
+      method: 'POST',
+      body: {
+        title,
+        description,
+        tech_stack: role.tech_stack || [],
+      },
+    })
+    experienceAnalyses.value[index] = result
+    toast.success('Role case study analyzed successfully!')
+  } catch (e) {
+    console.error(e)
+    toast.error('Failed to analyze role description.')
+  } finally {
+    analyzingExperienceIdx.value = null
+  }
+}
+
+function applyExperienceRewrite(index: number) {
+  const analysis = experienceAnalyses.value[index]
+  if (analysis && form.value?.formatted_experience?.[index]) {
+    form.value.formatted_experience[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
+    toast.success('Suggested rewrite applied to role description.')
+  }
+}
+
 // ---- Projects ----
 function addProject() {
   form.value?.formatted_projects.push({ title: '', description: '', tech_stack: [] })
+  if (form.value) form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
 }
 function removeProject(index: number) {
   form.value?.formatted_projects.splice(index, 1)
+  if (form.value) form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
 }
 function moveProject(index: number, dir: -1 | 1) {
   const list = form.value?.formatted_projects
@@ -114,7 +214,7 @@ const analyzingProjectIdx = ref<number | null>(null)
 
 async function analyzeProject(index: number) {
   const project = form.value?.formatted_projects[index]
-  if (!project || !project.title || !project.description) {
+  if (!project || !project.title || !descriptionPlainText(project.description)) {
     toast.info('Enter a title and description before analyzing.')
     return
   }
@@ -124,7 +224,7 @@ async function analyzeProject(index: number) {
       method: 'POST',
       body: {
         title: project.title,
-        description: project.description,
+        description: descriptionPlainText(project.description),
         tech_stack: project.tech_stack,
       },
     })
@@ -141,13 +241,13 @@ async function analyzeProject(index: number) {
 function applyProjectRewrite(index: number) {
   const analysis = projectAnalyses.value[index]
   if (analysis && form.value?.formatted_projects[index]) {
-    form.value.formatted_projects[index].description = analysis.suggestedRewrite
+    form.value.formatted_projects[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
     toast.success('Suggested rewrite applied to project description.')
   }
 }
 
 // ---- Sections (reorder + custom) ----
-type SectionEntry = { key: string; kind: 'projects' | 'skills' | 'custom'; label: string }
+type SectionEntry = { key: string; kind: 'projects' | 'experience' | 'skills' | 'custom'; label: string }
 
 const sectionEntries = computed<SectionEntry[]>(() => {
   if (!form.value) return []
@@ -157,9 +257,11 @@ const sectionEntries = computed<SectionEntry[]>(() => {
     label:
       s.kind === 'projects'
         ? 'Projects'
-        : s.kind === 'skills'
-          ? 'Skills'
-          : s.custom?.title?.trim() || 'Custom section',
+        : s.kind === 'experience'
+          ? 'Experience'
+          : s.kind === 'skills'
+            ? 'Skills'
+            : s.custom?.title?.trim() || 'Custom section',
   }))
 })
 
@@ -402,6 +504,10 @@ const inputClass =
               <input v-model="form.button_texts!.nav_projects" :class="inputClass" placeholder="e.g. Work, Portfolio" />
             </div>
             <div>
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Experience Nav Link</label>
+              <input v-model="form.button_texts!.nav_experience" :class="inputClass" placeholder="e.g. Experience, Career" />
+            </div>
+            <div>
               <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Skills Nav Link</label>
               <input v-model="form.button_texts!.nav_skills" :class="inputClass" placeholder="e.g. Skills, Expertise" />
             </div>
@@ -460,6 +566,185 @@ const inputClass =
           </div>
         </section>
 
+        <!-- Experience -->
+        <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-300">work_history</span>
+              <span v-if="!editingExperienceTitle" class="flex items-center gap-2">
+                {{ form.section_titles!.experience || 'Experience' }}
+                <button type="button" @click="editingExperienceTitle = true" class="text-blue-200/40 hover:text-white transition">
+                  <span class="material-symbols-outlined text-[16px]">edit</span>
+                </button>
+              </span>
+              <input
+                v-else
+                v-model="form.section_titles!.experience"
+                class="bg-slate-900/60 border border-blue-500/50 rounded px-2 py-0.5 text-sm text-white focus:outline-none w-40"
+                placeholder="Experience Title"
+                @blur="editingExperienceTitle = false; save()"
+                @keyup.enter="editingExperienceTitle = false; save()"
+                autofocus
+              />
+              <span class="text-blue-200/50 text-sm font-normal ml-2">({{ form.formatted_experience?.length || 0 }})</span>
+            </h2>
+            <button type="button" class="rounded-lg bg-blue-500/90 hover:bg-blue-400 px-3 py-1.5 text-sm font-semibold text-white" @click="addExperience">
+              + Add role
+            </button>
+          </div>
+
+          <p v-if="!(form.formatted_experience?.length)" class="text-blue-200/50 italic text-sm">
+            No experience yet. Add employment roles separately from projects.
+          </p>
+
+          <div v-else class="space-y-4">
+            <div
+              v-for="(role, i) in form.formatted_experience"
+              :key="i"
+              class="rounded-xl border border-white/10 bg-slate-900/40 p-4"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-blue-200/50 uppercase tracking-widest">Role {{ i + 1 }}</span>
+                <div class="flex items-center gap-1">
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" title="Move up" @click="moveExperience(i, -1)">arrow_upward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === (form.formatted_experience?.length || 0) - 1" title="Move down" @click="moveExperience(i, 1)">arrow_downward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300" title="Remove" @click="removeExperience(i)">delete</button>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div class="grid sm:grid-cols-2 gap-3">
+                  <input v-model="role.title" :class="inputClass" placeholder="Job title" />
+                  <input v-model="role.company" :class="inputClass" placeholder="Company" />
+                </div>
+                <div class="grid sm:grid-cols-3 gap-3">
+                  <input v-model="role.location" :class="inputClass" placeholder="Location" />
+                  <input v-model="role.start_date" :class="inputClass" placeholder="Start (e.g. 2021)" />
+                  <input v-model="role.end_date" :class="inputClass" :disabled="role.is_current" placeholder="End (e.g. 2024)" />
+                </div>
+                <label class="inline-flex items-center gap-2 text-sm text-blue-100/80">
+                  <input v-model="role.is_current" type="checkbox" class="rounded border-white/20 bg-slate-900" />
+                  Current role
+                </label>
+
+                <div>
+                  <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">
+                    Description
+                    <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span>
+                  </label>
+                  <div class="rounded border border-white/10 bg-white/5 overflow-hidden">
+                    <BuilderBulletDescriptionEditor
+                      :key="`exp-desc-${i}`"
+                      v-model="role.description"
+                      placeholder="What you did and the impact…"
+                      :rows="4"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex flex-wrap gap-1.5 mb-2">
+                    <span
+                      v-for="tech in (role.tech_stack || [])"
+                      :key="tech"
+                      class="inline-flex items-center gap-1 rounded-md bg-blue-500/15 text-blue-200 text-xs px-2 py-1"
+                    >
+                      {{ tech }}
+                      <button type="button" class="material-symbols-outlined text-[14px] hover:text-white" @click="removeExperienceTech(role, tech)">close</button>
+                    </span>
+                  </div>
+                  <input
+                    v-model="experienceTechDraft[i]"
+                    :class="inputClass"
+                    placeholder="Add a technology, press Enter"
+                    @keyup.enter="addExperienceTech(role, i)"
+                  />
+                </div>
+
+                <!-- Case Study Quality Scoring & Feedback -->
+                <div class="mt-4 border-t border-white/5 pt-4">
+                  <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-blue-300 text-lg">analytics</span>
+                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Case Study Quality Check</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="px-3 py-1 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white border border-blue-500/30 rounded text-xs transition duration-200 cursor-pointer flex items-center gap-1"
+                      :disabled="analyzingExperienceIdx === i"
+                      @click="analyzeExperience(i)"
+                    >
+                      <span class="material-symbols-outlined text-[14px]" :class="{'animate-spin': analyzingExperienceIdx === i}">
+                        {{ analyzingExperienceIdx === i ? 'sync' : 'auto_awesome' }}
+                      </span>
+                      {{ analyzingExperienceIdx === i ? 'Analyzing...' : 'Analyze Case Study' }}
+                    </button>
+                  </div>
+
+                  <div v-if="experienceAnalyses[i]" class="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
+                    <div class="flex flex-wrap items-center gap-4 justify-between">
+                      <div class="flex items-center gap-3">
+                        <div class="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 border-indigo-400/60 bg-indigo-500/10">
+                          <span class="text-sm font-black text-white">{{ experienceAnalyses[i].score }}</span>
+                          <span class="text-[8px] uppercase tracking-widest text-indigo-300">/ 100</span>
+                        </div>
+                        <div>
+                          <p class="text-xs font-semibold text-white">Completeness Score</p>
+                          <p class="text-[10px] text-slate-400 leading-none">Measures depth and impact</p>
+                        </div>
+                      </div>
+
+                      <div class="flex-1 max-w-[280px] grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-400">
+                        <div class="flex items-center justify-between">
+                          <span>Problem:</span>
+                          <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.problem }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Action:</span>
+                          <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.action }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Results:</span>
+                          <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.results }}%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span>Tech Spec:</span>
+                          <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.tech }}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-if="experienceAnalyses[i].improvements?.length" class="space-y-1.5 border-t border-white/5 pt-3">
+                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Targeted Improvements:</h4>
+                      <ul class="space-y-1 text-xs text-slate-300">
+                        <li v-for="(imp, impIdx) in experienceAnalyses[i].improvements" :key="impIdx" class="flex gap-2 items-start text-left">
+                          <span class="material-symbols-outlined text-[14px] text-amber-400 mt-0.5 shrink-0">warning</span>
+                          <span>{{ imp }}</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div v-if="experienceAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
+                      <div class="flex justify-between items-center">
+                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
+                        <button
+                          type="button"
+                          class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                          @click="applyExperienceRewrite(i)"
+                        >
+                          Apply Rewrite
+                        </button>
+                      </div>
+                      <p class="text-xs text-slate-300 bg-black/30 p-2.5 rounded border border-white/5 italic text-left whitespace-pre-wrap">
+                        {{ experienceAnalyses[i].suggestedRewrite }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Projects -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div class="flex items-center justify-between mb-4">
@@ -507,7 +792,20 @@ const inputClass =
               </div>
               <div class="space-y-3">
                 <input v-model="project.title" :class="inputClass" placeholder="Project title" />
-                <textarea v-model="project.description" rows="2" :class="inputClass" placeholder="What it was and the impact"></textarea>
+                <div>
+                  <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">
+                    Description
+                    <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span>
+                  </label>
+                  <div class="rounded border border-white/10 bg-white/5 overflow-hidden">
+                    <BuilderBulletDescriptionEditor
+                      :key="`proj-desc-${i}`"
+                      v-model="project.description"
+                      placeholder="What it was and the impact…"
+                      :rows="4"
+                    />
+                  </div>
+                </div>
                 <input v-model="project.url" :class="inputClass" placeholder="Live / case-study URL (optional)" />
                 <div>
                   <div class="flex flex-wrap gap-1.5 mb-2">
@@ -689,7 +987,7 @@ const inputClass =
               <div class="flex items-center gap-2 px-3 py-2.5">
                 <span class="material-symbols-outlined text-slate-500 text-[18px] cursor-grab active:cursor-grabbing" title="Drag to reorder">drag_indicator</span>
                 <span class="material-symbols-outlined text-[16px] text-blue-300/70">
-                  {{ entry.kind === 'projects' ? 'work' : entry.kind === 'skills' ? 'bolt' : 'article' }}
+                  {{ entry.kind === 'projects' ? 'work' : entry.kind === 'experience' ? 'work_history' : entry.kind === 'skills' ? 'bolt' : 'article' }}
                 </span>
                 <span class="flex-1 text-sm font-medium text-white truncate">{{ entry.label }}</span>
                 <span v-if="entry.kind !== 'custom'" class="text-[10px] uppercase tracking-wider text-blue-200/40">built-in</span>

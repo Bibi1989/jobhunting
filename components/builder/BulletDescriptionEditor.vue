@@ -61,8 +61,11 @@ function commit() {
 
 onMounted(() => {
   applyDom(props.modelValue)
+  // Don't auto-emit on mount when empty placeholder — only sync if we
+  // normalized existing content into a different (valid) list shape.
   const html = serializeEditor()
-  if (html !== (props.modelValue || '')) {
+  const incoming = normalizeBulletListHtml(props.modelValue || '')
+  if (html && incoming && html !== (props.modelValue || '')) {
     emit('update:modelValue', html)
   }
 })

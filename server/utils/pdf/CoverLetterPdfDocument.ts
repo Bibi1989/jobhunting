@@ -1,7 +1,8 @@
 import React from 'react'
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, View, Text, StyleSheet, Link } from '@react-pdf/renderer'
 import type { BuilderCoverLetter, BuilderResumeData } from '~/shared/types/builder'
 import { htmlToBlocks, stripHtmlToPlain } from './types'
+import { buildContactEntries, type ContactEntry } from '~/shared/pdf/contact'
 
 const TEAL = '#006a61'
 const NAVY = '#091426'
@@ -60,6 +61,86 @@ function buildBodyChildren(content: string, textStyle: TextStyle) {
   })
 }
 
+function ContactLinkRow({
+  entries,
+  style,
+  linkColor,
+  separator = '  ·  ',
+  centered = false,
+}: {
+  entries: ContactEntry[]
+  style: TextStyle
+  linkColor?: string
+  separator?: string
+  centered?: boolean
+}) {
+  if (!entries.length) return null
+
+  return React.createElement(
+    View,
+    {
+      style: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: centered ? 'center' : 'flex-start',
+        alignItems: 'center',
+      },
+    },
+    ...entries.flatMap((entry, i) => {
+      const node = entry.href
+        ? React.createElement(
+            Link,
+            {
+              key: `cl-${entry.kind}`,
+              src: entry.href,
+              style: {
+                ...style,
+                color: String(linkColor || style.color || MUTED),
+                textDecoration: 'none',
+              },
+            },
+            entry.display,
+          )
+        : React.createElement(Text, { key: `cl-${entry.kind}`, style }, entry.display)
+
+      if (i >= entries.length - 1) return [node]
+      return [
+        node,
+        React.createElement(
+          Text,
+          { key: `sep-${i}`, style: { ...style, marginHorizontal: 2 } },
+          separator,
+        ),
+      ]
+    }),
+  )
+}
+
+function SidebarContactBlock({
+  entries,
+  labelStyle,
+  valueStyle,
+}: {
+  entries: ContactEntry[]
+  labelStyle: TextStyle
+  valueStyle: TextStyle
+}) {
+  return entries.map((entry) =>
+    React.createElement(
+      View,
+      { key: `side-${entry.kind}` },
+      React.createElement(Text, { style: labelStyle }, entry.label),
+      entry.href
+        ? React.createElement(
+            Link,
+            { src: entry.href, style: { ...valueStyle, textDecoration: 'none' } },
+            entry.display,
+          )
+        : React.createElement(Text, { style: valueStyle }, entry.display),
+    ),
+  )
+}
+
 function renderStandard(
   p: BuilderResumeData['personalInfo'],
   letter: BuilderCoverLetter | undefined,
@@ -98,20 +179,19 @@ function renderStandard(
       textTransform: 'uppercase',
       color: MUTED,
       textAlign: 'center',
-      marginBottom: 6,
+      marginBottom: 8,
     },
     contact: {
       fontSize: 8,
       fontFamily: 'Helvetica',
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
+      letterSpacing: 0.4,
       color: MUTED,
       textAlign: 'center',
     },
     recipient: { marginBottom: 18, fontFamily: 'Helvetica', fontSize: 11 },
   })
 
-  const contact = [p.location, p.email, p.phone].filter(Boolean).join('  |  ')
+  const entries = buildContactEntries(p)
   const body = buildBodyChildren(content, {
     fontSize: 11,
     lineHeight: 1.5,
@@ -127,7 +207,13 @@ function renderStandard(
       { style: styles.header, wrap: false },
       React.createElement(Text, { style: styles.name }, p.fullName || 'Your Name'),
       p.jobTitle ? React.createElement(Text, { style: styles.title }, p.jobTitle) : null,
-      contact ? React.createElement(Text, { style: styles.contact }, contact) : null,
+      React.createElement(ContactLinkRow, {
+        entries,
+        style: styles.contact,
+        linkColor: SLATE,
+        separator: '  |  ',
+        centered: true,
+      }),
     ),
     letter?.companyName || letter?.hiringManager
       ? React.createElement(
@@ -177,7 +263,7 @@ function renderCreative(
       lineHeight: 1.05,
       marginBottom: 6,
     },
-    title: { fontSize: 11, color: MUTED, fontFamily: 'Helvetica-Bold', marginBottom: 8 },
+    title: { fontSize: 11, color: MUTED, fontFamily: 'Helvetica-Bold', marginBottom: 10 },
     contact: { fontSize: 9, color: MUTED, marginBottom: 22 },
     date: {
       fontSize: 9,
@@ -190,7 +276,7 @@ function renderCreative(
     company: { fontSize: 11, color: '#334155', marginBottom: 16 },
   })
 
-  const contact = [p.email, p.phone, p.location].filter(Boolean).join('   ')
+  const entries = buildContactEntries(p)
   const body = buildBodyChildren(content, {
     fontSize: 10.5,
     lineHeight: 1.5,
@@ -211,7 +297,12 @@ function renderCreative(
         React.createElement(Text, { style: styles.eyebrow }, 'Cover Letter'),
         React.createElement(Text, { style: styles.name }, p.fullName || 'Your Name'),
         p.jobTitle ? React.createElement(Text, { style: styles.title }, p.jobTitle) : null,
-        contact ? React.createElement(Text, { style: styles.contact }, contact) : null,
+        React.createElement(ContactLinkRow, {
+          entries,
+          style: styles.contact,
+          linkColor: TEAL,
+          separator: '   ·   ',
+        }),
       ),
       letter?.companyName || letter?.hiringManager
         ? React.createElement(
@@ -267,12 +358,12 @@ function renderExecutive(
       textTransform: 'uppercase',
       color: TEAL,
     },
-    contactBlock: { alignItems: 'flex-end' },
+    contactBlock: { alignItems: 'flex-end', maxWidth: '48%' },
     contact: {
-      fontSize: 9,
+      fontSize: 8.5,
       fontFamily: 'Helvetica',
       color: MUTED,
-      marginBottom: 2,
+      marginBottom: 3,
       textAlign: 'right',
     },
     metaRow: { flexDirection: 'row', marginBottom: 5 },
@@ -291,6 +382,7 @@ function renderExecutive(
     .filter(Boolean)
     .join(', ')
 
+  const entries = buildContactEntries(p)
   const body = buildBodyChildren(content, {
     fontSize: 11,
     lineHeight: 1.5,
@@ -322,9 +414,19 @@ function renderExecutive(
       React.createElement(
         View,
         { style: styles.contactBlock },
-        p.email ? React.createElement(Text, { style: styles.contact }, p.email) : null,
-        p.phone ? React.createElement(Text, { style: styles.contact }, p.phone) : null,
-        p.location ? React.createElement(Text, { style: styles.contact }, p.location) : null,
+        ...entries.map((entry) =>
+          entry.href
+            ? React.createElement(
+                Link,
+                {
+                  key: entry.kind,
+                  src: entry.href,
+                  style: { ...styles.contact, color: TEAL, textDecoration: 'none' },
+                },
+                entry.display,
+              )
+            : React.createElement(Text, { key: entry.kind, style: styles.contact }, entry.display),
+        ),
       ),
     ),
     React.createElement(
@@ -390,6 +492,7 @@ function renderTech(
     company: { fontSize: 11, color: '#475569', marginBottom: 18 },
   })
 
+  const entries = buildContactEntries(p)
   const body = buildBodyChildren(content, {
     fontSize: 10.5,
     lineHeight: 1.5,
@@ -405,30 +508,11 @@ function renderTech(
       { style: styles.sidebar },
       React.createElement(Text, { style: styles.sideName }, p.fullName || 'Your Name'),
       p.jobTitle ? React.createElement(Text, { style: styles.sideTitle }, p.jobTitle) : null,
-      p.email
-        ? React.createElement(
-            View,
-            null,
-            React.createElement(Text, { style: styles.sideLabel }, 'Email'),
-            React.createElement(Text, { style: styles.sideValue }, p.email),
-          )
-        : null,
-      p.phone
-        ? React.createElement(
-            View,
-            null,
-            React.createElement(Text, { style: styles.sideLabel }, 'Phone'),
-            React.createElement(Text, { style: styles.sideValue }, p.phone),
-          )
-        : null,
-      p.location
-        ? React.createElement(
-            View,
-            null,
-            React.createElement(Text, { style: styles.sideLabel }, 'Location'),
-            React.createElement(Text, { style: styles.sideValue }, p.location),
-          )
-        : null,
+      ...SidebarContactBlock({
+        entries,
+        labelStyle: styles.sideLabel,
+        valueStyle: styles.sideValue,
+      }),
       React.createElement(Text, { style: styles.sideFoot }, 'TECH INTRO'),
     ),
     React.createElement(

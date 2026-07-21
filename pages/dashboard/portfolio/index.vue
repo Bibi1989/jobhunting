@@ -27,6 +27,8 @@ const jobContext = ref<{ jobId: string; title: string; company: string; descript
 
 const generating = ref(false)
 const saving = ref(false)
+const favoritingId = ref<string | null>(null)
+const showFavoritesOnly = ref(false)
 const result = ref<PortfolioProfileData | null>(null)
 const previewSlug = ref<string | null>(null)
 const activeTab = ref<'saved' | 'create'>('saved')
@@ -37,6 +39,31 @@ const { data: saved, refresh: refreshSaved } = await useFetch<{ portfolios: Port
   '/api/portfolio',
   { default: () => ({ portfolios: [] }) },
 )
+
+const visiblePortfolios = computed(() => {
+  const list = saved.value?.portfolios || []
+  if (!showFavoritesOnly.value) return list
+  return list.filter((p) => p.isFavorite)
+})
+
+async function togglePortfolioFavorite(p: Portfolio) {
+  favoritingId.value = p.id
+  const next = !p.isFavorite
+  try {
+    await $fetch(`/api/portfolio/${p.id}/favorite`, {
+      method: 'PATCH',
+      body: { isFavorite: next },
+    })
+    p.isFavorite = next
+    toast.success(next ? 'Portfolio favorited.' : 'Removed from favorites.')
+    await refreshSaved()
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(e.data?.statusMessage || e.statusMessage || 'Could not update favorite.')
+  } finally {
+    favoritingId.value = null
+  }
+}
 
 const route = useRoute()
 const lastLoadedJobId = ref('')
@@ -403,18 +430,30 @@ function primaryContactHref(data: PortfolioProfileData) {
             My published portfolios
           </h2>
           <p class="text-sm text-blue-200/50">
-            {{ saved?.portfolios?.length || 0 }} published · open live or copy a share link
+            {{ saved?.portfolios?.length || 0 }} published ·
+            {{ saved?.portfolios?.filter((p) => p.isFavorite).length || 0 }} favorites
           </p>
         </div>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition"
+          :class="showFavoritesOnly
+            ? 'border-amber-400/50 bg-amber-500/15 text-amber-200'
+            : 'border-white/15 text-blue-200/70 hover:bg-white/5'"
+          @click="showFavoritesOnly = !showFavoritesOnly"
+        >
+          <span class="material-symbols-outlined text-[16px]">star</span>
+          {{ showFavoritesOnly ? 'Favorites only' : 'Show favorites' }}
+        </button>
       </div>
 
       <p
-        v-if="!saved?.portfolios?.length"
+        v-if="!visiblePortfolios.length"
         class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-blue-200/60"
       >
-        Nothing published yet.
+        {{ showFavoritesOnly ? 'No favorite portfolios yet.' : 'Nothing published yet.' }}
         <button
-          v-if="activeTab !== 'create'"
+          v-if="!showFavoritesOnly && activeTab !== 'create'"
           type="button"
           class="text-blue-300 hover:text-white underline underline-offset-4 ml-1"
           @click="activeTab = 'create'"
@@ -425,10 +464,22 @@ function primaryContactHref(data: PortfolioProfileData) {
 
       <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <article
-          v-for="p in saved.portfolios"
+          v-for="p in visiblePortfolios"
           :key="p.id"
-          class="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-blue-400/40 transition"
+          class="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-blue-400/40 transition relative"
         >
+          <button
+            type="button"
+            class="absolute top-3 right-3 z-10 rounded-full bg-slate-950/70 p-1.5 text-amber-300 hover:bg-slate-950/90 disabled:opacity-40"
+            :title="p.isFavorite ? 'Remove favorite' : 'Add favorite'"
+            :disabled="favoritingId === p.id"
+            @click="togglePortfolioFavorite(p)"
+          >
+            <span
+              class="material-symbols-outlined text-[18px]"
+              :style="p.isFavorite ? 'font-variation-settings: \'FILL\' 1' : ''"
+            >star</span>
+          </button>
           <div class="rounded-xl overflow-hidden border border-white/10 bg-slate-900 h-36 relative">
             <div
               class="absolute top-0 left-0 origin-top-left pointer-events-none"

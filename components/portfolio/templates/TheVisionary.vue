@@ -214,9 +214,15 @@ function gradientFor(index: number) {
     </section>
 
     <template v-for="section in sections" :key="section.key">
-      <!-- Work -->
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="light"
+      />
       <section
-        v-if="section.kind === 'projects'"
+        v-else-if="section.kind === 'projects'"
         id="work"
         class="mx-auto max-w-6xl px-6 py-24"
       >
@@ -261,7 +267,7 @@ function gradientFor(index: number) {
                     open_in_new
                   </span>
                 </div>
-                <p class="mt-2.5 flex-1 text-sm leading-relaxed text-primary-600">{{ project.description }}</p>
+                <PortfolioRichText class="mt-2.5 flex-1 text-sm leading-relaxed text-primary-600" :content="project.description" />
 
                 <div v-if="project.tech_stack && project.tech_stack.length > 0" class="mt-5 flex flex-wrap gap-2">
                   <span

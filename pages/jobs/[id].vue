@@ -29,7 +29,7 @@ import { downloadTextFile, slugifyFilename } from '~/utils/download'
 import { downloadProfessionalPdf } from '~/utils/exportPdf'
 
 useHead({
-  title: 'Job Details | ScrapeEngine',
+  title: 'Job Details | JobFlow',
 })
 
 const route = useRoute()
@@ -221,9 +221,9 @@ watch(
         salaryMin: newJob.salaryMin ?? null,
         salaryMax: newJob.salaryMax ?? null,
         currency: newJob.currency || 'USD',
-        description: newJob.description || '',
-        responsibilities: newJob.responsibilities || '',
-        requirements: newJob.requirements || '',
+        description: newJob.description ?? '',
+        responsibilities: newJob.responsibilities ?? '',
+        requirements: newJob.requirements ?? '',
       }
     }
   },
@@ -567,15 +567,7 @@ function applyToJob() {
             <ArrowLeft :size="18" />
           </NuxtLink>
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 md:w-10 md:h-10 shrink-0 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl glowing-logo text-white select-none">
-              S
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-xl md:text-2xl font-extrabold tracking-tight truncate">
-                Scrape<span class="text-gradient">Engine</span>
-              </h1>
-              <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest -mt-1 hidden sm:block">Intelligent Job Hub v5.0</p>
-            </div>
+            <AppLogo />
           </div>
         </div>
 
@@ -1244,6 +1236,7 @@ function applyToJob() {
               v-model:editing="editingResume"
               title="Tailored Resume"
               min-height-class="min-h-[20rem]"
+              :format-id="cvFormat"
             >
               <template #actions>
                 <button

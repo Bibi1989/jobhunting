@@ -7,6 +7,8 @@ const props = defineProps<{
   modelValue: string
   editing?: boolean
   minHeightClass?: string
+  /** When set (e.g. the-corporate), preview uses ResumeThemeRenderer full page. */
+  formatId?: string
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +17,41 @@ const emit = defineEmits<{
 }>()
 
 const html = computed(() => (props.modelValue ? marked(props.modelValue) : ''))
+const usesThemeRenderer = computed(() => String(props.formatId || '').startsWith('the-'))
+
+const previewShell = ref<HTMLElement | null>(null)
+const pageScale = ref(0.5)
+const PAGE_W = 794
+const PAGE_H = 1123
+let resizeObserver: ResizeObserver | null = null
+
+function updateScale() {
+  const el = previewShell.value
+  if (!el || !import.meta.client) return
+  const pad = 24
+  const availW = Math.max(120, el.clientWidth - pad)
+  const availH = Math.max(200, el.clientHeight - pad)
+  pageScale.value = Math.min(availW / PAGE_W, availH / PAGE_H, 1)
+}
+
+onMounted(() => {
+  updateScale()
+  if (!import.meta.client || typeof ResizeObserver === 'undefined') return
+  resizeObserver = new ResizeObserver(() => updateScale())
+  if (previewShell.value) resizeObserver.observe(previewShell.value)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
+
+watch(
+  () => [props.formatId, props.modelValue, props.editing] as const,
+  async () => {
+    await nextTick()
+    updateScale()
+  },
+)
 </script>
 
 <template>
@@ -57,6 +94,30 @@ const html = computed(() => (props.modelValue ? marked(props.modelValue) : ''))
       class="w-full bg-slate-950/50 px-4 py-4 font-mono text-sm leading-relaxed text-slate-200 outline-none border-t border-slate-800/80 focus:bg-slate-950/80 transition-colors"
       @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
+    <div
+      v-else-if="usesThemeRenderer"
+      ref="previewShell"
+      class="relative min-h-[36rem] max-h-[min(70vh,48rem)] overflow-hidden bg-slate-900/80 flex items-center justify-center p-4 border-t border-slate-800"
+    >
+      <div
+        class="relative shadow-2xl shadow-black/40 bg-white overflow-hidden"
+        :style="{
+          width: `${PAGE_W * pageScale}px`,
+          height: `${PAGE_H * pageScale}px`,
+        }"
+      >
+        <div
+          class="absolute top-0 left-0 origin-top-left bg-white pointer-events-none"
+          :style="{
+            width: `${PAGE_W}px`,
+            minHeight: `${PAGE_H}px`,
+            transform: `scale(${pageScale})`,
+          }"
+        >
+          <ResumeThemeRenderer :markdown="modelValue" :format-id="formatId" />
+        </div>
+      </div>
+    </div>
     <div
       v-else
       :class="minHeightClass || 'min-h-[18rem]'"
@@ -109,15 +170,5 @@ const html = computed(() => (props.modelValue ? marked(props.modelValue) : ''))
   margin: 0.25rem 0 0.75rem;
   padding-left: 1.25rem;
   list-style-type: disc;
-}
-
-.tailored-preview :deep(em) {
-  color: #64748b;
-  font-style: italic;
-}
-
-.tailored-preview :deep(strong) {
-  color: #0f172a;
-  font-weight: 700;
 }
 </style>

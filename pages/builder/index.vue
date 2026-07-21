@@ -20,6 +20,7 @@ type BuilderDocCard = {
   name: string
   updatedAt: string
   templateId: string
+  isFavorite?: boolean
   preview: BuilderDocumentPreview | null
 }
 
@@ -29,10 +30,38 @@ const toast = useAppToast()
 const { confirm } = useAppConfirm()
 const { data: documents, pending, refresh } = useFetch<BuilderDocCard[]>('/api/builder/documents')
 const deletingKey = ref<string | null>(null)
+const favoritingKey = ref<string | null>(null)
+const showFavoritesOnly = ref(false)
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
+}
+
+const visibleDocuments = computed(() => {
+  const list = documents.value || []
+  if (!showFavoritesOnly.value) return list
+  return list.filter((d) => d.isFavorite)
+})
+
+async function toggleFavorite(doc: BuilderDocCard) {
+  const key = `${doc.type}-${doc.id}`
+  favoritingKey.value = key
+  const next = !doc.isFavorite
+  try {
+    await $fetch(`/api/builder/documents/${doc.id}/favorite`, {
+      method: 'PATCH',
+      body: { type: doc.type, isFavorite: next },
+    })
+    doc.isFavorite = next
+    toast.success(next ? 'Added to favorites.' : 'Removed from favorites.')
+    await refresh()
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(e.data?.statusMessage || e.statusMessage || 'Could not update favorite.')
+  } finally {
+    favoritingKey.value = null
+  }
 }
 
 async function deleteDocument(doc: BuilderDocCard) {
@@ -93,14 +122,28 @@ async function deleteDocument(doc: BuilderDocCard) {
             <div class="z-10">
               <p class="text-xs uppercase tracking-widest text-blue-300 mb-2 font-semibold">Total Documents</p>
               <p class="font-serif text-4xl">{{ documents?.length || 0 }} Projects</p>
+              <p class="text-sm text-blue-200/70 mt-2">
+                {{ documents?.filter((d) => d.isFavorite).length || 0 }} favorites
+              </p>
             </div>
             <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#60a5fa 1px, transparent 1px); background-size: 20px 20px;"></div>
             <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500/30 rounded-full blur-3xl"></div>
           </div>
         </section>
 
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <h2 class="font-semibold uppercase tracking-widest text-blue-200/60 text-sm">Recent Projects</h2>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition"
+            :class="showFavoritesOnly
+              ? 'border-amber-400/50 bg-amber-500/15 text-amber-200'
+              : 'border-white/15 text-blue-200/70 hover:bg-white/5'"
+            @click="showFavoritesOnly = !showFavoritesOnly"
+          >
+            <span class="material-symbols-outlined text-[16px]" :class="showFavoritesOnly ? 'fill-current' : ''">star</span>
+            {{ showFavoritesOnly ? 'Favorites only' : 'Show favorites' }}
+          </button>
         </div>
 
         <section v-if="pending" class="text-blue-200/60">
@@ -109,19 +152,31 @@ async function deleteDocument(doc: BuilderDocCard) {
           </div>
         </section>
         
-        <section v-else-if="!documents?.length" class="text-blue-200/60 italic">
-          No documents found. Create a new resume above.
+        <section v-else-if="!visibleDocuments.length" class="text-blue-200/60 italic">
+          {{ showFavoritesOnly ? 'No favorites yet. Star a resume or cover letter.' : 'No documents found. Create a new resume above.' }}
         </section>
 
         <section v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <NuxtLink
-            v-for="doc in documents"
+            v-for="doc in visibleDocuments"
             :key="`${doc.type}-${doc.id}`"
             :to="`/builder/${doc.type === 'cover_letter' ? 'cover-letter' : 'resume'}/${doc.id}`"
             class="group bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden flex flex-col hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:border-blue-400/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
             <div class="relative aspect-[3/4] bg-slate-800/40 p-3 overflow-hidden border-b border-white/5">
               <BuilderDocumentThumbnail :preview="doc.preview" :type="doc.type" />
+              <button
+                type="button"
+                class="absolute top-3 right-3 z-10 rounded-full bg-slate-950/70 p-1.5 text-amber-300 hover:bg-slate-950/90 disabled:opacity-40"
+                :title="doc.isFavorite ? 'Remove favorite' : 'Add favorite'"
+                :disabled="favoritingKey === `${doc.type}-${doc.id}`"
+                @click.prevent.stop="toggleFavorite(doc)"
+              >
+                <span
+                  class="material-symbols-outlined text-[18px]"
+                  :style="doc.isFavorite ? 'font-variation-settings: \'FILL\' 1' : ''"
+                >star</span>
+              </button>
             </div>
             <div class="p-4">
               <div class="flex justify-between items-start mb-2 gap-2">

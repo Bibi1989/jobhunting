@@ -144,7 +144,8 @@ export const styles = {
   contactLine: {
     fontSize: 8.5,
     color: colors.muted,
-    marginBottom: 2,
+    marginBottom: 0,
+    lineHeight: 1.35,
   },
   techPage: {
     fontFamily: 'Helvetica',

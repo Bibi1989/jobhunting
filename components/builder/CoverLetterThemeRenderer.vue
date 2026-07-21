@@ -2,18 +2,37 @@
 /**
  * Cover letter layouts aligned to Stitch style variants.
  */
-defineProps<{
+const props = defineProps<{
   templateId: string
   fullName: string
   jobTitle?: string
   location?: string
   email?: string
   phone?: string
+  linkedin?: string
+  github?: string
+  portfolio?: string
   companyName?: string
   hiringManager?: string
   letterDate: string
   bodyHtml: string
 }>()
+
+function cleanLink(url?: string) {
+  if (!url) return ''
+  return url.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '')
+}
+
+const contactParts = computed(() => {
+  const parts: string[] = []
+  if (props.location) parts.push(props.location)
+  if (props.email) parts.push(props.email)
+  if (props.phone) parts.push(props.phone)
+  if (props.linkedin) parts.push(cleanLink(props.linkedin))
+  if (props.github) parts.push(cleanLink(props.github))
+  if (props.portfolio) parts.push(cleanLink(props.portfolio))
+  return parts
+})
 </script>
 
 <template>
@@ -27,10 +46,11 @@ defineProps<{
       <h2 v-if="jobTitle" class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider">
         {{ jobTitle }}
       </h2>
-      <div class="flex justify-center flex-wrap gap-x-3 gap-y-1 text-slate-600 text-[11px] uppercase tracking-widest font-sans">
-        <span v-if="location">{{ location }}</span>
-        <span v-if="email">| {{ email }}</span>
-        <span v-if="phone">| {{ phone }}</span>
+      <div class="flex justify-center flex-wrap gap-x-2 gap-y-1 text-slate-600 text-[11px] font-sans">
+        <template v-for="(part, i) in contactParts" :key="`${part}-${i}`">
+          <span v-if="i > 0" class="text-slate-300">|</span>
+          <span>{{ part }}</span>
+        </template>
       </div>
     </header>
     <div v-if="companyName || hiringManager" class="mb-5 text-[13px] font-sans">
@@ -52,10 +72,11 @@ defineProps<{
         <p class="text-[10px] uppercase tracking-[0.25em] text-[#006a61] font-bold mb-2">Cover Letter</p>
         <h1 class="text-4xl font-black tracking-tight text-slate-900 leading-none">{{ fullName || 'Your Name' }}</h1>
         <p v-if="jobTitle" class="mt-2 text-sm text-slate-500 font-semibold">{{ jobTitle }}</p>
-        <div class="mt-3 flex flex-wrap gap-x-4 text-[11px] text-slate-500">
-          <span v-if="email">{{ email }}</span>
-          <span v-if="phone">{{ phone }}</span>
-          <span v-if="location">{{ location }}</span>
+        <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <template v-for="(part, i) in contactParts" :key="`cr-${part}-${i}`">
+            <span v-if="i > 0" class="text-slate-300">·</span>
+            <span>{{ part }}</span>
+          </template>
         </div>
       </header>
       <div v-if="companyName || hiringManager" class="mb-5 text-[13px]">
@@ -80,9 +101,7 @@ defineProps<{
           <p v-if="jobTitle" class="text-[11px] uppercase tracking-[0.15em] text-[#006a61] font-bold mt-1">{{ jobTitle }}</p>
         </div>
         <div class="text-right text-[11px] text-slate-500 font-sans space-y-0.5">
-          <div v-if="email">{{ email }}</div>
-          <div v-if="phone">{{ phone }}</div>
-          <div v-if="location">{{ location }}</div>
+          <div v-for="(part, i) in contactParts" :key="`ex-${part}-${i}`">{{ part }}</div>
         </div>
       </div>
       <div class="mt-5 grid grid-cols-[72px_1fr] gap-y-1.5 text-[12px] font-sans">
@@ -119,6 +138,18 @@ defineProps<{
         <div v-if="location">
           <p class="text-slate-500 uppercase tracking-wider text-[8px] mb-0.5">Location</p>
           <p>{{ location }}</p>
+        </div>
+        <div v-if="linkedin">
+          <p class="text-slate-500 uppercase tracking-wider text-[8px] mb-0.5">LinkedIn</p>
+          <p class="break-all">{{ cleanLink(linkedin) }}</p>
+        </div>
+        <div v-if="github">
+          <p class="text-slate-500 uppercase tracking-wider text-[8px] mb-0.5">GitHub</p>
+          <p class="break-all">{{ cleanLink(github) }}</p>
+        </div>
+        <div v-if="portfolio">
+          <p class="text-slate-500 uppercase tracking-wider text-[8px] mb-0.5">Portfolio</p>
+          <p class="break-all">{{ cleanLink(portfolio) }}</p>
         </div>
       </div>
       <div class="mt-auto text-[8px] text-slate-500 font-mono border-t border-white/10 pt-3">

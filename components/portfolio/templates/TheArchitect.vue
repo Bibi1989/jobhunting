@@ -140,8 +140,14 @@ status    : <span class="text-primary-400">operational</span></code></pre>
     </section>
 
     <template v-for="section in sections" :key="section.key">
-      <!-- Work -->
-      <section v-if="section.kind === 'projects'" id="work" class="border-t border-primary-800 bg-primary-950 px-6 py-24">
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="dark"
+      />
+      <section v-else-if="section.kind === 'projects'" id="work" class="border-t border-primary-800 bg-primary-950 px-6 py-24">
         <div class="mx-auto max-w-6xl">
           <p
             class="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary-400"
@@ -178,9 +184,7 @@ status    : <span class="text-primary-400">operational</span></code></pre>
                   <span v-else class="text-primary-500">// deployed</span>
                 </div>
                 <h3 class="text-lg font-semibold text-primary-100">{{ project.title }}</h3>
-                <p v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-400">
-                  {{ project.description }}
-                </p>
+                <PortfolioRichText v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-400" :content="project.description" />
                 <div v-if="project.tech_stack?.length" class="mt-4 flex flex-wrap gap-2">
                   <code
                     v-for="tech in project.tech_stack"

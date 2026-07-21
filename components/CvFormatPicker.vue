@@ -8,6 +8,42 @@ const cvFormats = CV_FORMATS
 const selected = computed(() => getCvFormat(model.value))
 const previewMarkdown = computed(() => buildCvFormatPreview(model.value))
 const previewHtml = computed(() => marked(previewMarkdown.value))
+
+/** Stitch themes render via ResumeThemeRenderer; others use classic markdown layout. */
+const usesThemeRenderer = computed(() => String(model.value || '').startsWith('the-'))
+
+const previewShell = ref<HTMLElement | null>(null)
+const pageScale = ref(0.42)
+let resizeObserver: ResizeObserver | null = null
+
+const PAGE_W = 794
+const PAGE_H = 1123
+
+function updateScale() {
+  const el = previewShell.value
+  if (!el || !import.meta.client) return
+  const pad = 24
+  const availW = Math.max(120, el.clientWidth - pad)
+  const availH = Math.max(160, el.clientHeight - pad)
+  pageScale.value = Math.min(availW / PAGE_W, availH / PAGE_H, 1)
+}
+
+onMounted(() => {
+  updateScale()
+  if (!import.meta.client || typeof ResizeObserver === 'undefined') return
+  resizeObserver = new ResizeObserver(() => updateScale())
+  if (previewShell.value) resizeObserver.observe(previewShell.value)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
+
+watch(model, async () => {
+  await nextTick()
+  updateScale()
+})
 </script>
 
 <template>
@@ -21,8 +57,9 @@ const previewHtml = computed(() => marked(previewMarkdown.value))
       </p>
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-2">
-      <div class="grid max-h-72 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] items-stretch">
+      <!-- Format list (scrolls independently) -->
+      <div class="grid max-h-[min(70vh,48rem)] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-1 content-start">
         <button
           v-for="format in cvFormats"
           :key="format.id"
@@ -41,15 +78,45 @@ const previewHtml = computed(() => marked(previewMarkdown.value))
         </button>
       </div>
 
-      <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
-        <div class="flex items-center justify-between border-b border-slate-800 px-3 py-2">
+      <!-- Full A4 page preview — scaled to fit, no internal scroll -->
+      <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 flex flex-col min-h-[min(70vh,48rem)] h-full">
+        <div class="flex items-center justify-between border-b border-slate-800 px-3 py-2 shrink-0">
           <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">
             Format preview
           </p>
-          <p class="truncate text-[10px] text-slate-400">{{ selected.name }}</p>
+          <p class="truncate text-[10px] text-slate-400">{{ selected.name }} · full page</p>
         </div>
-        <div class="max-h-72 overflow-y-auto bg-[#f7f4ef] p-4">
-          <div class="cv-format-preview origin-top scale-[0.92] text-[#1c1c1c]" v-html="previewHtml" />
+        <div
+          ref="previewShell"
+          class="relative flex-1 min-h-[36rem] bg-slate-900/80 flex items-center justify-center overflow-hidden p-3"
+        >
+          <div
+            class="relative shadow-2xl shadow-black/40 bg-white overflow-hidden"
+            :style="{
+              width: `${PAGE_W * pageScale}px`,
+              height: `${PAGE_H * pageScale}px`,
+            }"
+          >
+            <div
+              class="absolute top-0 left-0 origin-top-left bg-white pointer-events-none"
+              :style="{
+                width: `${PAGE_W}px`,
+                minHeight: `${PAGE_H}px`,
+                transform: `scale(${pageScale})`,
+              }"
+            >
+              <ResumeThemeRenderer
+                v-if="usesThemeRenderer"
+                :markdown="previewMarkdown"
+                :format-id="model"
+              />
+              <div
+                v-else
+                class="cv-format-preview p-10 text-[#1c1c1c]"
+                v-html="previewHtml"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -7,7 +7,11 @@ export default defineNuxtConfig({
   modules: ['nuxt-auth-utils'],
   app: {
     head: {
+      title: 'JobFlow',
+      titleTemplate: '%s · JobFlow',
       link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
@@ -18,6 +22,10 @@ export default defineNuxtConfig({
           rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
         },
+      ],
+      meta: [
+        { name: 'theme-color', content: '#0f172a' },
+        { name: 'description', content: 'JobFlow — Intelligent Job Hub' },
       ],
     },
   },
@@ -60,7 +68,7 @@ export default defineNuxtConfig({
       password: '',
     },
     public: {
-      appName: 'JobHunting',
+      appName: 'JobFlow',
       /**
        * Override with NUXT_PUBLIC_API_BACKEND=nuxt|fastapi
        * (do not bake process.env here — Nuxt must apply env overrides at runtime)

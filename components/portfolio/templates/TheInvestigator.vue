@@ -173,8 +173,16 @@ function paddedIndex(index: number) {
     <hr v-if="bioSentences.length" class="mx-auto max-w-5xl border-primary-900/15" />
 
     <template v-for="section in sections" :key="section.key">
+      
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="light"
+      />
       <section
-        v-if="section.kind === 'projects'"
+        v-else-if="section.kind === 'projects'"
         id="work"
         class="mx-auto max-w-5xl px-6 py-20"
       >
@@ -222,9 +230,7 @@ function paddedIndex(index: number) {
                       open_in_new
                     </span>
                   </div>
-                  <p class="mt-3 max-w-3xl text-base leading-[1.85] text-[#3a3a36]">
-                    {{ project.description }}
-                  </p>
+                  <PortfolioRichText class="mt-3 max-w-3xl text-base leading-[1.85] text-[#3a3a36]" :content="project.description" />
                   <div v-if="project.tech_stack && project.tech_stack.length > 0" class="mt-5">
                     <p class="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-primary-900/50">
                       Methods &amp; Tools

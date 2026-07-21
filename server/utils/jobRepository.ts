@@ -204,11 +204,11 @@ export function mapJobRow(row: {
     salaryMax: row.salary_max ? Number(row.salary_max) : undefined,
     currency: row.currency || undefined,
     url: row.url,
-    description: row.description || undefined,
+    description: row.description ?? undefined,
     descriptionSource: row.description_source || undefined,
     sourceUrl: row.source_url || undefined,
     scrapeRunId: row.scrape_run_id || undefined,
-    responsibilities: row.responsibilities || undefined,
-    requirements: row.requirements || undefined,
+    responsibilities: row.responsibilities ?? undefined,
+    requirements: row.requirements ?? undefined,
   }
 }

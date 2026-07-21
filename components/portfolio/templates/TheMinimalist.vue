@@ -132,9 +132,15 @@ function pad(index: number): string {
 
     <!-- Body sections: Work, Skills, and any custom sections, in user-controlled order -->
     <template v-for="section in sections" :key="section.key">
-      <!-- Work -->
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="dark"
+      />
       <section
-        v-if="section.kind === 'projects'"
+        v-else-if="section.kind === 'projects'"
         id="work"
         class="border-t border-white/10 px-6 py-24 sm:px-10 sm:py-32"
       >
@@ -179,9 +185,7 @@ function pad(index: number): string {
                       open_in_new
                     </span>
                   </div>
-                  <p v-if="project.description" class="mt-4 max-w-2xl text-[15px] leading-relaxed text-primary-400">
-                    {{ project.description }}
-                  </p>
+                  <PortfolioRichText v-if="project.description" class="mt-4 max-w-2xl text-[15px] leading-relaxed text-primary-400" :content="project.description" />
                   <p
                     v-if="project.tech_stack && project.tech_stack.length"
                     class="mt-5 text-xs tracking-wide text-primary-500"

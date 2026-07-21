@@ -15,6 +15,7 @@ interface ParsedResume {
   phone: string
   location: string
   linkedin: string
+  github: string
   website: string
   summary: string
   skills: string[]
@@ -69,6 +70,7 @@ const parsed = computed<ParsedResume>(() => {
     phone: '',
     location: '',
     linkedin: '',
+    github: '',
     website: '',
     summary: '',
     skills: [],
@@ -153,12 +155,14 @@ const parsed = computed<ParsedResume>(() => {
       parts.forEach(part => {
         if (part.includes('@')) {
           resume.email = part
-        } else if (part.includes('linkedin.com')) {
+        } else if (part.includes('linkedin.com') || /^in\//i.test(part)) {
           resume.linkedin = part
+        } else if (part.includes('github.com') || /^gh\//i.test(part)) {
+          resume.github = part
         } else if (part.match(/\+?\d[\d\s-()]{7,}/)) {
           resume.phone = part
-        } else if (part.includes('.com') || part.includes('.io') || part.includes('.org') || part.includes('.me')) {
-          resume.website = part
+        } else if (part.includes('.com') || part.includes('.io') || part.includes('.org') || part.includes('.me') || part.includes('.dev')) {
+          resume.website = resume.website || part
         } else {
           resume.location = part
         }
@@ -302,6 +306,14 @@ const parsed = computed<ParsedResume>(() => {
   return resume
 })
 
+const hasProfileLinks = computed(
+  () => Boolean(parsed.value.linkedin || parsed.value.github || parsed.value.website),
+)
+
+const profileLinksLabel = computed(() =>
+  [parsed.value.linkedin, parsed.value.github, parsed.value.website].filter(Boolean).join(' · '),
+)
+
 // Standard markdown fallback html
 const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
 </script>
@@ -322,7 +334,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
           <span class="flex items-center gap-1.5" v-if="parsed.email">{{ parsed.email }}</span>
           <span class="flex items-center gap-1.5" v-if="parsed.phone">{{ parsed.phone }}</span>
           <span class="flex items-center gap-1.5" v-if="parsed.location">{{ parsed.location }}</span>
-          <span class="flex items-center gap-1.5 text-indigo-300" v-if="parsed.linkedin || parsed.website">{{ parsed.linkedin || parsed.website }}</span>
+          <span class="flex items-center gap-1.5 text-indigo-300" v-if="hasProfileLinks">{{ profileLinksLabel }}</span>
         </div>
       </div>
     </header>
@@ -431,8 +443,8 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <span v-if="parsed.phone">{{ parsed.phone }}</span>
         <span class="text-slate-400" v-if="parsed.phone && parsed.email">•</span>
         <span v-if="parsed.email">{{ parsed.email }}</span>
-        <span class="text-slate-400" v-if="parsed.email && (parsed.linkedin || parsed.website)">•</span>
-        <span v-if="parsed.linkedin || parsed.website" class="text-[#006a61]">{{ parsed.linkedin || parsed.website }}</span>
+        <span class="text-slate-400" v-if="parsed.email && (hasProfileLinks)">•</span>
+        <span v-if="hasProfileLinks" class="text-[#006a61]">{{ profileLinksLabel }}</span>
       </div>
     </header>
 
@@ -553,9 +565,9 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
             <span class="w-1 h-1 mt-1.5 shrink-0 bg-slate-400 rounded-full"></span>
             <span class="break-words leading-normal">{{ parsed.location }}</span>
           </div>
-          <div class="flex items-start gap-1.5 text-[#006a61]" v-if="parsed.linkedin || parsed.website">
+          <div class="flex items-start gap-1.5 text-[#006a61]" v-if="hasProfileLinks">
             <span class="w-1 h-1 mt-1.5 shrink-0 bg-slate-400 rounded-full"></span>
-            <span class="break-all leading-normal">{{ parsed.linkedin || parsed.website }}</span>
+            <span class="break-all leading-normal">{{ profileLinksLabel }}</span>
           </div>
         </div>
       </div>
@@ -666,7 +678,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
               <li v-if="parsed.email" class="break-all leading-normal" style="color:#ffffff;overflow:visible;height:auto;list-style:none;">{{ parsed.email }}</li>
               <li v-if="parsed.phone" class="leading-normal" style="color:#ffffff;overflow:visible;height:auto;list-style:none;">{{ parsed.phone }}</li>
               <li v-if="parsed.location" class="break-words leading-normal" style="color:#ffffff;overflow:visible;height:auto;list-style:none;">{{ parsed.location }}</li>
-              <li v-if="parsed.linkedin || parsed.website" class="break-all leading-normal" style="color:#ccfbf1;overflow:visible;height:auto;list-style:none;">{{ parsed.linkedin || parsed.website }}</li>
+              <li v-if="hasProfileLinks" class="break-all leading-normal" style="color:#ccfbf1;overflow:visible;height:auto;list-style:none;">{{ profileLinksLabel }}</li>
             </ul>
           </div>
 
@@ -781,7 +793,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <span v-if="parsed.location">{{ parsed.location }}</span>
         <span v-if="parsed.phone">{{ parsed.phone }}</span>
         <span v-if="parsed.email">{{ parsed.email }}</span>
-        <span v-if="parsed.linkedin || parsed.website" class="underline text-slate-700">{{ parsed.linkedin || parsed.website }}</span>
+        <span v-if="hasProfileLinks" class="underline text-slate-700">{{ profileLinksLabel }}</span>
       </div>
     </header>
 
@@ -877,7 +889,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <span v-if="parsed.email">✉ {{ parsed.email }}</span>
         <span v-if="parsed.phone">☎ {{ parsed.phone }}</span>
         <span v-if="parsed.location">⚲ {{ parsed.location }}</span>
-        <span v-if="parsed.linkedin || parsed.website" class="text-teal-400">{{ parsed.linkedin || parsed.website }}</span>
+        <span v-if="hasProfileLinks" class="text-teal-400">{{ profileLinksLabel }}</span>
       </div>
     </header>
 
@@ -1011,7 +1023,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
               <li v-if="parsed.email" class="break-all leading-normal" style="list-style:none;overflow:visible;height:auto;">✉ {{ parsed.email }}</li>
               <li v-if="parsed.phone" class="leading-normal" style="list-style:none;overflow:visible;height:auto;">☎ {{ parsed.phone }}</li>
               <li v-if="parsed.location" class="break-words leading-normal" style="list-style:none;overflow:visible;height:auto;">⚲ {{ parsed.location }}</li>
-              <li v-if="parsed.linkedin || parsed.website" class="text-[#ff4e69] font-semibold break-all leading-normal" style="list-style:none;overflow:visible;height:auto;">{{ parsed.linkedin || parsed.website }}</li>
+              <li v-if="hasProfileLinks" class="text-[#ff4e69] font-semibold break-all leading-normal" style="list-style:none;overflow:visible;height:auto;">{{ profileLinksLabel }}</li>
             </ul>
           </section>
 
@@ -1125,7 +1137,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
           <p v-if="parsed.email">✉ {{ parsed.email }}</p>
           <p v-if="parsed.phone">☎ {{ parsed.phone }}</p>
           <p v-if="parsed.location">⚲ {{ parsed.location }}</p>
-          <p v-if="parsed.linkedin || parsed.website" class="text-[#006a61] font-semibold">{{ parsed.linkedin || parsed.website }}</p>
+          <p v-if="hasProfileLinks" class="text-[#006a61] font-semibold">{{ profileLinksLabel }}</p>
         </div>
       </div>
 
@@ -1232,7 +1244,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <span v-if="parsed.email">{{ parsed.email }}</span>
         <span v-if="parsed.phone">{{ parsed.phone }}</span>
         <span v-if="parsed.location">{{ parsed.location }}</span>
-        <span v-if="parsed.linkedin || parsed.website" class="underline text-slate-600">{{ parsed.linkedin || parsed.website }}</span>
+        <span v-if="hasProfileLinks" class="underline text-slate-600">{{ profileLinksLabel }}</span>
       </div>
     </header>
 
@@ -1331,7 +1343,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <p v-if="parsed.email">{{ parsed.email }}</p>
         <p v-if="parsed.phone">{{ parsed.phone }}</p>
         <p v-if="parsed.location">{{ parsed.location }}</p>
-        <p v-if="parsed.linkedin || parsed.website" class="underline text-slate-800">{{ parsed.linkedin || parsed.website }}</p>
+        <p v-if="hasProfileLinks" class="underline text-slate-800">{{ profileLinksLabel }}</p>
       </div>
     </header>
 
@@ -1429,7 +1441,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <span v-if="parsed.email">{{ parsed.email }}</span>
         <span v-if="parsed.phone">{{ parsed.phone }}</span>
         <span v-if="parsed.location">{{ parsed.location }}</span>
-        <span v-if="parsed.linkedin || parsed.website" class="underline text-slate-600">{{ parsed.linkedin || parsed.website }}</span>
+        <span v-if="hasProfileLinks" class="underline text-slate-600">{{ profileLinksLabel }}</span>
       </div>
       <p class="text-[9.5px] uppercase tracking-wider text-slate-400 font-bold mt-2 select-none">{{ parsed.title }}</p>
     </header>
@@ -1523,7 +1535,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         <div class="flex flex-wrap gap-3 text-[9.5px] text-slate-500 mt-2 font-medium">
           <span v-if="parsed.email">✉ {{ parsed.email }}</span>
           <span v-if="parsed.location">⚲ {{ parsed.location }}</span>
-          <span v-if="parsed.linkedin || parsed.website" class="text-[#006a61]">{{ parsed.linkedin || parsed.website }}</span>
+          <span v-if="hasProfileLinks" class="text-[#006a61]">{{ profileLinksLabel }}</span>
         </div>
       </header>
 

@@ -75,11 +75,12 @@ function buildCoverLetterPreview(data: BuilderResumeData): BuilderDocumentPrevie
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
   const result = await query(
-    `SELECT id, doc_type, original_name, updated_at, content_text
+    `SELECT id, doc_type, original_name, updated_at, content_text,
+            COALESCE(is_favorite, FALSE) AS is_favorite
      FROM user_documents
      WHERE mime_type = 'application/json'
        AND user_id = $1
-     ORDER BY updated_at DESC`,
+     ORDER BY is_favorite DESC, updated_at DESC`,
     [user.id],
   )
 
@@ -89,6 +90,7 @@ export default defineEventHandler(async (event) => {
     name: string
     updatedAt: string
     templateId: string
+    isFavorite: boolean
     preview: BuilderDocumentPreview | null
   }> = []
 
@@ -109,6 +111,7 @@ export default defineEventHandler(async (event) => {
       name: row.original_name,
       updatedAt: row.updated_at,
       templateId,
+      isFavorite: Boolean(row.is_favorite),
       preview: parsed
         ? isCover
           ? buildCoverLetterPreview(parsed)
@@ -127,10 +130,17 @@ export default defineEventHandler(async (event) => {
           : `${row.original_name.replace(/\s+resume$/i, '').trim() || row.original_name} · Cover Letter`,
         updatedAt: row.updated_at,
         templateId,
+        isFavorite: Boolean(parsed.coverLetter?.isFavorite),
         preview: buildCoverLetterPreview(parsed),
       })
     }
   }
+
+  // Favorites first across synthetic + real rows, then by updatedAt
+  documents.sort((a, b) => {
+    if (a.isFavorite !== b.isFavorite) return a.isFavorite ? -1 : 1
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  })
 
   return documents
 })

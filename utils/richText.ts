@@ -107,6 +107,11 @@ export function normalizeBulletListHtml(html?: string | null): string {
   source = source.replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim()
   if (!source) return ''
 
+  // Plain text (including "- bullet" lines) → list HTML
+  if (!/<[a-z][\s\S]*>/i.test(source)) {
+    return bulletTextToHtml(source)
+  }
+
   // Quill chrome
   source = source.replace(/<span[^>]*class="[^"]*ql-ui[^"]*"[^>]*><\/span>/gi, '')
   source = source.replace(/<ol([^>]*)>([\s\S]*?)<\/ol>/gi, (_m, _a, inner: string) => {
@@ -125,14 +130,14 @@ export function normalizeBulletListHtml(html?: string | null): string {
     const items = liMatches
       .map((m) => sanitizeInlineHtml(m[1]))
       .map((item) => item.replace(/^[-*•●▪◦]\s+/, '').trim())
-      .filter(Boolean)
+      .filter((item) => item && item !== '<br>')
     if (!items.length) return ''
     return `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
   }
 
   // Paragraph / plain → bullets, preserve inline tags per block
   const chunks = source
-    .split(/<\/(?:p|div|h[1-6])>|<br\s*\/?>/gi)
+    .split(/<\/(?:p|div|h[1-6])>|<br\s*\/?>|\n+/gi)
     .map((chunk) => sanitizeInlineHtml(chunk.replace(/<[^>]+>/g, (tag) => (/^<\/?(?:strong|em|u|b|i)\b/i.test(tag) ? tag : ''))))
     .map((chunk) => chunk.replace(/^[-*•●▪◦]\s+/, '').trim())
     .filter(Boolean)
@@ -200,13 +205,51 @@ export function prepareEditorHtml(html?: string | null): string {
       .map((line) => line.replace(/^[-*•●▪◦]\s*/, '').trim())
       .filter(Boolean)
     if (lines.length > 1) {
-      text = `<ul>${lines.map((line) => `<li>${line}</li>`).join('')}</ul>`
+      text = `<ul>${lines.map((line) => `<li>${escapeHtmlText(line)}</li>`).join('')}</ul>`
     } else {
-      text = `<p>${text.replace(/^[-*•●▪◦]\s*/, '')}</p>`
+      text = `<p>${escapeHtmlText(text.replace(/^[-*•●▪◦]\s*/, ''))}</p>`
     }
   }
 
   return sanitizeRichTextHtml(text)
+}
+
+/**
+ * Quill 2 expects bullet lists as <ol><li data-list="bullet">…</li></ol>.
+ * Stored / preview HTML uses real <ul>, so convert before pasting into the editor.
+ */
+export function toQuillEditorHtml(html?: string | null): string {
+  let out = prepareEditorHtml(html)
+  if (!out) return ''
+
+  out = out.replace(/<ul\b[^>]*>([\s\S]*?)<\/ul>/gi, (_match, inner: string) => {
+    const items = [...String(inner).matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+    if (!items.length) return _match
+    const lis = items
+      .map((m) => {
+        const body = String(m[1] || '').trim() || '<br>'
+        // Avoid nesting data-list if already Quill-shaped
+        if (/data-list\s*=/i.test(String(m[0] || ''))) {
+          return `<li data-list="bullet">${body}</li>`
+        }
+        return `<li data-list="bullet">${body}</li>`
+      })
+      .join('')
+    return `<ol>${lis}</ol>`
+  })
+
+  // Ordered lists without Quill attrs → data-list="ordered"
+  out = out.replace(/<ol\b(?![^>]*data-list)[^>]*>([\s\S]*?)<\/ol>/gi, (match, inner: string) => {
+    if (/data-list\s*=/i.test(inner)) return match
+    const items = [...String(inner).matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+    if (!items.length) return match
+    const lis = items
+      .map((m) => `<li data-list="ordered">${String(m[1] || '').trim() || '<br>'}</li>`)
+      .join('')
+    return `<ol>${lis}</ol>`
+  })
+
+  return out
 }
 
 export function formatResumeDateRange(

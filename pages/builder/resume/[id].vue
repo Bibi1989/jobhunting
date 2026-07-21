@@ -16,7 +16,7 @@ import {
   withLayoutState,
   type ResumeSectionId,
 } from '~/shared/pdf/schema'
-import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
+import { loadBuilderJobPrefill, parseResumeTextToBuilder, consumeApplyPrefill } from '~/utils/builderJobPrefill'
 import { extractKeywordsFromText } from '~/utils/keywordExtractor'
 
 const toast = useAppToast()
@@ -382,9 +382,9 @@ async function draftResumeWithAi() {
       next.templateSlug = next.templateId
       next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
       next.targetJobDescription =
-          next.targetJobDescription ?? resumeData.value.targetJobDescription
+        next.targetJobDescription || resumeData.value.targetJobDescription || ''
       next.additionalInstructions =
-          next.additionalInstructions ?? resumeData.value.additionalInstructions
+        next.additionalInstructions || resumeData.value.additionalInstructions || ''
       if (alsoGenerateCoverLetter.value) {
         toast.info('Drafting cover letter…')
         try {
@@ -492,6 +492,53 @@ function triggerDraftUpload() {
   draftFileInput.value?.click()
 }
 
+async function importResumeFile(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('type', 'resume')
+
+  toast.info('Uploading resume…')
+  const docRes = await $fetch<{ document: { contentText: string; originalName?: string } }>(
+    '/api/documents',
+    { method: 'POST', body: formData },
+  )
+
+  if (!docRes.document?.contentText) {
+    throw new Error('Could not extract text from document')
+  }
+
+  rawResumeText.value = docRes.document.contentText
+  uploadedResumeName.value = docRes.document.originalName || file.name
+
+  toast.info('Parsing resume…')
+  const parseRes = await $fetch<{ resumeData: BuilderResumeData }>('/api/ai/parse-resume', {
+    method: 'POST',
+    body: { text: docRes.document.contentText },
+  })
+
+  if (parseRes.resumeData) {
+    const oldTemplateId = resumeData.value.templateId
+    const oldOrder = resumeData.value.sectionsOrder
+    const oldLanguage = resumeData.value.language
+    const oldJd = resumeData.value.targetJobDescription
+    const oldInstructions = resumeData.value.additionalInstructions
+
+    const next = withLayoutState({
+      ...parseRes.resumeData,
+      templateId: oldTemplateId,
+      templateSlug: oldTemplateId,
+      sectionsOrder: oldOrder,
+      language: oldLanguage,
+      targetJobDescription: oldJd,
+      additionalInstructions: oldInstructions,
+      name: resumeData.value.name,
+    })
+    resumeData.value = next
+    atsResult.value = null
+    await refreshCredits()
+  }
+}
+
 async function handleDraftResumeUpload(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
@@ -501,50 +548,8 @@ async function handleDraftResumeUpload(e: Event) {
 
   importing.value = true
   try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', 'resume')
-
-    toast.info('Uploading resume…')
-    const docRes = await $fetch<{ document: { contentText: string; originalName?: string } }>(
-      '/api/documents',
-      { method: 'POST', body: formData },
-    )
-
-    if (!docRes.document?.contentText) {
-      throw new Error('Could not extract text from document')
-    }
-
-    rawResumeText.value = docRes.document.contentText
-    uploadedResumeName.value = docRes.document.originalName || file.name
-
-    toast.info('Parsing resume…')
-    const parseRes = await $fetch<{ resumeData: BuilderResumeData }>('/api/ai/parse-resume', {
-      method: 'POST',
-      body: { text: docRes.document.contentText },
-    })
-
-    if (parseRes.resumeData) {
-      const oldTemplateId = resumeData.value.templateId
-      const oldOrder = resumeData.value.sectionsOrder
-      const oldLanguage = resumeData.value.language
-      const oldJd = resumeData.value.targetJobDescription
-      const oldInstructions = resumeData.value.additionalInstructions
-
-      const next = withLayoutState({
-        ...parseRes.resumeData,
-        templateId: oldTemplateId,
-        templateSlug: oldTemplateId,
-        sectionsOrder: oldOrder,
-        language: oldLanguage,
-        targetJobDescription: oldJd,
-        additionalInstructions: oldInstructions,
-      })
-      resumeData.value = next
-      atsResult.value = null
-      toast.success('Resume loaded — draft with it alone or add a job description.')
-      await refreshCredits()
-    }
+    await importResumeFile(file)
+    toast.success('Resume loaded — draft with it alone or add a job description.')
   } catch (err: unknown) {
     console.error(err)
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
@@ -763,6 +768,8 @@ onMounted(async () => {
         achievements: data.achievements || [],
         customSections: data.customSections || [],
         skills: data.skills || [],
+        targetJobDescription: data.targetJobDescription || '',
+        additionalInstructions: data.additionalInstructions || '',
       })
       await fetchVersions()
     } catch (e) {
@@ -783,11 +790,98 @@ onMounted(async () => {
 })
 
 async function applyJobPrefillFromRoute() {
+  const fromApply = String(route.query.from || '') === 'apply'
   const jobId = route.query.jobId
-  if (!jobId) return
+
+  if (!fromApply && !jobId) return
 
   loading.value = true
   try {
+    if (fromApply) {
+      const prefill = consumeApplyPrefill()
+      if (!prefill?.description && !prefill?.resumeFile) {
+        // Fallback: latest uploaded resume + empty JD still opens Target Role
+        const docs = await $fetch<{
+          resume: { contentText?: string; originalName?: string } | null
+        }>('/api/documents').catch(() => ({ resume: null }))
+        if (docs.resume?.contentText && docs.resume.contentText.trim().length > 40) {
+          rawResumeText.value = docs.resume.contentText.trim()
+          uploadedResumeName.value = docs.resume.originalName || 'Uploaded resume'
+        }
+        activeTab.value = 'targetRole'
+        toast.info('Add a job description to tailor your resume.')
+        return
+      }
+
+      if (prefill.description) {
+        resumeData.value.targetJobDescription = prefill.description
+      }
+      if (prefill.title && !resumeData.value.personalInfo.jobTitle?.trim()) {
+        resumeData.value.personalInfo.jobTitle = prefill.title
+      }
+      if (prefill.title) {
+        if (resumeId === 'new' || resumeData.value.name === 'My New Resume') {
+          resumeData.value.name = `${prefill.title} Resume`
+        }
+      }
+
+      if (prefill.resumeFile) {
+        importing.value = true
+        try {
+          await importResumeFile(prefill.resumeFile)
+        } catch (err) {
+          console.error(err)
+          toast.info('Job description loaded. Upload your CV again if import failed.')
+        } finally {
+          importing.value = false
+        }
+      } else if (prefill.resumeName) {
+        // File lost after refresh — try latest uploaded document
+        const docs = await $fetch<{
+          resume: { contentText?: string; originalName?: string } | null
+        }>('/api/documents').catch(() => ({ resume: null }))
+        if (docs.resume?.contentText && docs.resume.contentText.trim().length > 40) {
+          rawResumeText.value = docs.resume.contentText.trim()
+          uploadedResumeName.value = docs.resume.originalName || prefill.resumeName
+          try {
+            const parsed = await parseResumeTextToBuilder(rawResumeText.value)
+            if (parsed) {
+              const oldTemplateId = resumeData.value.templateId
+              const oldOrder = resumeData.value.sectionsOrder
+              const oldLanguage = resumeData.value.language
+              const oldJd = resumeData.value.targetJobDescription
+              const oldInstructions = resumeData.value.additionalInstructions
+              resumeData.value = withLayoutState({
+                ...parsed,
+                templateId: oldTemplateId,
+                templateSlug: oldTemplateId,
+                sectionsOrder: oldOrder,
+                language: oldLanguage,
+                targetJobDescription: oldJd || prefill.description,
+                additionalInstructions: oldInstructions,
+                name: resumeData.value.name,
+              } as BuilderResumeData)
+              if (prefill.title) {
+                resumeData.value.personalInfo.jobTitle =
+                  resumeData.value.personalInfo.jobTitle || prefill.title
+              }
+              await refreshCredits()
+            }
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      }
+
+      activeTab.value = 'targetRole'
+      toast.success(
+        prefill.resumeFile || uploadedResumeName.value
+          ? 'Job description and resume loaded into Target Role.'
+          : 'Job description loaded. Upload a CV or draft from the description.',
+      )
+      return
+    }
+
     const prefill = await loadBuilderJobPrefill(jobId)
     if (!prefill) return
 
@@ -1159,7 +1253,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         >
           <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
         </button>
-        <NuxtLink to="/" class="font-serif text-lg sm:text-2xl text-white font-bold hover:text-blue-300 transition-colors truncate">ScrapeEngine</NuxtLink>
+        <AppLogo size="sm" :show-tagline="false" class="truncate" />
         <nav class="hidden lg:flex gap-6 items-center">
           <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
           <NuxtLink to="/builder/templates" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">Templates</NuxtLink>
@@ -1405,11 +1499,21 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">LinkedIn</label>
-                  <input v-model="resumeData.personalInfo.linkedin" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
+                  <input
+                    v-model="resumeData.personalInfo.linkedin"
+                    type="text"
+                    placeholder="linkedin.com/in/you"
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
+                  />
                 </div>
                 <div class="flex flex-col">
                   <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">GitHub</label>
-                  <input v-model="resumeData.personalInfo.github" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
+                  <input
+                    v-model="resumeData.personalInfo.github"
+                    type="text"
+                    placeholder="github.com/you"
+                    class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
+                  />
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

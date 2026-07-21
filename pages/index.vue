@@ -251,17 +251,7 @@ function hideHistoryDropdown() {
       <header class="shrink-0 border-b border-slate-900 pb-4 mb-4 md:mb-6">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 shrink-0 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-bold text-xl glowing-logo text-white select-none">
-              S
-            </div>
-            <div class="min-w-0">
-              <h1 class="text-xl md:text-2xl font-extrabold tracking-tight truncate">
-                Scrape<span class="text-gradient">Engine</span>
-              </h1>
-              <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest -mt-1 hidden sm:block">
-                Intelligent Job Hub v5.0
-              </p>
-            </div>
+            <AppLogo />
           </div>
 
           <div class="hidden lg:flex flex-wrap gap-2 items-center justify-end">

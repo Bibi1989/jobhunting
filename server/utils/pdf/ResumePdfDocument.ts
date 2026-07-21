@@ -4,7 +4,7 @@
  * plus sectionsOrder for draw order.
  */
 import React from 'react'
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, View, Text, StyleSheet, Link } from '@react-pdf/renderer'
 import type { BuilderResumeData } from '~/shared/types/builder'
 import {
   normalizeSectionsOrder,
@@ -16,6 +16,7 @@ import {
 import { getPdfTemplateProfile, type PdfTemplateProfile, type PdfTemplateTheme } from '~/shared/pdf/templates'
 import { styles as tokenStyles } from '~/shared/pdf/tokens'
 import { cleanDescriptionHtml, formatDateRange, htmlToBlocks, htmlToInlineRuns, stripHtmlToPlain } from '~/shared/pdf/text'
+import { buildContactEntries, type ContactEntry } from '~/shared/pdf/contact'
 
 function sx(...parts: Array<object | false | null | undefined>): any {
   return parts.filter(Boolean)
@@ -448,6 +449,83 @@ function renderOrderedSection(
   }
 }
 
+function ContactItem({
+  entry,
+  style,
+  linkColor,
+}: {
+  entry: ContactEntry
+  style: any
+  linkColor?: string
+}) {
+  const linkStyle = entry.href
+    ? sx(style, {
+        color: linkColor || style?.color,
+        textDecoration: 'none',
+      })
+    : style
+
+  if (entry.href) {
+    return React.createElement(Link, { src: entry.href, style: linkStyle }, entry.display)
+  }
+  return React.createElement(Text, { style }, entry.display)
+}
+
+function ContactRow({
+  entries,
+  t,
+  centered = false,
+  separator = '·',
+  linkColor,
+}: {
+  entries: ContactEntry[]
+  t: T
+  centered?: boolean
+  separator?: string
+  linkColor?: string
+}) {
+  if (!entries.length) return null
+
+  const lineStyle = sx(t.contactLine, {
+    textAlign: centered ? 'center' : 'left',
+    marginBottom: 0,
+  })
+  const sepStyle = sx(lineStyle, {
+    marginHorizontal: 5,
+    color: t.muted?.color || t.contactLine?.color,
+  })
+
+  return React.createElement(
+    View,
+    {
+      style: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: centered ? 'center' : 'flex-start',
+        alignItems: 'center',
+        marginTop: 2,
+        marginBottom: 2,
+      },
+    },
+    ...entries.flatMap((entry, i) => {
+      const els: React.ReactElement[] = [
+        React.createElement(ContactItem, {
+          key: `c-${entry.kind}-${i}`,
+          entry,
+          style: lineStyle,
+          linkColor,
+        }),
+      ]
+      if (i < entries.length - 1) {
+        els.push(
+          React.createElement(Text, { key: `s-${i}`, style: sepStyle }, separator),
+        )
+      }
+      return els
+    }),
+  )
+}
+
 function HeaderBlock({
   data,
   t,
@@ -458,29 +536,47 @@ function HeaderBlock({
   centered?: boolean
 }) {
   const p = data.personalInfo
+  const entries = buildContactEntries(p)
+  const linkColor = t.subtitle?.color || t.h2?.color
+
+  if (centered) {
+    return React.createElement(
+      View,
+      {
+        wrap: false,
+        style: { marginBottom: 10, alignItems: 'center' },
+      },
+      React.createElement(Text, { style: sx(t.h1, { textAlign: 'center' }) }, p.fullName || data.name || 'Resume'),
+      p.jobTitle
+        ? React.createElement(Text, { style: sx(t.subtitle, { textAlign: 'center', marginBottom: 6 }) }, p.jobTitle)
+        : null,
+      React.createElement(ContactRow, {
+        entries,
+        t,
+        centered: true,
+        separator: '|',
+        linkColor,
+      }),
+    )
+  }
+
   return React.createElement(
     View,
     {
       wrap: false,
-      style: centered ? { marginBottom: 10, alignItems: 'center' } : { marginBottom: 8 },
+      style: { marginBottom: 10 },
     },
-    React.createElement(Text, { style: sx(t.h1, centered && { textAlign: 'center' }) }, p.fullName || data.name || 'Resume'),
+    React.createElement(Text, { style: t.h1 }, p.fullName || data.name || 'Resume'),
     p.jobTitle
-      ? React.createElement(Text, { style: sx(t.subtitle, centered && { textAlign: 'center' }) }, p.jobTitle)
+      ? React.createElement(Text, { style: sx(t.subtitle, { marginBottom: 6 }) }, p.jobTitle)
       : null,
-    centered
-      ? React.createElement(
-          Text,
-          { style: sx(t.contactLine, { textAlign: 'center' }) },
-          [p.email, p.phone, p.location, p.linkedin].filter(Boolean).join('  |  '),
-        )
-      : React.createElement(
-          View,
-          null,
-          ...[p.email, p.phone, p.location, p.linkedin || p.portfolio || p.github]
-            .filter(Boolean)
-            .map((line, i) => React.createElement(Text, { key: `c-${i}`, style: t.contactLine }, String(line))),
-        ),
+    React.createElement(ContactRow, {
+      entries,
+      t,
+      centered: false,
+      separator: '·',
+      linkColor,
+    }),
   )
 }
 
@@ -580,6 +676,40 @@ function TechResume({
   const p = data.personalInfo
   const sideIds = order.filter((id) => id === 'skills' || id === 'education')
   const mainIds = order.filter((id) => id !== 'skills' && id !== 'education')
+  const contactEntries = buildContactEntries(p)
+
+  const sidebarContact = contactEntries.map((entry, i) => {
+    const valueNode = entry.href
+      ? React.createElement(
+          Link,
+          {
+            src: entry.href,
+            style: sx(t.techText, { textDecoration: 'none', marginBottom: 8 }),
+          },
+          entry.display,
+        )
+      : React.createElement(Text, { style: sx(t.techText, { marginBottom: 8 }) }, entry.display)
+
+    return React.createElement(
+      View,
+      { key: `sc-${entry.kind}-${i}`, style: { marginBottom: 2 } },
+      React.createElement(
+        Text,
+        {
+          style: sx(t.techHeading, {
+            marginTop: i === 0 ? 0 : 6,
+            marginBottom: 2,
+            borderBottomWidth: 0,
+            paddingBottom: 0,
+            fontSize: 7,
+            letterSpacing: 1.1,
+          }),
+        },
+        entry.label,
+      ),
+      valueNode,
+    )
+  })
 
   const sidebar = React.createElement(
     View,
@@ -596,9 +726,7 @@ function TechResume({
     React.createElement(Text, { style: t.techName }, p.fullName || data.name || 'Resume'),
     p.jobTitle ? React.createElement(Text, { style: t.techRole }, p.jobTitle) : null,
     React.createElement(Text, { style: t.techHeading }, 'Contact'),
-    ...[p.email, p.phone, p.location, p.linkedin || p.portfolio || p.github]
-      .filter(Boolean)
-      .map((line, i) => React.createElement(Text, { key: `sc-${i}`, style: t.techText }, String(line))),
+    ...sidebarContact,
     ...sideIds.map((id) => renderOrderedSection(data, id, theme, t, { techLight: true })).filter(Boolean),
   )
 

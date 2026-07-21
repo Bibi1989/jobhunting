@@ -1,6 +1,6 @@
 import { createGeminiClient, generateWithModels, resolveGeminiModelChain } from './gemini'
 import { careerExpertGenerateConfig } from './careerExpertPrompt'
-import type { PortfolioProfileData, PortfolioProject } from '~/shared/types/portfolio'
+import type { PortfolioExperience, PortfolioProfileData, PortfolioProject } from '~/shared/types/portfolio'
 
 /**
  * Parse a CV / cover-letter's raw text into structured portfolio data using the
@@ -19,7 +19,20 @@ Return ONLY JSON (no markdown fences) matching exactly this shape:
   "website": string,                 // personal site if present, else ""
   "linkedin": string,                // LinkedIn URL or handle if present, else ""
   "github": string,                  // GitHub URL or handle if present, else ""
-  "formatted_projects": [            // real projects/roles from the document, most impressive first
+  "formatted_experience": [          // employment / roles only — NOT side projects
+    {
+      "title": string,
+      "company": string,
+      "location": string,
+      "start_date": string,
+      "end_date": string,
+      "is_current": boolean,
+      "description": string,
+      "tech_stack": string[],
+      "highlights": string[]
+    }
+  ],
+  "formatted_projects": [            // portfolio/case-study projects only — NOT job roles
     { "title": string, "description": string, "tech_stack": string[], "url": string }
   ],
   "core_skills": string[]            // 6-15 concise skills
@@ -27,18 +40,20 @@ Return ONLY JSON (no markdown fences) matching exactly this shape:
 
 Rules:
 - Use only facts present in the document. Never invent employers, titles, metrics, or contact details.
+- Keep employment history in formatted_experience and showcase/side projects in formatted_projects. Do not mix them.
 - If a contact field is missing, use an empty string.
 - If the name is unclear, use "Candidate".
 - Never use em dashes; use commas.
-- tech_stack must be an array of short strings (may be empty).
-- url on projects may be empty when no link exists.`
+- tech_stack must be an array of short strings (may be empty) on both experience and projects.
+- url on projects may be empty when no link exists.
+- highlights may be an empty array.`
 
 function buildPrompt(documentText: string, jobDescription?: string): string {
   const jd = jobDescription?.trim()
   const jdBlock = jd
     ? `
 
-Optional target job description — emphasize skills and projects that align with this role (still do not invent facts):
+Optional target job description — emphasize skills, experience, and projects that align with this role (still do not invent facts):
 """
 ${jd.slice(0, 8000)}
 """
@@ -95,6 +110,29 @@ function normalizeProfileData(input: unknown): PortfolioProfileData {
       })
     : []
 
+  const experience: PortfolioExperience[] = Array.isArray(obj.formatted_experience)
+    ? obj.formatted_experience.slice(0, 12).map((e) => {
+        const role = (e ?? {}) as Record<string, unknown>
+        const highlights = Array.isArray(role.highlights)
+          ? role.highlights.map(String).filter(Boolean).slice(0, 12)
+          : []
+        const tech_stack = Array.isArray(role.tech_stack)
+          ? role.tech_stack.map(String).filter(Boolean).slice(0, 20)
+          : []
+        return {
+          title: String(role.title || 'Role'),
+          company: String(role.company || ''),
+          location: String(role.location || '').trim() || undefined,
+          start_date: String(role.start_date || '').trim() || undefined,
+          end_date: String(role.end_date || '').trim() || undefined,
+          is_current: Boolean(role.is_current),
+          description: String(role.description || ''),
+          ...(tech_stack.length ? { tech_stack } : {}),
+          ...(highlights.length ? { highlights } : {}),
+        }
+      })
+    : []
+
   const optional = (key: string) => {
     const value = String(obj[key] || '').trim()
     return value || undefined
@@ -104,6 +142,7 @@ function normalizeProfileData(input: unknown): PortfolioProfileData {
     full_name: String(obj.full_name || 'Candidate'),
     professional_bio: String(obj.professional_bio || ''),
     formatted_projects: projects,
+    ...(experience.length ? { formatted_experience: experience } : {}),
     core_skills: Array.isArray(obj.core_skills) ? obj.core_skills.map(String).slice(0, 20) : [],
     email: optional('email'),
     phone: optional('phone'),
@@ -111,6 +150,7 @@ function normalizeProfileData(input: unknown): PortfolioProfileData {
     website: optional('website'),
     linkedin: optional('linkedin'),
     github: optional('github'),
+    section_order: ['experience', 'projects', 'skills'],
   }
 }
 

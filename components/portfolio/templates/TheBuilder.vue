@@ -160,8 +160,16 @@ const gridStyle = {
 
     <!-- Ordered body sections (projects / skills / custom) -->
     <template v-for="section in sections" :key="section.key">
+      
+      <!-- Experience -->
+      <PortfolioExperienceSection
+        v-if="section.kind === 'experience'"
+        :title="section.title"
+        :items="data.formatted_experience || []"
+        tone="dark"
+      />
       <section
-        v-if="section.kind === 'projects'"
+        v-else-if="section.kind === 'projects'"
         id="work"
         class="border-t border-primary-500/20 bg-primary-950 px-6 py-24"
       >
@@ -203,9 +211,7 @@ const gridStyle = {
                   <span v-else>build</span>
                 </div>
                 <h3 class="text-lg font-semibold text-primary-100">{{ project.title }}</h3>
-                <p v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-400">
-                  {{ project.description }}
-                </p>
+                <PortfolioRichText v-if="project.description" class="mt-2 text-sm leading-relaxed text-primary-400" :content="project.description" />
                 <div v-if="project.tech_stack?.length" class="mt-4 flex flex-wrap gap-2">
                   <code
                     v-for="tech in project.tech_stack"

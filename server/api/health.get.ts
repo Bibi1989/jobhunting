@@ -3,6 +3,6 @@ export default defineEventHandler(() => {
   return {
     ok: true,
     backend: 'nuxt',
-    app: 'JobFlow AI',
+    app: 'JobFlow',
   }
 })

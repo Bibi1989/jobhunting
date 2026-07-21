@@ -55,9 +55,7 @@ watch(
         >
           <span class="material-symbols-outlined">{{ mobileOpen ? 'close' : 'menu' }}</span>
         </button>
-        <NuxtLink to="/" class="font-serif text-xl sm:text-2xl text-white font-bold tracking-wide hover:text-blue-300 transition-colors">
-          ScrapeEngine
-        </NuxtLink>
+        <AppLogo size="sm" :show-tagline="false" />
         <nav class="hidden lg:flex gap-6 items-center h-full">
           <NuxtLink
             v-for="item in topNav"

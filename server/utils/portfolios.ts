@@ -2,6 +2,7 @@ import { query } from './db'
 import type {
   Portfolio,
   PortfolioCustomSection,
+  PortfolioExperience,
   PortfolioProfileData,
   PortfolioProject,
 } from '~/shared/types/portfolio'
@@ -23,11 +24,33 @@ export function sanitizeProfileData(input: unknown): PortfolioProfileData {
         const project = (p ?? {}) as Record<string, unknown>
         return {
           title: String(project.title || '').slice(0, 200),
-          description: String(project.description || '').slice(0, 2000),
+          description: String(project.description || '').slice(0, 8000),
           tech_stack: Array.isArray(project.tech_stack)
             ? project.tech_stack.map((t) => String(t).slice(0, 60)).filter(Boolean).slice(0, 30)
             : [],
           url: optionalString(project.url),
+        }
+      })
+    : []
+
+  const experience: PortfolioExperience[] = Array.isArray(obj.formatted_experience)
+    ? obj.formatted_experience.slice(0, 24).map((e) => {
+        const role = (e ?? {}) as Record<string, unknown>
+        const tech = Array.isArray(role.tech_stack)
+          ? role.tech_stack.map((t) => String(t).slice(0, 60)).filter(Boolean).slice(0, 30)
+          : []
+        return {
+          title: String(role.title || '').slice(0, 200),
+          company: String(role.company || '').slice(0, 200),
+          location: optionalString(role.location)?.slice(0, 120),
+          start_date: optionalString(role.start_date)?.slice(0, 40),
+          end_date: optionalString(role.end_date)?.slice(0, 40),
+          is_current: Boolean(role.is_current),
+          description: String(role.description || '').slice(0, 8000),
+          ...(tech.length ? { tech_stack: tech } : {}),
+          highlights: Array.isArray(role.highlights)
+            ? role.highlights.map((h) => String(h).slice(0, 300)).filter(Boolean).slice(0, 12)
+            : undefined,
         }
       })
     : []
@@ -55,6 +78,7 @@ export function sanitizeProfileData(input: unknown): PortfolioProfileData {
     full_name: String(obj.full_name || 'Candidate').slice(0, 160),
     professional_bio: String(obj.professional_bio || '').slice(0, 4000),
     formatted_projects: projects,
+    ...(experience.length ? { formatted_experience: experience } : {}),
     core_skills: Array.isArray(obj.core_skills)
       ? obj.core_skills.map((s) => String(s).slice(0, 60)).filter(Boolean).slice(0, 40)
       : [],
@@ -68,6 +92,7 @@ export function sanitizeProfileData(input: unknown): PortfolioProfileData {
     theme_color: optionalString(obj.theme_color),
     section_titles: sectionTitles ? {
       projects: optionalString(sectionTitles.projects),
+      experience: optionalString(sectionTitles.experience),
       skills: optionalString(sectionTitles.skills),
       profile: optionalString(sectionTitles.profile),
     } : undefined,
@@ -75,6 +100,7 @@ export function sanitizeProfileData(input: unknown): PortfolioProfileData {
       hero_cta: optionalString(buttonTexts.hero_cta),
       contact_cta: optionalString(buttonTexts.contact_cta),
       nav_projects: optionalString(buttonTexts.nav_projects),
+      nav_experience: optionalString(buttonTexts.nav_experience),
       nav_skills: optionalString(buttonTexts.nav_skills),
       nav_contact: optionalString(buttonTexts.nav_contact),
     } : undefined,
@@ -89,6 +115,7 @@ type PortfolioRow = {
   template_slug: string
   profile_data: PortfolioProfileData
   created_at: Date
+  is_favorite?: boolean
 }
 
 function mapPortfolio(row: PortfolioRow): Portfolio {
@@ -103,6 +130,7 @@ function mapPortfolio(row: PortfolioRow): Portfolio {
         : row.profile_data,
     createdAt:
       row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+    isFavorite: Boolean(row.is_favorite),
   }
 }
 
@@ -122,7 +150,9 @@ export async function createPortfolio(input: {
 
 export async function listPortfoliosByUser(userId: string): Promise<Portfolio[]> {
   const result = await query<PortfolioRow>(
-    `SELECT * FROM portfolios WHERE user_id = $1 ORDER BY created_at DESC`,
+    `SELECT * FROM portfolios
+     WHERE user_id = $1
+     ORDER BY is_favorite DESC, created_at DESC`,
     [userId],
   )
   return result.rows.map(mapPortfolio)
@@ -152,6 +182,21 @@ export async function updatePortfolioForUser(
      WHERE id = $1 AND user_id = $2
      RETURNING *`,
     [id, userId, input.templateSlug, JSON.stringify(input.profileData)],
+  )
+  return result.rows[0] ? mapPortfolio(result.rows[0]) : null
+}
+
+export async function setPortfolioFavoriteForUser(
+  id: string,
+  userId: string,
+  isFavorite: boolean,
+): Promise<Portfolio | null> {
+  const result = await query<PortfolioRow>(
+    `UPDATE portfolios
+     SET is_favorite = $3
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
+    [id, userId, isFavorite],
   )
   return result.rows[0] ? mapPortfolio(result.rows[0]) : null
 }

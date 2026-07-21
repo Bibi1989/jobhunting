@@ -88,6 +88,8 @@ export interface BuilderCoverLetter {
   /** Extra instructions for AI Enhance (e.g. keep to one page) */
   additionalInstructions?: string
   content: string
+  /** Starred in the builder workspace (embedded cover letters). */
+  isFavorite?: boolean
 }
 
 /** Ordered content blocks drawn by both the preview canvas and PDF download. */
