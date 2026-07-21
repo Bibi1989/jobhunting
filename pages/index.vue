@@ -50,7 +50,7 @@ const { loggedIn, logout } = useSaaS()
         <div class="flex items-center gap-4">
           <NuxtLink to="/pricing" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pricing</NuxtLink>
           <template v-if="loggedIn">
-            <NuxtLink to="/scraper" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Dashboard</NuxtLink>
+            <NuxtLink to="/scraper" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Job Scraper</NuxtLink>
             <button @click="logout" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Sign out</button>
             <NuxtLink to="/builder" class="px-4 py-2 bg-white text-slate-950 hover:bg-slate-200 text-sm font-bold rounded-xl transition-all shadow-sm">
               Go to Builder
