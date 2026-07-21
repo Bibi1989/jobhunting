@@ -10,12 +10,35 @@ import {
   type PortfolioProject,
 } from '~/shared/types/portfolio'
 import { htmlToBulletText, normalizeBulletListHtml } from '~/utils/richText'
+import { useAiUndo } from '~/composables/useAiUndo'
 
 definePageMeta({ layout: 'dashboard' })
 
 const route = useRoute()
 const toast = useAppToast()
 const { confirm } = useAppConfirm()
+const {
+  canUndo: canUndoAi,
+  lastLabel: lastAiUndoLabel,
+  push: pushAiUndo,
+  undo: undoAi,
+  undoScope: undoAiScope,
+  canUndoScope: canUndoAiScope,
+} = useAiUndo()
+
+function notifyAiSuccess(message: string) {
+  toast.success(message, {
+    action: canUndoAi.value
+      ? {
+          label: 'Undo',
+          onClick: () => {
+            const entry = undoAi()
+            if (entry) toast.info(`Reverted: ${entry.label}`)
+          },
+        }
+      : undefined,
+  })
+}
 const id = computed(() => String(route.params.id))
 
 const { data, error } = await useFetch<{ portfolio: Portfolio }>(
@@ -177,8 +200,15 @@ async function analyzeExperience(index: number) {
 function applyExperienceRewrite(index: number) {
   const analysis = experienceAnalyses.value[index]
   if (analysis && form.value?.formatted_experience?.[index]) {
+    const previous = form.value.formatted_experience[index].description
+    const scope = `experience:${index}`
+    pushAiUndo(scope, 'Undo role rewrite', () => {
+      if (form.value?.formatted_experience?.[index]) {
+        form.value.formatted_experience[index].description = previous
+      }
+    })
     form.value.formatted_experience[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
-    toast.success('Suggested rewrite applied to role description.')
+    notifyAiSuccess('Suggested rewrite applied to role description.')
   }
 }
 
@@ -241,8 +271,15 @@ async function analyzeProject(index: number) {
 function applyProjectRewrite(index: number) {
   const analysis = projectAnalyses.value[index]
   if (analysis && form.value?.formatted_projects[index]) {
+    const previous = form.value.formatted_projects[index].description
+    const scope = `project:${index}`
+    pushAiUndo(scope, 'Undo project rewrite', () => {
+      if (form.value?.formatted_projects[index]) {
+        form.value.formatted_projects[index].description = previous
+      }
+    })
     form.value.formatted_projects[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
-    toast.success('Suggested rewrite applied to project description.')
+    notifyAiSuccess('Suggested rewrite applied to project description.')
   }
 }
 
@@ -395,6 +432,16 @@ const inputClass =
         >
           View live
         </a>
+        <button
+          v-if="canUndoAi"
+          type="button"
+          class="rounded-lg border border-amber-500/40 text-amber-200 hover:bg-amber-500/15 px-4 py-2 text-sm font-semibold transition inline-flex items-center gap-1"
+          :title="lastAiUndoLabel"
+          @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
+        >
+          <span class="material-symbols-outlined text-[16px]">undo</span>
+          Undo AI
+        </button>
         <button
           type="button"
           class="rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 px-4 py-2 text-sm font-semibold transition disabled:opacity-50"
@@ -726,13 +773,23 @@ const inputClass =
                     <div v-if="experienceAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
                       <div class="flex justify-between items-center">
                         <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
-                        <button
-                          type="button"
-                          class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
-                          @click="applyExperienceRewrite(i)"
-                        >
-                          Apply Rewrite
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                          <button
+                            v-if="canUndoAiScope(`experience:${i}`)"
+                            type="button"
+                            class="px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 border border-amber-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                            @click="() => { const entry = undoAiScope(`experience:${i}`); if (entry) toast.info('Role rewrite undone.') }"
+                          >
+                            Undo
+                          </button>
+                          <button
+                            type="button"
+                            class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                            @click="applyExperienceRewrite(i)"
+                          >
+                            Apply Rewrite
+                          </button>
+                        </div>
                       </div>
                       <p class="text-xs text-slate-300 bg-black/30 p-2.5 rounded border border-white/5 italic text-left whitespace-pre-wrap">
                         {{ experienceAnalyses[i].suggestedRewrite }}
@@ -896,13 +953,23 @@ const inputClass =
                     <div v-if="projectAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
                       <div class="flex justify-between items-center">
                         <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
-                        <button
-                          type="button"
-                          class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
-                          @click="applyProjectRewrite(i)"
-                        >
-                          Apply Rewrite
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                          <button
+                            v-if="canUndoAiScope(`project:${i}`)"
+                            type="button"
+                            class="px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 border border-amber-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                            @click="() => { const entry = undoAiScope(`project:${i}`); if (entry) toast.info('Project rewrite undone.') }"
+                          >
+                            Undo
+                          </button>
+                          <button
+                            type="button"
+                            class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
+                            @click="applyProjectRewrite(i)"
+                          >
+                            Apply Rewrite
+                          </button>
+                        </div>
                       </div>
                       <p class="text-xs text-slate-300 bg-black/30 p-2.5 rounded border border-white/5 italic text-left">
                         {{ projectAnalyses[i].suggestedRewrite }}

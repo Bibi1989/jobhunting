@@ -6,9 +6,32 @@ import { downloadServerPdf } from '~/utils/downloadServerPdf'
 import { slugifyFilename } from '~/utils/download'
 import { coverLetterTemplates } from '~/utils/templates'
 import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
+import { useAiUndo } from '~/composables/useAiUndo'
 
 const toast = useAppToast()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
+const {
+  canUndo: canUndoAi,
+  lastLabel: lastAiUndoLabel,
+  push: pushAiUndo,
+  undo: undoAi,
+  undoScope: undoAiScope,
+  canUndoScope: canUndoAiScope,
+} = useAiUndo()
+
+function notifyAiSuccess(message: string) {
+  toast.success(message, {
+    action: canUndoAi.value
+      ? {
+          label: 'Undo',
+          onClick: () => {
+            const entry = undoAi()
+            if (entry) toast.info(`Reverted: ${entry.label}`)
+          },
+        }
+      : undefined,
+  })
+}
 
 definePageMeta({ middleware: 'auth' })
 
@@ -367,15 +390,23 @@ async function translateCoverLetter(targetLang: keyof typeof LANG_LABELS) {
 
     if (response?.translatedData) {
       const translated = response.translatedData
+      const previousLetter = { ...coverLetter.value }
+      const previousInfo = { ...resumeData.value.personalInfo }
+      const previousLang = resumeData.value.language
+      pushAiUndo('coverLetter:translate', 'Undo cover letter translation', () => {
+        coverLetter.value = previousLetter
+        resumeData.value.personalInfo = previousInfo
+        resumeData.value.language = previousLang
+      })
       coverLetter.value = {
-                        jobDescription: translated.jobDescription ?? coverLetter.value.jobDescription,
-                        companyName: translated.companyName ?? coverLetter.value.companyName,
-                        hiringManager: translated.hiringManager ?? coverLetter.value.hiringManager,
-                        tone: translated.tone ?? coverLetter.value.tone,
-                        additionalInstructions:
-                          translated.additionalInstructions ?? coverLetter.value.additionalInstructions,
-                        content: translated.content ?? coverLetter.value.content,
-                      }
+        jobDescription: translated.jobDescription ?? coverLetter.value.jobDescription,
+        companyName: translated.companyName ?? coverLetter.value.companyName,
+        hiringManager: translated.hiringManager ?? coverLetter.value.hiringManager,
+        tone: translated.tone ?? coverLetter.value.tone,
+        additionalInstructions:
+          translated.additionalInstructions ?? coverLetter.value.additionalInstructions,
+        content: translated.content ?? coverLetter.value.content,
+      }
       if (translated.personalInfo) {
         resumeData.value.personalInfo = {
           ...resumeData.value.personalInfo,
@@ -383,7 +414,7 @@ async function translateCoverLetter(targetLang: keyof typeof LANG_LABELS) {
         }
       }
       resumeData.value.language = targetLang
-      toast.success(`Translated to ${LANG_LABELS[targetLang]}.`)
+      notifyAiSuccess(`Translated to ${LANG_LABELS[targetLang]}.`)
       await refreshCredits()
     }
   } catch (e) {
@@ -425,8 +456,12 @@ async function enhanceCoverLetter() {
     })
 
     if (response?.content?.trim()) {
+      const previous = coverLetter.value.content
+      pushAiUndo('coverLetter:content', 'Undo cover letter draft', () => {
+        coverLetter.value.content = previous
+      })
       coverLetter.value.content = response.content
-      toast.success(hasJd && hasResume ? 'Cover letter drafted.' : 'Cover letter drafted from available details.')
+      notifyAiSuccess(hasJd && hasResume ? 'Cover letter drafted.' : 'Cover letter drafted from available details.')
       activeTab.value = 'content'
       mobilePane.value = 'edit'
       await refreshCredits()
@@ -504,6 +539,16 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
             placeholder="Document Name"
           />
         </div>
+        <button
+          v-if="canUndoAi"
+          type="button"
+          class="px-2.5 sm:px-3 py-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/40 rounded hover:bg-amber-500/25 transition-colors font-semibold text-sm cursor-pointer inline-flex items-center gap-1"
+          :title="lastAiUndoLabel"
+          @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
+        >
+          <span class="material-symbols-outlined text-[16px]">undo</span>
+          <span class="hidden sm:inline">Undo AI</span>
+        </button>
         <button
           :disabled="saving"
           class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer"
@@ -875,17 +920,28 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                 <h1 class="font-bold text-2xl text-white mb-1">Letter Content</h1>
                 <p class="text-blue-200/60 text-sm">Edit your draft, or regenerate with AI from resume and/or job details.</p>
               </div>
-              <button
-                type="button"
-                :disabled="enhancing"
-                class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 shrink-0"
-                @click="enhanceCoverLetter"
-              >
-                <span class="material-symbols-outlined text-[12px]" :class="{ 'animate-spin': enhancing }">
-                  {{ enhancing ? 'refresh' : 'auto_awesome' }}
-                </span>
-                {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance' }}
-              </button>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  v-if="canUndoAiScope('coverLetter:content')"
+                  type="button"
+                  class="text-[10px] flex items-center gap-1 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 px-2 py-1 rounded border border-amber-500/30 transition-colors cursor-pointer"
+                  @click="() => { const entry = undoAiScope('coverLetter:content'); if (entry) toast.info('Cover letter draft undone.') }"
+                >
+                  <span class="material-symbols-outlined text-[12px]">undo</span>
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  :disabled="enhancing"
+                  class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50"
+                  @click="enhanceCoverLetter"
+                >
+                  <span class="material-symbols-outlined text-[12px]" :class="{ 'animate-spin': enhancing }">
+                    {{ enhancing ? 'refresh' : 'auto_awesome' }}
+                  </span>
+                  {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance' }}
+                </button>
+              </div>
             </div>
 
             <BuilderRichTextEditor

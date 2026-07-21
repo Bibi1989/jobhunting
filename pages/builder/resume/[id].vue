@@ -18,10 +18,40 @@ import {
 } from '~/shared/pdf/schema'
 import { loadBuilderJobPrefill, parseResumeTextToBuilder, consumeApplyPrefill } from '~/utils/builderJobPrefill'
 import { extractKeywordsFromText } from '~/utils/keywordExtractor'
+import { cloneJson, useAiUndo } from '~/composables/useAiUndo'
 
 const toast = useAppToast()
 const confirmDialog = useAppConfirm()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
+const {
+  canUndo: canUndoAi,
+  lastLabel: lastAiUndoLabel,
+  push: pushAiUndo,
+  undo: undoAi,
+  undoScope: undoAiScope,
+  canUndoScope: canUndoAiScope,
+} = useAiUndo()
+
+function notifyAiSuccess(message: string) {
+  toast.success(message, {
+    action: canUndoAi.value
+      ? {
+          label: 'Undo',
+          onClick: () => {
+            const entry = undoAi()
+            if (entry) toast.info(`Reverted: ${entry.label}`)
+          },
+        }
+      : undefined,
+  })
+}
+
+function pushDocumentUndo(label: string) {
+  const snapshot = cloneJson(resumeData.value)
+  pushAiUndo('document', label, () => {
+    resumeData.value = withLayoutState(cloneJson(snapshot))
+  })
+}
 
 definePageMeta({ middleware: 'auth' })
 
@@ -377,6 +407,7 @@ async function draftResumeWithAi() {
     })
 
     if (response?.resumeData) {
+      pushDocumentUndo('Undo AI resume draft')
       const next = withLayoutState(response.resumeData)
       next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
       next.templateSlug = next.templateId
@@ -445,6 +476,15 @@ async function draftResumeWithAi() {
         alsoGenerateCoverLetter.value && next.coverLetter?.content
           ? 'Resume and cover letter drafted.'
           : hasJd && hasResume ? 'Resume drafted.' : 'Resume drafted from available details.',
+        {
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              const entry = undoAi()
+              if (entry) toast.info(`Reverted: ${entry.label}`)
+            },
+          },
+        },
       )
       activeTab.value = 'personalInfo'
       mobilePane.value = 'edit'
@@ -517,6 +557,7 @@ async function importResumeFile(file: File) {
   })
 
   if (parseRes.resumeData) {
+    pushDocumentUndo('Undo resume import')
     const oldTemplateId = resumeData.value.templateId
     const oldOrder = resumeData.value.sectionsOrder
     const oldLanguage = resumeData.value.language
@@ -608,6 +649,7 @@ async function fixAtsIssues() {
       },
     })
     if (response?.resumeData) {
+      pushDocumentUndo('Undo ATS fixes')
       const next = withLayoutState(response.resumeData)
       next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
       next.templateSlug = next.templateId
@@ -616,7 +658,7 @@ async function fixAtsIssues() {
       atsResult.value = null
       await refreshCredits()
       await saveDraftWithLabel('ATS Fix')
-      toast.success('ATS fixes applied and saved. Re-run the check to confirm your new score.')
+      notifyAiSuccess('ATS fixes applied and saved. Re-run the check to confirm your new score.')
     }
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
@@ -661,6 +703,7 @@ async function translateResume(targetLang: 'en' | 'de' | 'fr' | 'es') {
     })
     
     if (response && response.translatedData) {
+      pushDocumentUndo('Undo translation')
       const oldTemplateId = resumeData.value.templateId
       const oldOrder = resumeData.value.sectionsOrder
       resumeData.value = withLayoutState({
@@ -670,7 +713,7 @@ async function translateResume(targetLang: 'en' | 'de' | 'fr' | 'es') {
         sectionsOrder: oldOrder,
         language: targetLang,
       })
-      toast.success(`Translated to ${({ en: 'English', de: 'German', fr: 'French', es: 'Spanish' } as const)[targetLang]}.`)
+      notifyAiSuccess(`Translated to ${({ en: 'English', de: 'German', fr: 'French', es: 'Spanish' } as const)[targetLang]}.`)
       await refreshCredits()
     }
   } catch (e) {
@@ -1108,21 +1151,36 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
     const html = normalizeEnhancedHtml(result.enhancedDescription, type !== 'summary')
     
     if (type === 'summary') {
+      const previous = resumeData.value.personalInfo.summary
+      pushAiUndo('summary', 'Undo summary enhance', () => {
+        resumeData.value.personalInfo.summary = previous
+      })
       resumeData.value.personalInfo.summary = html
     } else if (type === 'experience') {
       const idx = resumeData.value.experience.findIndex((e) => e.id === item.id)
       if (idx >= 0) {
-        // Mutate in place so the same v-for item binding updates.
+        const previous = resumeData.value.experience[idx]!.description
+        const scope = `experience:${item.id}`
+        pushAiUndo(scope, 'Undo experience enhance', () => {
+          const i = resumeData.value.experience.findIndex((e) => e.id === item.id)
+          if (i >= 0) resumeData.value.experience[i]!.description = previous
+        })
         resumeData.value.experience[idx]!.description = html
       }
     } else if (type === 'project') {
       const idx = resumeData.value.projects.findIndex((p) => p.id === item.id)
       if (idx >= 0) {
+        const previous = resumeData.value.projects[idx]!.description || ''
+        const scope = `project:${item.id}`
+        pushAiUndo(scope, 'Undo project enhance', () => {
+          const i = resumeData.value.projects.findIndex((p) => p.id === item.id)
+          if (i >= 0) resumeData.value.projects[i]!.description = previous
+        })
         resumeData.value.projects[idx]!.description = html
       }
     }
     await nextTick()
-    toast.success('Description enhanced.')
+    notifyAiSuccess('Description enhanced.')
     await refreshCredits()
   } catch (e) {
     console.error('Enhance failed:', e)
@@ -1280,6 +1338,16 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <span class="hidden md:inline">{{ importing ? 'Importing...' : 'Import Resume' }}</span>
         </button>
 
+        <button
+          v-if="canUndoAi"
+          type="button"
+          class="px-2.5 sm:px-3 py-1.5 bg-amber-500/15 text-amber-200 border border-amber-500/40 rounded hover:bg-amber-500/25 transition-colors font-semibold text-sm cursor-pointer inline-flex items-center gap-1"
+          :title="lastAiUndoLabel"
+          @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
+        >
+          <span class="material-symbols-outlined text-[16px]">undo</span>
+          <span class="hidden sm:inline">Undo AI</span>
+        </button>
         <button @click="saveDraft" :disabled="saving" class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer">
           <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
           <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
@@ -1530,10 +1598,21 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               <div class="flex flex-col relative">
                 <div class="flex justify-between items-end mb-1">
                   <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Professional Summary <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
-                  <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary, targetRole: resumeData.personalInfo.targetRole, commandPrompt: resumeData.personalInfo.commandPrompt }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
-                    <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has('summary')}">{{ enhancingIds.has('summary') ? 'refresh' : 'auto_awesome' }}</span>
-                    {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance' }}
-                  </button>
+                  <div class="flex items-center gap-1.5 z-10">
+                    <button
+                      v-if="canUndoAiScope('summary')"
+                      type="button"
+                      class="text-[10px] flex items-center gap-1 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 px-2 py-1 rounded border border-amber-500/30 transition-colors cursor-pointer"
+                      @click="() => { const entry = undoAiScope('summary'); if (entry) toast.info('Summary enhance undone.') }"
+                    >
+                      <span class="material-symbols-outlined text-[12px]">undo</span>
+                      Undo
+                    </button>
+                    <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary, targetRole: resumeData.personalInfo.targetRole, commandPrompt: resumeData.personalInfo.commandPrompt }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
+                      <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has('summary')}">{{ enhancingIds.has('summary') ? 'refresh' : 'auto_awesome' }}</span>
+                      {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance' }}
+                    </button>
+                  </div>
                 </div>
                 <div class="bg-white/5 rounded border border-white/10">
                   <BuilderRichTextEditor
@@ -1778,10 +1857,21 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
-                      <button @click="enhanceDescription(exp, 'experience')" :disabled="enhancingIds.has(exp.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
-                        <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(exp.id)}">{{ enhancingIds.has(exp.id) ? 'refresh' : 'auto_awesome' }}</span>
-                        {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance' }}
-                      </button>
+                      <div class="flex items-center gap-1.5 z-10">
+                        <button
+                          v-if="canUndoAiScope(`experience:${exp.id}`)"
+                          type="button"
+                          class="text-[10px] flex items-center gap-1 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 px-2 py-1 rounded border border-amber-500/30 transition-colors cursor-pointer"
+                          @click="() => { const entry = undoAiScope(`experience:${exp.id}`); if (entry) toast.info('Experience enhance undone.') }"
+                        >
+                          <span class="material-symbols-outlined text-[12px]">undo</span>
+                          Undo
+                        </button>
+                        <button @click="enhanceDescription(exp, 'experience')" :disabled="enhancingIds.has(exp.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
+                          <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(exp.id)}">{{ enhancingIds.has(exp.id) ? 'refresh' : 'auto_awesome' }}</span>
+                          {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance' }}
+                        </button>
+                      </div>
                     </div>
                     <div class="bg-white/5 rounded border border-white/10">
                       <BuilderBulletDescriptionEditor
@@ -1889,10 +1979,21 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
                       <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
-                      <button @click="enhanceDescription(proj, 'project')" :disabled="enhancingIds.has(proj.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
-                        <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(proj.id)}">{{ enhancingIds.has(proj.id) ? 'refresh' : 'auto_awesome' }}</span>
-                        {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance' }}
-                      </button>
+                      <div class="flex items-center gap-1.5 z-10">
+                        <button
+                          v-if="canUndoAiScope(`project:${proj.id}`)"
+                          type="button"
+                          class="text-[10px] flex items-center gap-1 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 px-2 py-1 rounded border border-amber-500/30 transition-colors cursor-pointer"
+                          @click="() => { const entry = undoAiScope(`project:${proj.id}`); if (entry) toast.info('Project enhance undone.') }"
+                        >
+                          <span class="material-symbols-outlined text-[12px]">undo</span>
+                          Undo
+                        </button>
+                        <button @click="enhanceDescription(proj, 'project')" :disabled="enhancingIds.has(proj.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
+                          <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(proj.id)}">{{ enhancingIds.has(proj.id) ? 'refresh' : 'auto_awesome' }}</span>
+                          {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance' }}
+                        </button>
+                      </div>
                     </div>
                     <div class="bg-white/5 rounded border border-white/10">
                       <BuilderBulletDescriptionEditor
