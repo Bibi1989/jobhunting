@@ -41,23 +41,21 @@ async function runAnalysis() {
   analysisResult.value = null
 
   try {
-    // Placeholder for actual ATS analysis endpoint
-    // We simulate an API call here for the layout. In a real scenario, we'd hit a Gemini endpoint.
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const res = await $fetch<{ success: boolean, analysis: AnalysisResult }>('/api/ai/analyze-resume', {
+      method: 'POST',
+      body: {
+        resumeData: undefined,
+        rawResumeText: resumeDoc.value.contentText,
+      }
+    })
     
-    analysisResult.value = {
-      score: 85,
-      strengths: [
-        'Strong action verbs used (Engineered, Architected).',
-        'Clear formatting detected.'
-      ],
-      improvements: [
-        'Missing explicit keywords for "React" or "TypeScript" (if targeting frontend).',
-        'Quantify your impact more in the recent roles (e.g., "Increased performance by X%").'
-      ]
+    if (res.analysis) {
+      analysisResult.value = res.analysis
+    } else {
+      throw new Error("Invalid response from server.")
     }
   } catch (err: any) {
-    error.value = err.message || "Failed to analyze resume."
+    error.value = err.data?.statusMessage || err.message || "Failed to analyze resume."
   } finally {
     loading.value = false
   }
@@ -105,7 +103,7 @@ async function runAnalysis() {
               Upgrade to Pro
             </NuxtLink>
           </div>
-          <div v-else class="w-full max-w-md mb-10">
+          <div v-else class="w-full max-w-3xl bg-slate-900/60 border border-slate-800/80 rounded-3xl p-8 mb-10 text-left">
             <DocumentsPanel
               :resume="resumeDoc"
               :cover-letter="null"

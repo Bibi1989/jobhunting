@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { Eye, EyeOff } from 'lucide-vue-next'
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const route = useRoute()
@@ -54,13 +56,24 @@ async function onSubmit() {
         </div>
         <div>
           <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Password</label>
-          <input
-            v-model="password"
-            type="password"
-            required
-            minlength="8"
-            class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white outline-none focus:border-indigo-400"
-          />
+          <div class="relative mt-1">
+            <input
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              minlength="8"
+              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white outline-none focus:border-indigo-400 pr-10"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white focus:outline-none transition-colors"
+              @click="showPassword = !showPassword"
+              title="Toggle password visibility"
+            >
+              <Eye v-if="!showPassword" :size="18" />
+              <EyeOff v-else :size="18" />
+            </button>
+          </div>
         </div>
         <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
         <button

@@ -76,13 +76,15 @@ async function removeDocument(type: 'resume' | 'cover_letter') {
 </script>
 
 <template>
-  <div class="space-y-5">
-    <h3 class="text-xs font-bold uppercase text-indigo-400 tracking-widest select-none">Your Documents</h3>
-    <p class="text-[11px] text-slate-500 leading-relaxed select-none">
-      Upload a CV and cover letter (PDF, DOCX, or TXT) to auto-fill details and customize materials.
-    </p>
+  <div class="flex flex-col md:flex-row gap-6 md:gap-10 w-full">
+    <div class="md:w-1/3 shrink-0 flex flex-col gap-2">
+      <h3 class="text-xs font-bold uppercase text-indigo-400 tracking-widest select-none">Your Documents</h3>
+      <p class="text-[11px] text-slate-500 leading-relaxed select-none">
+        Upload a CV and cover letter (PDF, DOCX, or TXT) to auto-fill details and customize materials.
+      </p>
+    </div>
 
-    <div class="space-y-4">
+    <div class="flex-1 space-y-4 min-w-0">
       <div>
         <span class="text-[11px] text-slate-400 font-bold mb-2 block select-none">Resume / CV</span>
         <div class="flex items-center gap-2">
