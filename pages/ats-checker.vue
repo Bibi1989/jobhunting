@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { UploadCloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-vue-next'
 import type { UserDocumentSummary } from '~/shared/types/job'
-import { marked } from 'marked'
+
+interface AnalysisResult {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+}
 
 const resumeDoc = ref<UserDocumentSummary | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
-const analysisResult = ref<string | null>(null)
-const analysisHtml = computed(() => analysisResult.value ? marked(analysisResult.value) : '')
+const analysisResult = ref<AnalysisResult | null>(null)
 const { loggedIn, isPro } = useSaaS()
 
 async function loadDocuments() {
@@ -41,17 +45,17 @@ async function runAnalysis() {
     // We simulate an API call here for the layout. In a real scenario, we'd hit a Gemini endpoint.
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    analysisResult.value = `
-### ATS Compatibility Score: 85/100
-
-**Strengths:**
-- Strong action verbs used (Engineered, Architected).
-- Clear formatting detected.
-
-**Areas for Improvement:**
-- Missing explicit keywords for "React" or "TypeScript" (if targeting frontend).
-- Quantify your impact more in the recent roles (e.g., "Increased performance by X%").
-    `
+    analysisResult.value = {
+      score: 85,
+      strengths: [
+        'Strong action verbs used (Engineered, Architected).',
+        'Clear formatting detected.'
+      ],
+      improvements: [
+        'Missing explicit keywords for "React" or "TypeScript" (if targeting frontend).',
+        'Quantify your impact more in the recent roles (e.g., "Increased performance by X%").'
+      ]
+    }
   } catch (err: any) {
     error.value = err.message || "Failed to analyze resume."
   } finally {
@@ -127,11 +131,55 @@ async function runAnalysis() {
           </div>
 
           <div v-if="analysisResult" class="w-full max-w-2xl bg-slate-900/80 border border-slate-800 rounded-3xl p-8 text-left">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Sparkles class="text-indigo-400" :size="20" />
-              Analysis Results
+            <h3 class="text-xl font-bold text-white mb-8 flex items-center justify-between">
+              <span class="flex items-center gap-2">
+                <Sparkles class="text-indigo-400" :size="20" />
+                Analysis Results
+              </span>
             </h3>
-            <div class="prose prose-invert prose-sm max-w-none prose-p:text-slate-300 prose-li:text-slate-300" v-html="analysisHtml" />
+            
+            <div class="flex flex-col items-center justify-center mb-10">
+              <div class="relative w-32 h-32 flex items-center justify-center rounded-full bg-slate-950 shadow-inner">
+                <svg class="absolute inset-0 w-full h-full transform -rotate-90">
+                  <circle class="text-slate-800" stroke-width="8" stroke="currentColor" fill="transparent" r="58" cx="64" cy="64"/>
+                  <circle 
+                    :class="analysisResult.score >= 80 ? 'text-emerald-500' : analysisResult.score >= 60 ? 'text-amber-500' : 'text-red-500'" 
+                    stroke-width="8" 
+                    :stroke-dasharray="364" 
+                    :stroke-dashoffset="364 - (364 * analysisResult.score) / 100" 
+                    stroke-linecap="round" 
+                    stroke="currentColor" 
+                    fill="transparent" 
+                    r="58" cx="64" cy="64"
+                    class="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div class="flex flex-col items-center">
+                  <span class="text-3xl font-extrabold text-white">{{ analysisResult.score }}</span>
+                  <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Score</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5">
+                <h4 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                  <CheckCircle2 :size="16" /> Strengths
+                </h4>
+                <ul class="text-sm text-slate-300 space-y-2 list-disc pl-4 marker:text-emerald-500">
+                  <li v-for="s in analysisResult.strengths" :key="s">{{ s }}</li>
+                </ul>
+              </div>
+
+              <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+                <h4 class="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                  <AlertCircle :size="16" /> Areas to Improve
+                </h4>
+                <ul class="text-sm text-slate-300 space-y-2 list-disc pl-4 marker:text-amber-500">
+                  <li v-for="i in analysisResult.improvements" :key="i">{{ i }}</li>
+                </ul>
+              </div>
+            </div>
             
             <div class="mt-8 flex justify-center">
               <button @click="analysisResult = null" class="text-sm font-semibold text-slate-400 hover:text-white transition-colors">

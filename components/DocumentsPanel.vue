@@ -90,6 +90,7 @@ async function removeDocument(type: 'resume' | 'cover_letter') {
             class="flex-1 flex items-center justify-between gap-3 px-4 py-3 bg-slate-950/40 border border-slate-800/80 rounded-2xl text-xs text-slate-300 cursor-pointer hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300 select-none group"
             :class="{ 'opacity-65 pointer-events-none': uploading === 'resume' || removing === 'resume' }"
           >
+            <input type="file" class="hidden" accept=".pdf,.doc,.docx,.txt" @change="onFileChange($event, 'resume')" />
             <div class="flex items-center gap-2.5 min-w-0">
               <Upload :size="14" class="text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0" />
               <span class="truncate font-medium group-hover:text-slate-200 transition-colors">
@@ -124,6 +125,7 @@ async function removeDocument(type: 'resume' | 'cover_letter') {
             class="flex-1 flex items-center justify-between gap-3 px-4 py-3 bg-slate-950/40 border border-slate-800/80 rounded-2xl text-xs text-slate-300 cursor-pointer hover:border-indigo-500/50 hover:bg-slate-900/60 transition-all duration-300 select-none group"
             :class="{ 'opacity-65 pointer-events-none': uploading === 'cover_letter' || removing === 'cover_letter' }"
           >
+            <input type="file" class="hidden" accept=".pdf,.doc,.docx,.txt" @change="onFileChange($event, 'cover_letter')" />
             <div class="flex items-center gap-2.5 min-w-0">
               <Upload :size="14" class="text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0" />
               <span class="truncate font-medium group-hover:text-slate-200 transition-colors">
