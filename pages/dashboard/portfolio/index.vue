@@ -202,7 +202,6 @@ function primaryContactHref(data: PortfolioProfileData) {
   )
 }
 </script>
-
 <template>
   <div class="px-6 py-10 max-w-7xl mx-auto">
     <header class="mb-8">
@@ -211,126 +210,29 @@ function primaryContactHref(data: PortfolioProfileData) {
         Generate a live portfolio from your CV, publish it, and host it on your own domain.
         Saved portfolios stay here so you can open or share them anytime.
       </p>
+      <div class="flex flex-wrap items-center gap-2 mt-6">
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          :class="activeTab === 'saved' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
+          @click="activeTab = 'saved'"
+        >
+          Saved
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-semibold transition"
+          :class="activeTab === 'create' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
+          @click="activeTab = 'create'"
+        >
+          Create new
+        </button>
+      </div>
       <div class="w-full h-px bg-white/10 mt-6"></div>
     </header>
 
-    <!-- Always-visible saved portfolios (even when creation is Pro-gated) -->
-    <section id="my-portfolios" class="scroll-mt-24 mb-10">
-      <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
-        <div>
-          <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-1">
-            My published portfolios
-          </h2>
-          <p class="text-sm text-blue-200/50">
-            {{ saved?.portfolios?.length || 0 }} published · open live or copy a share link
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="rounded-lg px-3 py-2 text-sm font-semibold transition"
-            :class="activeTab === 'saved' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
-            @click="activeTab = 'saved'"
-          >
-            Saved
-          </button>
-          <button
-            type="button"
-            class="rounded-lg px-3 py-2 text-sm font-semibold transition"
-            :class="activeTab === 'create' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
-            @click="activeTab = 'create'"
-          >
-            Create new
-          </button>
-        </div>
-      </div>
-
-      <p v-if="!saved?.portfolios?.length" class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-blue-200/60">
-        Nothing published yet.
-        <button
-          type="button"
-          class="text-blue-300 hover:text-white underline underline-offset-4 ml-1"
-          @click="activeTab = 'create'"
-        >
-          Create your first portfolio
-        </button>
-      </p>
-
-      <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <article
-          v-for="p in saved.portfolios"
-          :key="p.id"
-          class="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-blue-400/40 transition"
-        >
-          <div class="rounded-xl overflow-hidden border border-white/10 bg-slate-900 h-36 relative">
-            <div
-              class="absolute top-0 left-0 origin-top-left pointer-events-none"
-              style="width: 400%; height: 400%; transform: scale(0.25);"
-            >
-              <PortfolioRenderer :slug="p.templateSlug" :data="p.profileData" />
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-            <h3 class="font-semibold text-white truncate">{{ p.profileData.full_name }}</h3>
-          </div>
-          <p class="text-xs text-blue-200/60">
-            {{ templateName(p.templateSlug) }} · {{ formatDate(p.createdAt) }}
-          </p>
-          <code class="text-xs text-blue-200/70 bg-slate-900/60 rounded px-2 py-1 truncate">
-            {{ origin }}/p/{{ p.id }}
-          </code>
-          <div class="flex flex-wrap items-center gap-2 mt-auto">
-            <NuxtLink
-              :to="`/dashboard/portfolio/${p.id}`"
-              class="flex-1 min-w-[6rem] inline-flex items-center justify-center gap-1 rounded-lg bg-blue-500 hover:bg-blue-400 px-3 py-2 text-sm font-semibold text-white transition"
-            >
-              <span class="material-symbols-outlined text-[16px]">edit</span> Edit
-            </NuxtLink>
-            <a
-              :href="`/p/${p.id}`"
-              target="_blank"
-              rel="noopener"
-              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
-            >
-              View live
-            </a>
-            <button
-              type="button"
-              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
-              @click="copyLink(p.id)"
-            >
-              Copy link
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
-              title="Copy domain hosting instructions"
-              @click="copyDomainHelp(p.id)"
-            >
-              Domain
-            </button>
-          </div>
-        </article>
-      </div>
-
-      <div class="mt-6 rounded-2xl border border-white/10 bg-blue-500/5 p-5 text-sm text-blue-100/80">
-        <p class="font-semibold text-white mb-1 flex items-center gap-2">
-          <span class="material-symbols-outlined text-blue-300">public</span>
-          Host on your own domain
-        </p>
-        <p>
-          Every published portfolio is live at
-          <code class="text-blue-200">{{ origin || 'https://your-app' }}/p/&lt;id&gt;</code>
-          with no dashboard chrome. Point your domain at this app (CNAME or reverse proxy) and share
-          <code class="text-blue-200">yourdomain.com/p/&lt;id&gt;</code>.
-          Use the Domain button on any card to copy step-by-step instructions.
-        </p>
-      </div>
-    </section>
-
-    <!-- Create flow -->
-    <div v-show="activeTab === 'create'" class="relative">
+    <!-- Create flow first when on Create new -->
+    <div v-show="activeTab === 'create'" class="relative mb-12">
       <div
         :class="['space-y-12 transition', unlocked ? '' : 'pointer-events-none select-none blur-sm opacity-60']"
         :aria-hidden="!unlocked"
@@ -477,7 +379,7 @@ function primaryContactHref(data: PortfolioProfileData) {
             {{ aiBlockedMessage() || 'Pro members can generate template-ready portfolios from any CV.' }}
           </p>
           <p class="mt-3 text-xs text-blue-200/50">
-            You can still open any portfolios you already published above.
+            You can still open any portfolios you already published below.
           </p>
           <NuxtLink
             to="/pricing"
@@ -488,6 +390,111 @@ function primaryContactHref(data: PortfolioProfileData) {
         </div>
       </div>
     </div>
+
+    <!-- Saved portfolios last when creating -->
+    <section
+      id="my-portfolios"
+      class="scroll-mt-24"
+      :class="activeTab === 'create' ? 'pt-4 border-t border-white/10' : ''"
+    >
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-1">
+            My published portfolios
+          </h2>
+          <p class="text-sm text-blue-200/50">
+            {{ saved?.portfolios?.length || 0 }} published · open live or copy a share link
+          </p>
+        </div>
+      </div>
+
+      <p
+        v-if="!saved?.portfolios?.length"
+        class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-blue-200/60"
+      >
+        Nothing published yet.
+        <button
+          v-if="activeTab !== 'create'"
+          type="button"
+          class="text-blue-300 hover:text-white underline underline-offset-4 ml-1"
+          @click="activeTab = 'create'"
+        >
+          Create your first portfolio
+        </button>
+      </p>
+
+      <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <article
+          v-for="p in saved.portfolios"
+          :key="p.id"
+          class="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col gap-3 hover:border-blue-400/40 transition"
+        >
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-slate-900 h-36 relative">
+            <div
+              class="absolute top-0 left-0 origin-top-left pointer-events-none"
+              style="width: 400%; height: 400%; transform: scale(0.25);"
+            >
+              <PortfolioRenderer :slug="p.templateSlug" :data="p.profileData" />
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+            <h3 class="font-semibold text-white truncate">{{ p.profileData.full_name }}</h3>
+          </div>
+          <p class="text-xs text-blue-200/60">
+            {{ templateName(p.templateSlug) }} · {{ formatDate(p.createdAt) }}
+          </p>
+          <code class="text-xs text-blue-200/70 bg-slate-900/60 rounded px-2 py-1 truncate">
+            {{ origin }}/p/{{ p.id }}
+          </code>
+          <div class="flex flex-wrap items-center gap-2 mt-auto">
+            <NuxtLink
+              :to="`/dashboard/portfolio/${p.id}`"
+              class="flex-1 min-w-[6rem] inline-flex items-center justify-center gap-1 rounded-lg bg-blue-500 hover:bg-blue-400 px-3 py-2 text-sm font-semibold text-white transition"
+            >
+              <span class="material-symbols-outlined text-[16px]">edit</span> Edit
+            </NuxtLink>
+            <a
+              :href="`/p/${p.id}`"
+              target="_blank"
+              rel="noopener"
+              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
+            >
+              View live
+            </a>
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
+              @click="copyLink(p.id)"
+            >
+              Copy link
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
+              title="Copy domain hosting instructions"
+              @click="copyDomainHelp(p.id)"
+            >
+              Domain
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="mt-6 rounded-2xl border border-white/10 bg-blue-500/5 p-5 text-sm text-blue-100/80">
+        <p class="font-semibold text-white mb-1 flex items-center gap-2">
+          <span class="material-symbols-outlined text-blue-300">public</span>
+          Host on your own domain
+        </p>
+        <p>
+          Every published portfolio is live at
+          <code class="text-blue-200">{{ origin || 'https://your-app' }}/p/&lt;id&gt;</code>
+          with no dashboard chrome. Point your domain at this app (CNAME or reverse proxy) and share
+          <code class="text-blue-200">yourdomain.com/p/&lt;id&gt;</code>.
+          Use the Domain button on any card to copy step-by-step instructions.
+        </p>
+      </div>
+    </section>
 
     <Teleport to="body">
       <div

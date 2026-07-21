@@ -12,9 +12,26 @@ export interface OllamaChatOptions {
 
 export async function ollamaChat(options: OllamaChatOptions): Promise<string> {
   const config = useRuntimeConfig()
-  const baseUrl = String(config.ollamaBaseUrl || 'http://localhost:11434').replace(/\/$/, '')
-  const primary = options.model || String(config.ollamaModel || 'gemma4:e4b')
-  const fallbacks = String(config.ollamaFallbackModels || 'llama3.2:latest')
+  const baseUrl = String(
+    process.env.OLLAMA_BASE_URL ||
+      process.env.NUXT_OLLAMA_BASE_URL ||
+      config.ollamaBaseUrl ||
+      'http://localhost:11434',
+  ).replace(/\/$/, '')
+  const primary =
+    options.model ||
+    String(
+      process.env.OLLAMA_MODEL ||
+        process.env.NUXT_OLLAMA_MODEL ||
+        config.ollamaModel ||
+        'gemma4:e4b',
+    )
+  const fallbacks = String(
+    process.env.OLLAMA_FALLBACK_MODELS ||
+      process.env.NUXT_OLLAMA_FALLBACK_MODELS ||
+      config.ollamaFallbackModels ||
+      'llama3.2:latest',
+  )
     .split(',')
     .map((m) => m.trim())
     .filter(Boolean)

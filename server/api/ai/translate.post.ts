@@ -1,4 +1,5 @@
-import { createGeminiClient } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -22,9 +23,10 @@ export default withCredits(async (event) => {
   const langName = LANGUAGE_NAMES[targetLanguage] || targetLanguage
 
   const ai = createGeminiClient()
+  const model = resolveGeminiModel()
   const payload = mode === 'cover_letter' ? coverLetter : resumeData
 
-  const prompt = `You are an expert translator. I will provide you with a JSON object representing a ${
+  const prompt = `You are an expert translator specializing in career documents (resumes, cover letters, and interview materials). I will provide you with a JSON object representing a ${
     mode === 'cover_letter' ? 'cover letter document' : 'resume'
   }.
 Your task is to translate ALL user-entered string values (like names, job titles, summaries, descriptions, letter body, company names when appropriate, etc.) into ${langName}.
@@ -42,11 +44,11 @@ ${JSON.stringify(payload, null, 2)}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model,
       contents: prompt,
-      config: {
+      config: careerExpertGenerateConfig({
         temperature: 0.2,
-      },
+      }),
     })
 
     let text = String(response.text || '').trim()

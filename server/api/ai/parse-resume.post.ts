@@ -1,4 +1,5 @@
-import { createGeminiClient } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
 
@@ -11,8 +12,8 @@ export default withCredits(async (event) => {
   }
 
   const ai = createGeminiClient()
-  const prompt = `You are an expert resume parser and writer.
-I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
+  const model = resolveGeminiModel()
+  const prompt = withCareerExpertPrompt(`I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
 Your task is to parse this text and structure it into a valid JSON object representing the resume data.
 
 Rules:
@@ -58,16 +59,16 @@ The output JSON MUST follow this exact schema structure:
   "achievements": [],
   "customSections": []
 }
-`
+`)
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model,
       contents: prompt,
-      config: {
+      config: careerExpertGenerateConfig({
         temperature: 0.1,
         responseMimeType: 'application/json',
-      },
+      }),
     })
 
     const raw = (response.text || '').trim()

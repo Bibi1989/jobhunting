@@ -8,9 +8,14 @@
   NITRO_PRESET = "netlify"
   NUXT_PUBLIC_API_BACKEND = "nuxt"
 
-# Required in Netlify UI → Environment variables ( mag Production + Deploy previews):
+# Required in Netlify UI → Environment variables (Production + Deploy previews):
 #   DATABASE_URL            Neon pooler URL (sslmode=require; remove channel_binding=require)
 #   NUXT_DATABASE_URL       same as DATABASE_URL (Nuxt runtimeConfig override — recommended)
 #   NUXT_SESSION_PASSWORD   ≥32 random characters
 #   NUXT_PUBLIC_API_BACKEND=nuxt
-# Optional: GEMINI_API_KEY, NUXT_APP_URL=https://<site>.netlify.app
+#   GEMINI_API_KEY          Google AI Studio key (same as local web/.env)
+#   GEMINI_MODEL            e.g. gemini-3.1-pro-preview  (must match local for same quality)
+# Optional:
+#   NUXT_GEMINI_API_KEY / NUXT_GEMINI_MODEL  (Nuxt runtimeConfig aliases)
+#   NUXT_APP_URL=https://<site>.netlify.app
+#   OLLAMA_* only for local fallback — leave unset on Netlify

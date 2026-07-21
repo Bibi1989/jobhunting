@@ -15,7 +15,7 @@ import {
 } from '~/shared/pdf/schema'
 import { getPdfTemplateProfile, type PdfTemplateProfile, type PdfTemplateTheme } from '~/shared/pdf/templates'
 import { styles as tokenStyles } from '~/shared/pdf/tokens'
-import { formatDateRange, htmlToBlocks, stripHtmlToPlain } from '~/shared/pdf/text'
+import { cleanDescriptionHtml, formatDateRange, htmlToBlocks, htmlToInlineRuns, stripHtmlToPlain } from '~/shared/pdf/text'
 
 function sx(...parts: Array<object | false | null | undefined>): any {
   return parts.filter(Boolean)
@@ -51,12 +51,60 @@ function themed(theme: PdfTemplateTheme) {
 
 type T = ReturnType<typeof themed>
 
+function fontForRun(bold?: boolean, italic?: boolean): string {
+  if (bold && italic) return 'Helvetica-BoldOblique'
+  if (bold) return 'Helvetica-Bold'
+  if (italic) return 'Helvetica-Oblique'
+  return 'Helvetica'
+}
+
+function RichText({
+  html,
+  plain,
+  style,
+}: {
+  html?: string
+  plain: string
+  style: any
+}) {
+  const runs = htmlToInlineRuns(html || plain)
+  if (!runs.length) {
+    return React.createElement(Text, { style }, plain)
+  }
+  const hasMarks = runs.some((r) => r.bold || r.italic || r.underline)
+  if (!hasMarks) {
+    return React.createElement(Text, { style }, plain)
+  }
+  return React.createElement(
+    Text,
+    { style },
+    ...runs.map((run, index) =>
+      React.createElement(
+        Text,
+        {
+          key: `r-${index}`,
+          style: {
+            fontFamily: fontForRun(run.bold, run.italic),
+            textDecoration: run.underline ? 'underline' : undefined,
+          },
+        },
+        run.text,
+      ),
+    ),
+  )
+}
+
 function Blocks({ html, light = false, theme }: { html?: string; light?: boolean; theme: PdfTemplateTheme }) {
   const blocks = htmlToBlocks(html)
+  if (!blocks.length) return null
+
+  // CRITICAL: never put bare <Text> as a sibling of a header <View>.
+  // In react-pdf that collapses vertical layout and stacks every line on the same Y.
   return React.createElement(
     View,
-    null,
+    { style: { flexDirection: 'column', width: '100%', marginTop: 2 } },
     ...blocks.map((block, index) => {
+      const color = light ? theme.sidebarText : theme.ink
       if (block.type === 'bullet') {
         return React.createElement(
           View,
@@ -64,18 +112,21 @@ function Blocks({ html, light = false, theme }: { html?: string; light?: boolean
           React.createElement(Text, {
             style: sx(S.bulletGlyph, light && { color: theme.sidebarMuted }),
           }, '•'),
-          React.createElement(Text, {
-            style: sx(S.bulletText, { color: light ? theme.sidebarText : theme.ink }),
-          }, block.text),
+          React.createElement(RichText, {
+            html: block.html,
+            plain: block.text,
+            style: sx(S.bulletText, { color }),
+          }),
         )
       }
       return React.createElement(
-        Text,
-        {
-          key: `p-${index}`,
-          style: sx(S.body, { marginBottom: 4, color: light ? theme.sidebarText : theme.ink }),
-        },
-        block.text,
+        View,
+        { key: `p-${index}`, style: { width: '100%', marginBottom: 4 } },
+        React.createElement(RichText, {
+          html: block.html,
+          plain: block.text,
+          style: sx(S.body, { color }),
+        }),
       )
     }),
   )
@@ -85,15 +136,14 @@ function ExperienceList({ data, theme, t }: { data: BuilderResumeData; theme: Pd
   if (!data.experience?.length) return null
   return React.createElement(
     View,
-    null,
+    { style: { flexDirection: 'column', width: '100%' } },
     ...data.experience.map((job) =>
       React.createElement(
         View,
         { key: job.id, style: S.atom },
-        // Keep title/company together; allow description bullets to paginate.
         React.createElement(
           View,
-          { wrap: false },
+          { style: { flexDirection: 'column', width: '100%', marginBottom: 2 } },
           React.createElement(
             View,
             { style: S.rowBetween },
@@ -102,7 +152,7 @@ function ExperienceList({ data, theme, t }: { data: BuilderResumeData; theme: Pd
           ),
           React.createElement(Text, { style: t.itemMeta }, [job.company, job.location].filter(Boolean).join(' · ')),
         ),
-        React.createElement(Blocks, { html: job.description, theme }),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(job.description), theme }),
       ),
     ),
   )
@@ -147,22 +197,28 @@ function ProjectsList({ data, theme, t }: { data: BuilderResumeData; theme: PdfT
   if (!data.projects?.length) return null
   return React.createElement(
     View,
-    null,
-    ...data.projects.map((project) =>
-      React.createElement(
+    { style: { flexDirection: 'column', width: '100%' } },
+    ...data.projects.map((project) => {
+      const range = formatDateRange(project.startDate, project.endDate, project.isCurrent)
+      return React.createElement(
         View,
         { key: project.id, style: S.atom },
         React.createElement(
           View,
-          { wrap: false },
-          React.createElement(Text, { style: t.itemTitle }, project.title || 'Project'),
+          { style: { flexDirection: 'column', width: '100%', marginBottom: 2 } },
+          React.createElement(
+            View,
+            { style: S.rowBetween },
+            React.createElement(Text, { style: t.itemTitle }, project.title || 'Project'),
+            range ? React.createElement(Text, { style: t.muted }, range) : null,
+          ),
           project.organization
             ? React.createElement(Text, { style: t.itemMeta }, project.organization)
             : null,
         ),
-        React.createElement(Blocks, { html: project.description, theme }),
-      ),
-    ),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(project.description), theme }),
+      )
+    }),
   )
 }
 
@@ -179,7 +235,7 @@ function AchievementsList({ data, theme, t }: { data: BuilderResumeData; theme: 
         item.issuer || item.date
           ? React.createElement(Text, { style: t.itemMeta }, [item.issuer, item.date].filter(Boolean).join(' · '))
           : null,
-        React.createElement(Blocks, { html: item.description, theme }),
+        React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme }),
       ),
     ),
   )
@@ -325,7 +381,7 @@ function renderOrderedSection(
             { key: item.id, style: S.atom },
             React.createElement(Text, { style: t.itemTitle }, item.title),
             item.subtitle ? React.createElement(Text, { style: t.itemMeta }, item.subtitle) : null,
-            React.createElement(Blocks, { html: item.description, theme }),
+            React.createElement(Blocks, { html: cleanDescriptionHtml(item.description), theme }),
           ),
         ),
       )

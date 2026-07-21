@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from 'lucide-vue-next'
 import type { Job, UserDocumentSummary } from '~/shared/types/job'
+import { extractJobTitleFromResumeText } from '~/shared/utils/resumeJobTitle'
 
 const url = ref('')
 const useResumeForScrape = ref(false)
@@ -86,6 +87,14 @@ async function loadDocuments() {
     }>('/api/documents')
     resumeDoc.value = data.resume
     coverLetterDoc.value = data.coverLetter
+
+    if (data.resume?.contentText?.trim()) {
+      useResumeForScrape.value = true
+      if (!scrapeJobTitle.value.trim()) {
+        const fromResume = extractJobTitleFromResumeText(data.resume.contentText)
+        if (fromResume) scrapeJobTitle.value = fromResume
+      }
+    }
   } catch {
     // ignore
   }
@@ -124,18 +133,18 @@ async function handleScrape() {
   showFavorites.value = false
 
   try {
-    const data = await $fetch<{ jobs: Job[]; meta?: { targeted?: boolean; count?: number } }>(
-      '/api/scrape',
-      {
-        method: 'POST',
-        body: {
-          url: url.value.trim(),
-          useResume: useResumeForScrape.value,
-          useCoverLetter: useCoverLetterForScrape.value,
-          jobTitle: scrapeJobTitle.value.trim() || undefined,
-        },
+    const data = await $fetch<{
+      jobs: Job[]
+      meta?: { targeted?: boolean; count?: number; enriched?: number; targetJobTitle?: string | null }
+    }>('/api/scrape', {
+      method: 'POST',
+      body: {
+        url: url.value.trim(),
+        useResume: useResumeForScrape.value,
+        useCoverLetter: useCoverLetterForScrape.value,
+        jobTitle: scrapeJobTitle.value.trim() || undefined,
       },
-    )
+    })
 
     jobs.value = data.jobs || []
     hasScraped.value = true
@@ -147,17 +156,20 @@ async function handleScrape() {
       error.value =
         'Scrape completed but no related jobs were found. Try another careers URL, adjust the job title, or scrape without targeting.'
     } else {
-      const withFull = jobs.value.filter((j) => j.description && j.description.length > 200).length
+      const enriched =
+        data.meta?.enriched ??
+        jobs.value.filter((j) => j.descriptionSource === 'detail_page').length
+      const targetTitle = data.meta?.targetJobTitle || scrapeJobTitle.value.trim()
       const targeted =
         useResumeForScrape.value ||
         useCoverLetterForScrape.value ||
-        Boolean(scrapeJobTitle.value.trim())
+        Boolean(targetTitle)
       toastMessage.value = targeted
-        ? `Found ${jobs.value.length} related jobs (${withFull} with full descriptions).`
-        : `Saved ${jobs.value.length} jobs (${withFull} with full descriptions).`
+        ? `Found ${jobs.value.length} jobs related to ${targetTitle ? `“${targetTitle}”` : 'your profile'} (${enriched} with full detail pages).`
+        : `Saved ${jobs.value.length} jobs (${enriched} with full detail pages).`
       setTimeout(() => {
         toastMessage.value = null
-      }, 4000)
+      }, 4500)
     }
   } catch (err: unknown) {
     hasScraped.value = true
@@ -291,7 +303,7 @@ function hideHistoryDropdown() {
                 class="w-2.5 h-2.5 rounded-full"
                 :class="loading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"
               />
-              <span class="text-slate-400 font-semibold">{{ loading ? 'Scraping...' : 'Ready' }}</span>
+              <span class="text-slate-400 font-semibold">{{ loading ? 'Scraping listings + details…' : 'Ready' }}</span>
             </div>
             <CreditBadge />
             <NuxtLink
@@ -356,7 +368,7 @@ function hideHistoryDropdown() {
                 Sign in
               </NuxtLink>
               <div class="mt-auto pt-4 text-xs text-slate-500">
-                Status: {{ loading ? 'Scraping…' : 'Ready' }}
+                Status: {{ loading ? 'Scraping listings + details…' : 'Ready' }}
               </div>
             </nav>
           </div>
@@ -426,7 +438,7 @@ function hideHistoryDropdown() {
                 :class="scrapeInputDisabled ? 'opacity-50 pointer-events-none' : ''"
               >
                 <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Optional — find related roles
+                  Find related roles — uses resume job title when “Use resume” is on
                 </p>
                 <div class="flex flex-col lg:flex-row lg:items-center gap-3">
                   <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
@@ -437,7 +449,7 @@ function hideHistoryDropdown() {
                       :disabled="scrapeInputDisabled || !resumeDoc"
                     />
                     <span>
-                      Use resume
+                      Use resume job title
                       <span v-if="!resumeDoc" class="text-slate-500">(upload first)</span>
                     </span>
                   </label>
@@ -457,7 +469,7 @@ function hideHistoryDropdown() {
                     <input
                       v-model="scrapeJobTitle"
                       type="text"
-                      placeholder="Or target job title (e.g. Senior Backend Engineer)"
+                      placeholder="Target job title (auto-filled from resume)"
                       class="w-full bg-slate-950/40 border border-slate-800/80 focus:border-indigo-500/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none transition-all disabled:cursor-not-allowed"
                       :disabled="scrapeInputDisabled"
                     />

@@ -5,6 +5,7 @@ import { resumeTemplates, getResumeTemplate, resolveResumeTemplateId } from '~/u
 import type { BuilderResumeData, BuilderCustomSection } from '~/shared/types/builder'
 import { downloadServerPdf } from '~/utils/downloadServerPdf'
 import {
+  normalizeBulletListHtml,
   prepareEditorHtml,
 } from '~/utils/richText'
 import { slugifyFilename } from '~/utils/download'
@@ -103,7 +104,9 @@ const resumeData = ref<BuilderResumeData>({
     linkedin: 'linkedin.com/in/jonathansterling',
     portfolio: 'jonathansterling.design',
     github: '',
-    summary: '<p>Strategic and visionary Product Designer with over 8 years of experience building scalable digital ecosystems.</p>'
+    summary: '<p>Strategic and visionary Product Designer with over 8 years of experience building scalable digital ecosystems.</p>',
+    targetRole: '',
+    commandPrompt: ''
   },
   experience: [
     {
@@ -116,6 +119,8 @@ const resumeData = ref<BuilderResumeData>({
       isCurrent: true,
       description:
         '<ul><li>Led end-to-end delivery of customer-facing web platforms using React, Node.js, and cloud infrastructure.</li><li>Improved release reliability with automated tests and CI/CD, cutting production incidents over successive quarters.</li><li>Mentored engineers and partnered with product to ship scoped features on a predictable cadence.</li></ul>',
+      targetRole: '',
+      commandPrompt: ''
     },
   ],
   education: [
@@ -165,6 +170,7 @@ type AtsCheckResult = {
 const atsRunning = ref(false)
 const atsFixing = ref(false)
 const atsResult = ref<AtsCheckResult | null>(null)
+const atsFixInstructions = ref('')
 
 function hasResumeSignal() {
   const info = resumeData.value.personalInfo
@@ -355,6 +361,7 @@ async function fixAtsIssues() {
         resumeData: resumeData.value,
         atsResult: atsResult.value,
         jobDescription: resumeData.value.targetJobDescription || undefined,
+        fixInstructions: atsFixInstructions.value.trim() || undefined,
       },
     })
     if (response?.resumeData) {
@@ -385,8 +392,10 @@ function atsSeverityClass(severity: string) {
   return 'border-sky-500/40 bg-sky-500/10 text-sky-100'
 }
 
-function normalizeEnhancedHtml(raw: string) {
-  return prepareEditorHtml(raw)
+function normalizeEnhancedHtml(raw: string, asBullets = false) {
+  const cleaned = prepareEditorHtml(raw)
+  if (!asBullets) return cleaned
+  return normalizeBulletListHtml(cleaned)
 }
 
 async function handleLanguageChange(e: Event) {
@@ -657,7 +666,7 @@ async function downloadPreviewPdf() {
   }
 }
 
-async function enhanceDescription(item: { id: string, title?: string, description?: string }, type: 'experience' | 'project' | 'summary') {
+async function enhanceDescription(item: { id: string, title?: string, description?: string, targetRole?: string, commandPrompt?: string }, type: 'experience' | 'project' | 'summary') {
   if (!canAccessAI.value) {
     toast.info(aiBlockedMessage() || 'Pro subscription required for AI.')
     return
@@ -682,11 +691,13 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
         title: targetTitle,
         currentDescription: type === 'summary' ? resumeData.value.personalInfo.summary : (item.description || ''),
         type,
-        experiences: type === 'summary' ? resumeData.value.experience : undefined
+        experiences: type === 'summary' ? resumeData.value.experience : undefined,
+        targetRole: item.targetRole || '',
+        commandPrompt: item.commandPrompt || ''
       }
     })
 
-    const html = normalizeEnhancedHtml(result.enhancedDescription)
+    const html = normalizeEnhancedHtml(result.enhancedDescription, type !== 'summary')
     
     if (type === 'summary') {
       resumeData.value.personalInfo.summary = html
@@ -717,7 +728,7 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
 
 function addExperience() {
   resumeData.value.experience.push({
-    id: newId(), title: '', company: '', location: '', startDate: '', endDate: '', isCurrent: false, description: ''
+    id: newId(), title: '', company: '', location: '', startDate: '', endDate: '', isCurrent: false, description: '', targetRole: '', commandPrompt: ''
   })
 }
 function removeExperience(index: number) { resumeData.value.experience.splice(index, 1) }
@@ -736,7 +747,7 @@ function removeSkill(index: number) { resumeData.value.skills.splice(index, 1) }
 
 function addProject() {
   resumeData.value.projects.push({
-    id: newId(), title: '', description: '', isCurrent: false
+    id: newId(), title: '', description: '', isCurrent: false, targetRole: '', commandPrompt: ''
   })
 }
 function removeProject(index: number) { resumeData.value.projects.splice(index, 1) }
@@ -911,7 +922,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
       <main class="flex-1 flex overflow-hidden min-w-0">
         <!-- Left Pane: Editor Form -->
         <section
-          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-1/2"
+          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-[40%]"
           :class="mobilePane === 'edit' ? 'flex' : 'hidden lg:flex'"
           @click="activePopoverId = null"
         >
@@ -1006,16 +1017,30 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   <input v-model="resumeData.personalInfo.github" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
+                  <textarea v-model="resumeData.personalInfo.targetRole" rows="2" placeholder="e.g. Senior Product Designer" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm resize-y"></textarea>
+                </div>
+                <div class="flex flex-col">
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
+                  <input v-model="resumeData.personalInfo.commandPrompt" type="text" placeholder="e.g. Focus on UX research and strategy" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm" />
+                </div>
+              </div>
+
               <div class="flex flex-col relative">
                 <div class="flex justify-between items-end mb-1">
                   <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Professional Summary <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
-                  <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
+                  <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary, targetRole: resumeData.personalInfo.targetRole, commandPrompt: resumeData.personalInfo.commandPrompt }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
                     <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has('summary')}">{{ enhancingIds.has('summary') ? 'refresh' : 'auto_awesome' }}</span>
                     {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance' }}
                   </button>
                 </div>
                 <div class="bg-white/5 rounded border border-white/10">
-                  <BuilderRichTextEditor v-model="resumeData.personalInfo.summary" />
+                  <BuilderRichTextEditor
+                    :key="'summary-editor'"
+                    v-model="resumeData.personalInfo.summary"
+                  />
                 </div>
               </div>
             </div>
@@ -1165,16 +1190,31 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                       </label>
                     </div>
                   </div>
+                  <!-- AI Enhance Helpers for Experience -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-3 rounded-lg border border-white/5">
+                    <div class="flex flex-col">
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
+                      <textarea v-model="exp.targetRole" rows="2" placeholder="e.g. Principal Web Architect" class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
+                    </div>
+                    <div class="flex flex-col">
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
+                      <input v-model="exp.commandPrompt" type="text" placeholder="e.g. Focus on system architecture and Next.js" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                    </div>
+                  </div>
+
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
                       <button @click="enhanceDescription(exp, 'experience')" :disabled="enhancingIds.has(exp.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
                         <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(exp.id)}">{{ enhancingIds.has(exp.id) ? 'refresh' : 'auto_awesome' }}</span>
                         {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance' }}
                       </button>
                     </div>
                     <div class="bg-white/5 rounded border border-white/10">
-                      <BuilderRichTextEditor v-model="exp.description" />
+                      <BuilderBulletDescriptionEditor
+                        :key="`exp-desc-${exp.id}`"
+                        v-model="resumeData.experience[index].description"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1236,16 +1276,31 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                       </label>
                     </div>
                   </div>
+                  <!-- AI Enhance Helpers for Project -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-3 rounded-lg border border-white/5">
+                    <div class="flex flex-col">
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
+                      <textarea v-model="proj.targetRole" rows="2" placeholder="e.g. Lead Engineer" class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
+                    </div>
+                    <div class="flex flex-col">
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
+                      <input v-model="proj.commandPrompt" type="text" placeholder="e.g. Focus on API design and scaling" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                    </div>
+                  </div>
+
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
                       <button @click="enhanceDescription(proj, 'project')" :disabled="enhancingIds.has(proj.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 z-10">
                         <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(proj.id)}">{{ enhancingIds.has(proj.id) ? 'refresh' : 'auto_awesome' }}</span>
                         {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance' }}
                       </button>
                     </div>
                     <div class="bg-white/5 rounded border border-white/10">
-                      <BuilderRichTextEditor v-model="proj.description" />
+                      <BuilderBulletDescriptionEditor
+                        :key="`proj-desc-${proj.id}`"
+                        v-model="resumeData.projects[index].description"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1286,11 +1341,13 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     </div>
                   </div>
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description / Honors <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description / Honors <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
                     <div class="bg-white/5 rounded border border-white/10 mt-1">
-                      <ClientOnly>
-                      <BuilderRichTextEditor v-model="edu.description" editor-class="min-h-[100px]" />
-                      </ClientOnly>
+                      <BuilderBulletDescriptionEditor
+                        :key="`edu-desc-${edu.id}`"
+                        v-model="resumeData.education[index].description"
+                        :rows="4"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1345,11 +1402,13 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     </div>
                   </div>
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description (Optional) <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description (Optional) <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
                     <div class="bg-white/5 rounded border border-white/10 mt-1">
-                      <ClientOnly>
-                      <BuilderRichTextEditor v-model="ach.description" editor-class="min-h-[100px]" />
-                      </ClientOnly>
+                      <BuilderBulletDescriptionEditor
+                        :key="`ach-desc-${ach.id}`"
+                        v-model="resumeData.achievements[index].description"
+                        :rows="4"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1394,11 +1453,13 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                         <input v-model="item.subtitle" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none text-sm transition-colors" />
                       </div>
                       <div class="flex flex-col">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
                         <div class="bg-white/5 rounded border border-white/10 mt-1">
-                          <ClientOnly>
-                          <BuilderRichTextEditor v-model="item.description" editor-class="min-h-[100px]" />
-                          </ClientOnly>
+                          <BuilderBulletDescriptionEditor
+                            :key="`custom-desc-${item.id}`"
+                            v-model="resumeData.customSections[sIndex].items[iIndex].description"
+                            :rows="4"
+                          />
                         </div>
                       </div>
                     </div>
@@ -1440,6 +1501,17 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                   placeholder="Paste a job description to check keyword alignment (same field as Target Role)…"
                 />
               </div>
+              <div class="flex flex-col">
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
+                  Fix instructions <span class="normal-case text-slate-500">(optional — for Fix ATS Issues)</span>
+                </label>
+                <textarea
+                  v-model="atsFixInstructions"
+                  rows="3"
+                  class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
+                  placeholder="What to fix or leave alone. Example: Improve bullets and keywords, but do not change company names or dates. Keep the summary short."
+                />
+              </div>
               <div class="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -1466,7 +1538,7 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
               </button>
               </div>
               <p v-if="atsResult" class="text-[11px] text-slate-400 w-full">
-                Fix uses 3 credits and rewrites summary, bullets, and skills from the audit findings.
+                Fix uses 3 credits and rewrites summary, bullets, and skills from the audit findings. Your fix instructions (if any) take priority.
               </p>
             </div>
 
@@ -1537,10 +1609,10 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
 
         <!-- Right Pane: Live PDF preview (matches selected gallery template) -->
         <section
-          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-1/2"
+          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-[60%]"
           :class="mobilePane === 'preview' ? 'flex' : 'hidden lg:flex'"
         >
-          <div class="shrink-0 mx-auto">
+          <div class="shrink-0 mx-auto w-full max-w-[240mm]">
             <BuilderPdfResumePdfPreview :resume="resumeData" />
           </div>
         </section>

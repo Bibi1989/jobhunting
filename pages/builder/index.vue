@@ -114,39 +114,24 @@ async function deleteDocument(doc: BuilderDocCard) {
         </section>
 
         <section v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <div
+          <NuxtLink
             v-for="doc in documents"
             :key="`${doc.type}-${doc.id}`"
-            class="group bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden flex flex-col hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:border-blue-400/50 hover:-translate-y-1 transition-all duration-300"
+            :to="`/builder/${doc.type === 'cover_letter' ? 'cover-letter' : 'resume'}/${doc.id}`"
+            class="group bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden flex flex-col hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:border-blue-400/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
             <div class="relative aspect-[3/4] bg-slate-800/40 p-3 overflow-hidden border-b border-white/5">
               <BuilderDocumentThumbnail :preview="doc.preview" :type="doc.type" />
-              <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <NuxtLink
-                  :to="`/builder/${doc.type === 'cover_letter' ? 'cover-letter' : 'resume'}/${doc.id}`"
-                  class="bg-blue-500 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-400 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer"
-                >
-                  Edit
-                </NuxtLink>
-                <button
-                  type="button"
-                  class="bg-red-600/90 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                  :disabled="deletingKey === `${doc.type}-${doc.id}`"
-                  @click.stop="deleteDocument(doc)"
-                >
-                  {{ deletingKey === `${doc.type}-${doc.id}` ? 'Deleting…' : 'Delete' }}
-                </button>
-              </div>
             </div>
             <div class="p-4">
               <div class="flex justify-between items-start mb-2 gap-2">
                 <h3 class="font-semibold text-white truncate pr-2 group-hover:text-blue-400 transition-colors">{{ doc.name }}</h3>
                 <button
                   type="button"
-                  class="shrink-0 text-slate-500 hover:text-red-400 material-symbols-outlined text-[18px] cursor-pointer disabled:opacity-40"
+                  class="shrink-0 text-slate-500 hover:text-red-400 material-symbols-outlined text-[18px] cursor-pointer disabled:opacity-40 z-10"
                   title="Delete"
                   :disabled="deletingKey === `${doc.type}-${doc.id}`"
-                  @click="deleteDocument(doc)"
+                  @click.prevent.stop="deleteDocument(doc)"
                 >
                   delete
                 </button>
@@ -156,7 +141,7 @@ async function deleteDocument(doc: BuilderDocCard) {
                 <span class="text-xs text-slate-400">Edited {{ formatDate(doc.updatedAt) }}</span>
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </section>
       </div>
   </div>

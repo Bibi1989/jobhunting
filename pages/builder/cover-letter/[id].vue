@@ -607,7 +607,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
       <main class="flex-1 flex overflow-hidden min-w-0">
         <section
-          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-1/2"
+          class="h-full flex-col bg-slate-900/40 backdrop-blur-md border-r border-white/10 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative w-full lg:w-[40%]"
           :class="mobilePane === 'edit' ? 'flex' : 'hidden lg:flex'"
         >
           <div v-if="activeTab === 'template'">
@@ -864,10 +864,10 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         </section>
 
         <section
-          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-1/2"
+          class="h-full bg-slate-800/80 overflow-auto p-4 sm:p-8 lg:p-12 justify-start lg:justify-center items-start shadow-inner w-full lg:w-[60%]"
           :class="mobilePane === 'preview' ? 'flex' : 'hidden lg:flex'"
         >
-          <div class="shrink-0 mx-auto w-full max-w-[210mm]">
+          <div class="shrink-0 mx-auto w-full max-w-[240mm]">
             <BuilderPdfCoverLetterPdfPreview
               :resume="resumeData"
               :cover-letter="coverLetter"

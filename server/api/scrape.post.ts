@@ -18,6 +18,7 @@ import {
   shouldUseSearchFallback,
 } from '../utils/scraper'
 import { withCredits } from '../utils/withCredits'
+import { extractJobTitleFromResumeText } from '../../shared/utils/resumeJobTitle'
 
 export default withCredits(
   async (event) => {
@@ -28,14 +29,16 @@ export default withCredits(
       jobTitle?: string
     }>(event)
     const url = body?.url?.trim()
-    const jobTitle = body?.jobTitle?.trim() || ''
+    const manualJobTitle = body?.jobTitle?.trim() || ''
 
     if (!url) {
       throw createError({ statusCode: 400, statusMessage: 'URL is required' })
     }
 
     let target: JobScrapeTarget | null = null
-    if (body?.useResume || body?.useCoverLetter || jobTitle) {
+    let resolvedJobTitle = manualJobTitle
+
+    if (body?.useResume || body?.useCoverLetter || manualJobTitle) {
       const user = event.context.user
       if (!user?.id) {
         throw createError({ statusCode: 401, statusMessage: 'Authentication required' })
@@ -54,9 +57,16 @@ export default withCredits(
             'No cover letter uploaded. Upload a cover letter or uncheck “Use cover letter”.',
         })
       }
+
+      const resumeText = body.useResume ? docs.resume?.contentText : undefined
+      // Prefer an explicit title; otherwise derive from the uploaded resume.
+      if (!resolvedJobTitle && resumeText) {
+        resolvedJobTitle = extractJobTitleFromResumeText(resumeText)
+      }
+
       target = {
-        jobTitle: jobTitle || undefined,
-        resumeText: body.useResume ? docs.resume?.contentText : undefined,
+        jobTitle: resolvedJobTitle || undefined,
+        resumeText,
         coverLetterText: body.useCoverLetter ? docs.coverLetter?.contentText : undefined,
       }
       if (!hasScrapeTarget(target)) {
@@ -120,7 +130,7 @@ export default withCredits(
         count: savedJobs.length,
         usedSearch,
         targeted: Boolean(hasScrapeTarget(target)),
-        targetJobTitle: jobTitle || null,
+        targetJobTitle: resolvedJobTitle || null,
         sourceStatus: statusText,
         scrapeRunId,
         enriched: savedJobs.filter((j) => j.descriptionSource === 'detail_page').length,

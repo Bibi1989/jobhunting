@@ -24,8 +24,20 @@ const DESCRIPTION_SCHEMA = {
   required: ['description'],
 } as const
 
-const MAX_DETAIL_PAGES = 12
-const CONCURRENCY = 3
+const MAX_DETAIL_PAGES = Number(process.env.SCRAPE_MAX_DETAIL_PAGES || 40)
+const CONCURRENCY = Number(process.env.SCRAPE_DETAIL_CONCURRENCY || 4)
+
+function urlsMatch(a: string, b: string): boolean {
+  try {
+    const left = new URL(a)
+    const right = new URL(b)
+    const norm = (u: URL) =>
+      `${u.origin}${u.pathname.replace(/\/+$/, '') || '/'}`.toLowerCase()
+    return norm(left) === norm(right)
+  } catch {
+    return a.replace(/\/+$/, '').toLowerCase() === b.replace(/\/+$/, '').toLowerCase()
+  }
+}
 
 export async function enrichJobsWithFullDescriptions(
   ai: GoogleGenAI,
@@ -33,20 +45,22 @@ export async function enrichJobsWithFullDescriptions(
   jobs: Job[],
   listingUrl: string,
 ): Promise<Job[]> {
-  const targets = jobs.slice(0, MAX_DETAIL_PAGES)
+  const limit = Number.isFinite(MAX_DETAIL_PAGES) && MAX_DETAIL_PAGES > 0 ? MAX_DETAIL_PAGES : jobs.length
+  const targets = jobs.slice(0, limit)
   const enriched: Job[] = []
+  const concurrency = Math.max(1, Number.isFinite(CONCURRENCY) ? CONCURRENCY : 4)
 
-  for (let i = 0; i < targets.length; i += CONCURRENCY) {
-    const batch = targets.slice(i, i + CONCURRENCY)
+  for (let i = 0; i < targets.length; i += concurrency) {
+    const batch = targets.slice(i, i + concurrency)
     const results = await Promise.all(
       batch.map((job) => enrichSingleJob(ai, models, job, listingUrl)),
     )
     enriched.push(...results)
   }
 
-  if (jobs.length > MAX_DETAIL_PAGES) {
+  if (jobs.length > targets.length) {
     enriched.push(
-      ...jobs.slice(MAX_DETAIL_PAGES).map((job) => ({
+      ...jobs.slice(targets.length).map((job) => ({
         ...job,
         descriptionSource: job.description ? 'listing' : undefined,
       })),
@@ -62,7 +76,7 @@ async function enrichSingleJob(
   job: Job,
   listingUrl: string,
 ): Promise<Job & { descriptionSource?: string }> {
-  if (!job.url || job.url === listingUrl) {
+  if (!job.url || urlsMatch(job.url, listingUrl)) {
     return {
       ...job,
       descriptionSource: job.description ? 'listing' : undefined,
@@ -70,7 +84,7 @@ async function enrichSingleJob(
   }
 
   try {
-    const { html, isError, status } = await fetchPageHtml(job.url)
+    const { html, isError, status, finalUrl } = await fetchPageHtml(job.url)
     if (isError || status >= 400 || !html) {
       return {
         ...job,
@@ -78,7 +92,15 @@ async function enrichSingleJob(
       }
     }
 
-    const cleaned = cleanHtmlForExtraction(html, job.url)
+    // Some boards redirect detail links back to the listing — keep listing text.
+    if (urlsMatch(finalUrl, listingUrl)) {
+      return {
+        ...job,
+        descriptionSource: job.description ? 'listing' : undefined,
+      }
+    }
+
+    const cleaned = cleanHtmlForExtraction(html, finalUrl || job.url)
     if (cleaned.length < 200) {
       return {
         ...job,
@@ -87,7 +109,13 @@ async function enrichSingleJob(
     }
 
     const details = await extractFullDescription(ai, models, cleaned, job)
-    const description = details.description?.trim() || job.description
+    const detailDescription = details.description?.trim() || ''
+    // Prefer the detail-page text whenever it is meaningfully longer than the listing blurb.
+    const listingDescription = job.description?.trim() || ''
+    const description =
+      detailDescription.length >= Math.max(120, listingDescription.length * 0.6)
+        ? detailDescription
+        : detailDescription || listingDescription
 
     return {
       ...job,
@@ -97,8 +125,12 @@ async function enrichSingleJob(
       salaryMin: details.salaryMin ?? job.salaryMin,
       salaryMax: details.salaryMax ?? job.salaryMax,
       currency: details.currency || job.currency,
-      description,
-      descriptionSource: description ? 'detail_page' : job.description ? 'listing' : undefined,
+      description: description || undefined,
+      descriptionSource: detailDescription
+        ? 'detail_page'
+        : listingDescription
+          ? 'listing'
+          : undefined,
     }
   } catch (error) {
     console.warn(`Failed to enrich ${job.url}:`, formatGeminiError(error))

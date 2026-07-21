@@ -26,7 +26,7 @@ function resolveTemplateId(data: BuilderResumeData) {
 }
 
 function buildBodyChildren(content: string, textStyle: TextStyle) {
-  const blocks = htmlToBlocks(content)
+  const blocks = htmlToBlocks(content, true)
   const plainFallback = stripHtmlToPlain(content)
 
   if (blocks.length === 0) {

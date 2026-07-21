@@ -33,18 +33,19 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     /**
-     * Prefer GEMINI_API_KEY in web/.env (resolved at request time via resolveGeminiApiKey).
-     * Optional override: NUXT_GEMINI_API_KEY.
+     * Secrets and model MUST come from env at runtime (Netlify / web/.env).
+     * Do not bake API keys or production models into this file.
+     *   GEMINI_API_KEY or NUXT_GEMINI_API_KEY
+     *   GEMINI_MODEL or NUXT_GEMINI_MODEL  (e.g. gemini-3.1-pro-preview)
      */
     geminiApiKey: '',
-    /** Prefer GEMINI_MODEL in web/.env; optional NUXT_GEMINI_MODEL. */
-    geminiModel: 'gemini-3.1-pro-preview',
+    geminiModel: '',
     // Empty default — set DATABASE_URL or NUXT_DATABASE_URL at runtime (Netlify).
     // Do not bake a localhost URL here or prod will silently ignore DATABASE_URL.
     databaseUrl: '',
-    ollamaBaseUrl: 'http://localhost:11434',
-    ollamaModel: 'gemma4:e4b',
-    ollamaFallbackModels: 'llama3.2:latest',
+    ollamaBaseUrl: '',
+    ollamaModel: '',
+    ollamaFallbackModels: '',
     stripeSecretKey: '',
     stripeWebhookSecret: '',
     stripePriceProMonthly: '',
@@ -53,9 +54,10 @@ export default defineNuxtConfig({
     resendApiKey: '',
     contactFromEmail: '',
     /** Override with NUXT_API_PROXY_TARGET */
-    apiProxyTarget: 'http://127.0.0.1:8000',
+    apiProxyTarget: '',
     session: {
-      password: 'jobflow-dev-session-password-change-me-32chars',
+      /** Override with NUXT_SESSION_PASSWORD (≥32 chars). Dev fallback only. */
+      password: '',
     },
     public: {
       appName: 'JobHunting',

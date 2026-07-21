@@ -8,6 +8,8 @@ export interface BuilderPersonalInfo {
   linkedin?: string
   github?: string
   portfolio?: string
+  targetRole?: string
+  commandPrompt?: string
 }
 
 export interface BuilderExperience {
@@ -21,6 +23,8 @@ export interface BuilderExperience {
   description: string
   companyWebsite?: string
   companyWebsiteName?: string
+  targetRole?: string
+  commandPrompt?: string
 }
 
 export interface BuilderEducation {
@@ -49,6 +53,8 @@ export interface BuilderProject {
   description?: string
   linkUrl?: string
   linkName?: string
+  targetRole?: string
+  commandPrompt?: string
 }
 
 export interface BuilderAchievement {

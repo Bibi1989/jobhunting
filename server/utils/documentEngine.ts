@@ -10,10 +10,11 @@ import {
   type CandidateProfile,
 } from '../../shared/samples/candidateProfile'
 import { formatGeminiError } from './jobs'
-import { resolveGeminiApiKey } from './gemini'
+import { resolveGeminiApiKey, resolveGeminiModel } from './gemini'
 
-export const MODEL_PDF_TAILOR = 'gemini-3.1-pro-preview'
-export const MODEL_FLASH_LITE = 'gemini-3.1-pro-preview'
+export function getDocumentAiModel(): string {
+  return resolveGeminiModel()
+}
 
 export interface DocumentPair {
   resume: string
@@ -137,7 +138,7 @@ ${input.jobDescription.slice(0, 14000)}`
 
   try {
     const response = await input.ai.models.generateContent({
-      model: MODEL_PDF_TAILOR,
+      model: getDocumentAiModel(),
       contents,
       config: {
         responseMimeType: 'application/json',
@@ -167,7 +168,7 @@ export async function generateFromJobDescriptionOnly(input: {
 
   try {
     const response = await input.ai.models.generateContent({
-      model: MODEL_FLASH_LITE,
+      model: getDocumentAiModel(),
       contents: `Analyze this job description. Return JSON with:
 title, company, requiredSkills (array), preferredSkills (array), keywords (array),
 responsibilities (array of concrete duties), seniority, tone.

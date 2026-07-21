@@ -2,9 +2,9 @@
 import { prepareEditorHtml } from '~/utils/richText'
 
 /**
- * Quill wrapper that keeps the editor in sync when modelValue is changed
- * programmatically (e.g. AI Enhance). Stock QuillEditor often leaves the
- * toolbar empty while Vue state / preview already has the new HTML.
+ * Quill wrapper. External model updates (e.g. AI Enhance) are applied when the
+ * editor is not focused. While typing we only emit Quill HTML — never re-paste
+ * sanitized HTML back into Quill (that was clearing whole descriptions on delete).
  */
 const props = withDefaults(
   defineProps<{
@@ -25,21 +25,33 @@ type QuillApi = {
   setHTML: (html: string) => void
   getHTML: () => string
   pasteHTML: (html: string, source?: string) => void
+  getQuill?: () => { root?: HTMLElement; getSelection?: () => unknown; setSelection?: (...args: unknown[]) => void }
 }
 
 const quillRef = ref<QuillApi | null>(null)
 const ready = ref(false)
 const syncing = ref(false)
+const focused = ref(false)
+/** Seed once for Quill; after ready, content is driven by pasteHTML / user input. */
+const initialContent = ref(prepareEditorHtml(props.modelValue || '') || '')
 
 function normalize(html?: string | null) {
-  const value = String(html || '')
+  return String(html || '')
     .replace(/<p><br\s*\/?><\/p>/gi, '')
     .replace(/<p>\s*<\/p>/gi, '')
+    .replace(/\s+/g, ' ')
     .trim()
-  return value
 }
 
-function applyHtml(html: string, emitCleaned = false) {
+function getEditorHtml(): string {
+  try {
+    return quillRef.value?.getHTML?.() || ''
+  } catch {
+    return ''
+  }
+}
+
+function applyExternalHtml(html: string) {
   const editor = quillRef.value
   if (!editor || !ready.value) return
 
@@ -47,12 +59,9 @@ function applyHtml(html: string, emitCleaned = false) {
   syncing.value = true
   try {
     if (typeof editor.pasteHTML === 'function') {
-      editor.pasteHTML(cleaned || '', 'api')
+      editor.pasteHTML(cleaned || '<p><br></p>', 'api')
     } else {
       editor.setHTML(cleaned || '')
-    }
-    if (emitCleaned && normalize(cleaned) !== normalize(props.modelValue)) {
-      emit('update:modelValue', cleaned)
     }
   } finally {
     window.setTimeout(() => {
@@ -63,42 +72,71 @@ function applyHtml(html: string, emitCleaned = false) {
 
 function onReady() {
   ready.value = true
-  applyHtml(props.modelValue || '', true)
+  const desired = prepareEditorHtml(props.modelValue || '')
+  if (normalize(getEditorHtml()) !== normalize(desired)) {
+    applyExternalHtml(desired)
+  }
 }
 
 watch(
   () => props.modelValue,
   (value) => {
-    if (!ready.value || syncing.value) return
-    let current = ''
-    try {
-      current = quillRef.value?.getHTML() || ''
-    } catch {
-      return
-    }
-    if (normalize(current) === normalize(value)) return
-    applyHtml(value || '')
+    if (!ready.value || syncing.value || focused.value) return
+    if (normalize(getEditorHtml()) === normalize(value)) return
+    applyExternalHtml(value || '')
   },
 )
 
-function onUpdate() {
+function onUpdate(content?: string) {
   if (syncing.value) return
-  const editor = quillRef.value
-  const html = editor && typeof editor.getHTML === 'function' ? editor.getHTML() : ''
+  // Prefer the event payload from Quill; fall back to getHTML.
+  const html = typeof content === 'string' ? content : getEditorHtml()
+  // Do NOT run prepareEditorHtml here — it rewrites lists/structure mid-edit and
+  // can wipe the whole field when deleting a selection or characters.
+  if (html === props.modelValue) return
+  syncing.value = true
+  emit('update:modelValue', html)
+  nextTick(() => {
+    syncing.value = false
+  })
+}
+
+function onFocus() {
+  focused.value = true
+}
+
+function onBlur(event: FocusEvent) {
+  const root = event.currentTarget as HTMLElement | null
+  const next = event.relatedTarget as Node | null
+  // Ignore toolbar / internal Quill focus moves.
+  if (root && next && root.contains(next)) return
+  focused.value = false
+  // Light cleanup only after the user leaves the field.
+  const html = getEditorHtml()
   const cleaned = prepareEditorHtml(html)
-  if (normalize(cleaned) === normalize(props.modelValue)) return
-  emit('update:modelValue', cleaned)
+  if (normalize(cleaned) !== normalize(props.modelValue)) {
+    syncing.value = true
+    emit('update:modelValue', cleaned)
+    nextTick(() => {
+      syncing.value = false
+    })
+  }
 }
 </script>
 
 <template>
   <ClientOnly>
-    <div class="builder-rich-text">
+    <div class="builder-rich-text" @focusin="onFocus" @focusout="onBlur($event)">
       <QuillEditor
         ref="quillRef"
         theme="snow"
         content-type="html"
-        :content="modelValue || ''"
+        :content="initialContent"
+        :toolbar="[
+          ['bold', 'italic', 'underline'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['clean'],
+        ]"
         class="ql-editor-custom"
         :class="editorClass"
         @ready="onReady"

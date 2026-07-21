@@ -1,4 +1,5 @@
-import { createGeminiClient } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import { builderResumeToMarkdown } from '~/utils/builderToMarkdown'
 
@@ -54,9 +55,9 @@ export default withCredits(async (event) => {
       : ''
 
   const ai = createGeminiClient()
+  const model = resolveGeminiModel()
 
-  const prompt = `You are an expert ATS (Applicant Tracking System) resume auditor.
-Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".
+  const prompt = withCareerExpertPrompt(`Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".
 
 Resume (markdown):
 """
@@ -75,16 +76,16 @@ Return ONLY valid JSON matching this schema (no markdown fences):
   "issues": [{ "severity": "critical"|"warning"|"info", "category": string, "message": string, "suggestion": string }],
   "keywordGaps": string[],
   "quickWins": string[]
-}`
+}`)
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model,
       contents: prompt,
-      config: {
+      config: careerExpertGenerateConfig({
         temperature: 0.35,
         responseMimeType: 'application/json',
-      },
+      }),
     })
 
     const raw = (response.text || '').trim()

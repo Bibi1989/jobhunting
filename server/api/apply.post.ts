@@ -3,6 +3,7 @@ import {
   generateFromJobDescriptionOnly,
   generateFromPdfResume,
 } from '../utils/documentEngine'
+import { resolveGeminiModel } from '../utils/gemini'
 import { withCredits } from '../utils/withCredits'
 
 function partText(part?: { data?: Buffer | Uint8Array }): string {
@@ -92,7 +93,7 @@ export default withCredits(async (event) => {
         resume: docs.resume,
         coverLetter: docs.coverLetter,
         mode: 'pdf' as const,
-        model: 'gemini-3.1-pro-preview',
+        model: resolveGeminiModel(),
       }
     }
 
@@ -105,7 +106,7 @@ export default withCredits(async (event) => {
       resume: docs.resume,
       coverLetter: docs.coverLetter,
       mode: 'template' as const,
-      model: 'gemini-3.1-pro-preview',
+      model: resolveGeminiModel(),
     }
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'statusCode' in error) {

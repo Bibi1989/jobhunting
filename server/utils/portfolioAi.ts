@@ -1,4 +1,5 @@
-import { createGeminiClient, generateWithModels, resolveGeminiModel } from './gemini'
+import { createGeminiClient, generateWithModels, resolveGeminiModelChain } from './gemini'
+import { careerExpertGenerateConfig } from './careerExpertPrompt'
 import type { PortfolioProfileData, PortfolioProject } from '~/shared/types/portfolio'
 
 /**
@@ -118,15 +119,16 @@ export async function generatePortfolioFromText(
   jobDescription?: string,
 ): Promise<PortfolioProfileData> {
   const ai = createGeminiClient()
-
-  // Prefer the configured model, then fall back to a known-good flash model.
-  const models = [resolveGeminiModel(), 'gemini-2.5-flash', 'gemini-2.0-flash']
+  const models = resolveGeminiModelChain()
 
   const response = await generateWithModels(ai, models, (model) =>
     ai.models.generateContent({
       model,
       contents: buildPrompt(documentText, jobDescription),
-      config: { temperature: 0.4, responseMimeType: 'application/json' },
+      config: careerExpertGenerateConfig({
+        temperature: 0.4,
+        responseMimeType: 'application/json',
+      }),
     }),
   )
 

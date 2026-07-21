@@ -1,5 +1,6 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
-import { formatGeminiError, getGeminiModels } from '../../utils/jobs'
+import { createGeminiClient, resolveGeminiModelChain } from '../../utils/gemini'
+import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
 
 function stripHtml(html: string) {
@@ -60,12 +61,7 @@ export default withCredits(async (event) => {
     typeof additionalInstructions === 'string' ? additionalInstructions.trim() : ''
 
   const ai = createGeminiClient()
-  const primary = resolveGeminiModel()
-  const models = [
-    ...new Set(
-      ['gemini-2.5-flash', primary, ...getGeminiModels(primary), 'gemini-2.0-flash'].filter(Boolean),
-    ),
-  ]
+  const models = resolveGeminiModelChain()
 
   const enhanceBlock = hasExistingDraft
     ? `
@@ -99,8 +95,7 @@ ${extraInstructions}
     jd ? 'a job description is available — tailor to it' : 'no job description — emphasize transferable strengths and interest in the role/company',
   ].join('; ')
 
-  const prompt = `You are an expert career coach and professional copywriter.
-Your task is to produce a highly persuasive, customized cover letter for a job applicant.
+  const prompt = withCareerExpertPrompt(`Your task is to produce a highly persuasive, customized cover letter for a job applicant.
 Context: ${sourceNote}.
 
 Applicant Information (from their Resume):
@@ -140,7 +135,7 @@ CRITICAL INSTRUCTIONS:
 - Never invent employers, degrees, or metrics that are not grounded in the provided resume/job text.
 - Ensure the tone matches the requested tone exactly.
 - If the user asks to keep the letter to one page (or similar length limits), write a concise letter of about 250–350 words / 3–4 short paragraphs so it fits on a single A4 page with a standard header.
-- Output ONLY the HTML string. Do not include any other conversational text.`
+- Output ONLY the HTML string. Do not include any other conversational text.`)
 
   let lastError: unknown = null
   for (const model of models) {
@@ -148,9 +143,9 @@ CRITICAL INSTRUCTIONS:
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
-        config: {
+        config: careerExpertGenerateConfig({
           temperature: 0.7,
-        },
+        }),
       })
 
       const text = cleanHtmlResponse(response.text || '')

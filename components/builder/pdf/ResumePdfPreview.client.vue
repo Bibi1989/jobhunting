@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="resume-pdf-preview relative w-full min-w-0 max-w-[210mm] mx-auto min-h-[842px] bg-white">
+  <div class="resume-pdf-preview relative w-full min-w-0 max-w-[240mm] mx-auto min-h-[842px] bg-white shadow-2xl rounded-sm overflow-hidden">
     <div
       v-if="loading"
       class="absolute inset-x-0 top-0 z-10 flex justify-center pointer-events-none"

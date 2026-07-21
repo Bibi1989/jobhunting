@@ -16,7 +16,7 @@ import {
 } from '../../shared/samples/candidateProfile'
 import { isGeminiQuotaOrUnavailableError, ollamaJsonPrompt } from './aiFallback'
 import { resolveCandidateProfileSync } from './candidateProfile'
-import { formatGeminiError, normalizeJobs } from './jobs'
+import { formatGeminiError, getGeminiModels, normalizeJobs } from './jobs'
 
 export type JobScrapeTarget = {
   jobTitle?: string
@@ -38,11 +38,13 @@ export function buildScrapeTargetPrompt(target?: JobScrapeTarget | null): string
 
   const parts: string[] = []
   if (target!.jobTitle?.trim()) {
-    parts.push(`Target job title / role: "${target!.jobTitle.trim()}".`)
+    parts.push(
+      `Primary target job title / role: "${target!.jobTitle.trim()}". Prefer openings that match or closely relate to this title (same function, seniority band, and stack).`,
+    )
   }
   if (target!.resumeText?.trim()) {
     parts.push(
-      `Candidate resume (match seniority, skills, and domain):\n${target!.resumeText.trim().slice(0, 6000)}`,
+      `Candidate resume (match seniority, skills, and domain; when no explicit title is given, infer the target role from the resume headline/summary):\n${target!.resumeText.trim().slice(0, 6000)}`,
     )
   }
   if (target!.coverLetterText?.trim()) {
@@ -53,7 +55,9 @@ export function buildScrapeTargetPrompt(target?: JobScrapeTarget | null): string
 
   return `
 
-CANDIDATE TARGETING — prioritize openings related to the candidate. Prefer strongly related roles first. Still include borderline matches if few related roles exist, but deprioritize clearly unrelated titles (e.g. sales-only when the candidate is engineering).
+CANDIDATE TARGETING — return openings related to the candidate's target role first.
+When a target job title is present, strongly prioritize jobs with similar titles and responsibilities.
+Prefer strongly related roles; still include borderline matches if few related roles exist, but deprioritize clearly unrelated titles (e.g. sales-only when the candidate is engineering).
 ${parts.join('\n\n')}`
 }
 
@@ -96,7 +100,7 @@ const TAILORED_SCHEMA = {
 } as const
 
 export function resolveGeminiApiKey(): string {
-  // Prefer plain .env name; Nuxt also accepts NUXT_GEMINI_API_KEY → runtimeConfig.
+  // Secrets must come from env at request time — never bake keys into nuxt.config.
   const fromEnv =
     process.env.GEMINI_API_KEY?.trim() ||
     process.env.NUXT_GEMINI_API_KEY?.trim() ||
@@ -110,6 +114,7 @@ export function resolveGeminiApiKey(): string {
 }
 
 export function resolveGeminiModel(): string {
+  // Prefer GEMINI_MODEL from .env / Netlify; do not prefer weaker flash models first.
   const fromEnv =
     process.env.GEMINI_MODEL?.trim() ||
     process.env.NUXT_GEMINI_MODEL?.trim() ||
@@ -120,6 +125,23 @@ export function resolveGeminiModel(): string {
   } catch {
     return 'gemini-3.1-pro-preview'
   }
+}
+
+/**
+ * Model try order: env primary first, then configured fallbacks, then flash.
+ * (Previously some routes tried flash first, so prod often produced weaker drafts
+ * while local fell through to the stronger GEMINI_MODEL after flash failures.)
+ */
+export function resolveGeminiModelChain(extraFallbacks: string[] = []): string[] {
+  const primary = resolveGeminiModel()
+  const chain = [
+    primary,
+    ...extraFallbacks,
+    ...getGeminiModels(primary),
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+  ]
+  return [...new Set(chain.map((m) => String(m || '').trim()).filter(Boolean))]
 }
 
 export function createGeminiClient(apiKey?: string) {

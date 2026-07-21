@@ -1,4 +1,5 @@
-import { createGeminiClient } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import { builderResumeToMarkdown } from '~/utils/builderToMarkdown'
 import type { BuilderResumeData } from '~/shared/types/builder'
@@ -27,6 +28,8 @@ export default withCredits(async (event) => {
   const resumeData = body?.resumeData as BuilderResumeData | undefined
   const atsResult = body?.atsResult as AtsCheckResult | undefined
   const jobDescription = typeof body?.jobDescription === 'string' ? body.jobDescription : ''
+  const fixInstructions =
+    typeof body?.fixInstructions === 'string' ? body.fixInstructions.trim() : ''
 
   if (!resumeData || typeof resumeData !== 'object') {
     throw createError({ statusCode: 400, statusMessage: 'Resume data is required' })
@@ -40,13 +43,23 @@ export default withCredits(async (event) => {
   const gaps = Array.isArray(atsResult.keywordGaps) ? atsResult.keywordGaps : []
   const wins = Array.isArray(atsResult.quickWins) ? atsResult.quickWins : []
 
+  const userConstraints = fixInstructions
+    ? `
+USER FIX INSTRUCTIONS (highest priority — must follow when they do not require inventing facts):
+"""
+${fixInstructions.slice(0, 4000)}
+"""
+Honor requests about what to change and what to leave unchanged (e.g. keep dates, employers, or specific sections).
+`
+    : ''
+
   const ai = createGeminiClient()
-  const prompt = `You are an expert resume writer optimizing for ATS parseability.
-Apply the audit findings to improve this resume JSON. Keep the same JSON schema/shape.
+  const model = resolveGeminiModel()
+  const prompt = withCareerExpertPrompt(`Apply the audit findings to improve this resume JSON. Keep the same JSON schema/shape.
 
 Target role: "${resumeData.personalInfo?.jobTitle || 'professional'}"
 ${jobDescription.trim() ? `Job description excerpt:\n"""\n${jobDescription.trim().slice(0, 4000)}\n"""\n` : ''}
-
+${userConstraints}
 ATS score: ${atsResult.score ?? 'n/a'}
 Summary: ${atsResult.summary || ''}
 Issues:
@@ -68,19 +81,19 @@ Rules:
 - Return ONLY a valid JSON object with the FULL updated resume (same keys as input).
 - Preserve all ids for experience/education/skills/projects/achievements/customSections when possible.
 - Keep templateId, themeColor, language, name unchanged.
-- Improve summary, bullets, skills, and section wording for ATS + the target role.
+- Improve summary, bullets, skills, and section wording for ATS + the target role, unless the user instructions say otherwise.
 - Descriptions that are HTML must stay valid HTML using <p>/<ul>/<li>/<strong> only (no markdown).
 - Do not invent fake employers or degrees; strengthen existing content and weave in missing keywords naturally.
-- Do not add commentary outside the JSON object.`
+- Do not add commentary outside the JSON object.`)
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model,
       contents: prompt,
-      config: {
+      config: careerExpertGenerateConfig({
         temperature: 0.4,
         responseMimeType: 'application/json',
-      },
+      }),
     })
 
     const raw = (response.text || '').trim()

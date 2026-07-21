@@ -1,5 +1,6 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
-import { formatGeminiError, getGeminiModels } from '../../utils/jobs'
+import { createGeminiClient, resolveGeminiModelChain } from '../../utils/gemini'
+import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
 
@@ -71,15 +72,9 @@ ${extraInstructions}
     : ''
 
   const ai = createGeminiClient()
-  const primary = resolveGeminiModel()
-  const models = [
-    ...new Set(
-      ['gemini-2.5-flash', primary, ...getGeminiModels(primary), 'gemini-2.0-flash'].filter(Boolean),
-    ),
-  ]
+  const models = resolveGeminiModelChain()
 
-  const prompt = `You are an expert resume writer optimizing for clarity, impact, and ATS parseability.
-Your task is to produce an updated resume JSON for the applicant.
+  const prompt = withCareerExpertPrompt(`Your task is to produce an updated resume JSON for the applicant.
 Context: ${sourceNote}.
 Target role hint: "${roleHint || 'professional role'}".
 
@@ -104,7 +99,7 @@ Rules:
 - When a job description is present, emphasize relevant skills and achievements and weave in missing keywords naturally.
 - When only a resume is present, improve wording, bullet impact, and structure without changing facts.
 - Ensure personalInfo.jobTitle aligns with the target role when a JD or role hint is provided.
-- Do not add commentary outside the JSON object.`
+- Do not add commentary outside the JSON object.`)
 
   let lastError: unknown = null
   for (const model of models) {
@@ -112,10 +107,10 @@ Rules:
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
-        config: {
+        config: careerExpertGenerateConfig({
           temperature: 0.45,
           responseMimeType: 'application/json',
-        },
+        }),
       })
 
       const raw = extractJsonObject(response.text || '')
