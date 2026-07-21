@@ -33,6 +33,7 @@ const importFileInput = ref<HTMLInputElement | null>(null)
 const draftFileInput = ref<HTMLInputElement | null>(null)
 const uploadedResumeName = ref('')
 const rawResumeText = ref('')
+const alsoGenerateCoverLetter = ref(false)
 
 function newId() {
   return crypto.randomUUID()
@@ -216,14 +217,82 @@ async function draftResumeWithAi() {
         next.targetJobDescription ?? resumeData.value.targetJobDescription
       next.additionalInstructions =
         next.additionalInstructions ?? resumeData.value.additionalInstructions
+      if (alsoGenerateCoverLetter.value) {
+        toast.info('Drafting cover letter…')
+        try {
+          const clResponse = await $fetch<{ content?: string }>('/api/ai/generate-cover-letter', {
+            method: 'POST',
+            body: {
+              resumeData: response.resumeData,
+              jobDescription: resumeData.value.targetJobDescription || '',
+              companyName: '',
+              hiringManager: 'Hiring Manager',
+              tone: 'professional',
+              currentContent: '',
+              additionalInstructions: resumeData.value.additionalInstructions || '',
+              rawResumeText: rawResumeText.value || undefined,
+            },
+          })
+          if (clResponse?.content) {
+            next.coverLetter = {
+              jobDescription: resumeData.value.targetJobDescription || '',
+              companyName: '',
+              hiringManager: 'Hiring Manager',
+              tone: 'professional',
+              content: clResponse.content,
+              additionalInstructions: resumeData.value.additionalInstructions || '',
+            }
+          }
+        } catch (err) {
+          console.error('Failed to generate cover letter', err)
+          toast.error('Resume drafted, but cover letter generation failed.')
+        }
+      }
+
       resumeData.value = next
       atsResult.value = null
+
+      let savedId = resumeId
+      try {
+        const payload = withLayoutState(resumeData.value)
+        if (resumeId === 'new') {
+          const { id } = await $fetch<{ id: string }>('/api/builder/resume', {
+            method: 'POST',
+            body: payload,
+          })
+          savedId = id
+          router.replace(`/builder/resume/${id}`)
+        } else {
+          await $fetch(`/api/builder/resume/${resumeId}`, {
+            method: 'PUT',
+            body: payload,
+          })
+        }
+      } catch (saveErr) {
+        console.error('Auto-save failed', saveErr)
+      }
+
       toast.success(
-        hasJd && hasResume ? 'Resume drafted.' : 'Resume drafted from available details.',
+        alsoGenerateCoverLetter.value && next.coverLetter?.content
+          ? 'Resume and cover letter drafted.'
+          : hasJd && hasResume ? 'Resume drafted.' : 'Resume drafted from available details.',
       )
       activeTab.value = 'personalInfo'
       mobilePane.value = 'edit'
       await refreshCredits()
+
+      if (alsoGenerateCoverLetter.value && next.coverLetter?.content && savedId && savedId !== 'new') {
+        const confirmDialog = useAppConfirm()
+        const wantToView = await confirmDialog.confirm({
+          title: 'Cover Letter Ready',
+          message: 'Your cover letter has been successfully drafted. Would you like to view it in the cover letter builder?',
+          confirmLabel: 'View Cover Letter',
+          cancelLabel: 'Keep Editing Resume',
+        })
+        if (wantToView) {
+          void router.push(`/builder/cover-letter/${savedId}`)
+        }
+      }
       return
     }
     toast.error('AI returned an empty resume. Please try again.')
@@ -666,7 +735,7 @@ async function downloadPreviewPdf() {
   }
 }
 
-async function enhanceDescription(item: { id: string, title?: string, description?: string, targetRole?: string, commandPrompt?: string }, type: 'experience' | 'project' | 'summary') {
+async function enhanceDescription(item: { id: string, title?: string, description?: string, targetRole?: string, commandPrompt?: string, projectDescription?: string }, type: 'experience' | 'project' | 'summary') {
   if (!canAccessAI.value) {
     toast.info(aiBlockedMessage() || 'Pro subscription required for AI.')
     return
@@ -693,7 +762,8 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
         type,
         experiences: type === 'summary' ? resumeData.value.experience : undefined,
         targetRole: item.targetRole || '',
-        commandPrompt: item.commandPrompt || ''
+        commandPrompt: item.commandPrompt || '',
+        projectDescription: item.projectDescription || ''
       }
     })
 
@@ -747,7 +817,7 @@ function removeSkill(index: number) { resumeData.value.skills.splice(index, 1) }
 
 function addProject() {
   resumeData.value.projects.push({
-    id: newId(), title: '', description: '', isCurrent: false, targetRole: '', commandPrompt: ''
+    id: newId(), title: '', description: '', projectDescription: '', isCurrent: false, targetRole: '', commandPrompt: ''
   })
 }
 function removeProject(index: number) { resumeData.value.projects.splice(index, 1) }
@@ -1104,6 +1174,18 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                 <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
               </div>
 
+              <div class="flex items-center gap-2 py-1 select-none">
+                <input
+                  id="also-generate-cover-letter"
+                  v-model="alsoGenerateCoverLetter"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-white/10 bg-white/5 text-blue-600 focus:ring-blue-500/50 outline-none cursor-pointer"
+                />
+                <label for="also-generate-cover-letter" class="text-xs font-medium text-slate-300 cursor-pointer">
+                  Also draft a tailored cover letter
+                </label>
+              </div>
+
               <button
                 type="button"
                 :disabled="enhancing || importing"
@@ -1277,14 +1359,20 @@ function removeCustomItem(section: BuilderCustomSection, itemIndex: number) {
                     </div>
                   </div>
                   <!-- AI Enhance Helpers for Project -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-3 rounded-lg border border-white/5">
+                  <div class="grid grid-cols-1 gap-4 bg-white/5 p-4 rounded-lg border border-white/5">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
-                      <textarea v-model="proj.targetRole" rows="2" placeholder="e.g. Lead Engineer" class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Describe the Project (for AI Enhance)</label>
+                      <textarea v-model="proj.projectDescription" rows="2" placeholder="e.g. Built a real-time metrics dashboard using Nuxt 3 and WebSockets to monitor server resources, processing 5K requests/sec." class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
                     </div>
-                    <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
-                      <input v-model="proj.commandPrompt" type="text" placeholder="e.g. Focus on API design and scaling" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
+                        <input v-model="proj.targetRole" type="text" placeholder="e.g. Lead Engineer" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                      </div>
+                      <div class="flex flex-col">
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
+                        <input v-model="proj.commandPrompt" type="text" placeholder="e.g. Focus on low-latency messaging" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                      </div>
                     </div>
                   </div>
 

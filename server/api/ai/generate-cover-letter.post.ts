@@ -129,12 +129,17 @@ CRITICAL INSTRUCTIONS:
 - Write the entire cover letter in well-formatted HTML suitable for a rich text editor.
 - Use <p> tags for paragraphs. Do not use markdown wrappers like \`\`\`html.
 - Do NOT include the applicant's contact header block or date at the top, just start with the salutation (e.g. "Dear ${salutationName},").
+- Structure the cover letter with exactly 4 distinct paragraphs:
+  1. The Hook: Direct statement connecting top technical strengths to a core challenge highlighted in the job description. No generic intro fluff (do not say "I am excited to apply" or similar).
+  2. Core Evidence: 1-2 concrete, high-impact achievements from the experience data that directly solve requirements in the job description, emphasizing metrics.
+  3. Strategic Alignment: Brief explanation of why this specific technical environment and target role fit current capabilities.
+  4. Concise Call to Action: Direct closing.
 - End with a professional sign-off and the applicant's name (${personalInfo.fullName || 'the applicant'}).
-- When a job description is present, highlight specific, relevant achievements that align with it.
-- When only a resume is present, emphasize standout achievements and a clear value proposition.
-- Never invent employers, degrees, or metrics that are not grounded in the provided resume/job text.
+- Every achievement and detail must begin with or use strong, precise action verbs, and subjective buzzwords must be eliminated.
+- Do not use brackets or placeholders (e.g., do not write [X%] or [X ms]). If quantitative metrics are not explicitly provided, estimate and insert realistic, technically-defensible metrics that logically align with the described achievements. Never invent fake companies or dates.
+- Mirror exact technical keywords, tools, and terminology from the Job Description naturally.
 - Ensure the tone matches the requested tone exactly.
-- If the user asks to keep the letter to one page (or similar length limits), write a concise letter of about 250–350 words / 3–4 short paragraphs so it fits on a single A4 page with a standard header.
+- Keep the letter concise (about 250–350 words) so it fits on a single A4 page with a standard header.
 - Output ONLY the HTML string. Do not include any other conversational text.`)
 
   let lastError: unknown = null

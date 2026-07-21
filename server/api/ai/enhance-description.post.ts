@@ -4,7 +4,7 @@ import { withCredits } from '../../utils/withCredits'
 
 export default withCredits(async (event) => {
   const body = await readBody(event)
-  const { title, currentDescription, type, experiences, targetRole, commandPrompt } = body
+  const { title, currentDescription, type, experiences, targetRole, commandPrompt, projectDescription } = body
 
   if (!title) {
     throw createError({
@@ -83,15 +83,20 @@ Instructions:
       commandPromptText = `\nAdditional style/content instructions from user: "${commandPrompt.trim()}"`
     }
 
-    task = `The user is writing the description for a project entry with the title "${title}".${roleTargetText}${commandPromptText}
+    let projectDescriptionText = ''
+    if (projectDescription && projectDescription.trim()) {
+      projectDescriptionText = `\nProject description/notes provided by user: "${projectDescription.trim()}"`
+    }
+
+    task = `The user is writing the description for a project entry with the title "${title}".${roleTargetText}${commandPromptText}${projectDescriptionText}
 Current description text (if any) (may contain HTML):
 """
 ${currentDescription || ''}
 """
 
 Instructions:
-- If the current description is empty, generate 2-3 professional bullet points describing what a typical project named "${title}" might entail.${targetRole ? ` Align them with the target role details: "${targetRole}".` : ''}
-- If the current description is present, enhance it to be more professional and impactful, focusing on the technologies used and the results achieved.${targetRole ? ` Align it with the target role details: "${targetRole}".` : ''}
+- If the current description is empty, generate 2-3 professional, metric-oriented bullet points describing what the project entails. Use the provided project description/notes ("${projectDescription || ''}") as context.
+- If the current description is present, enhance it to be more professional, impact-oriented, and structured, focusing on the technologies used and results achieved. Integrate the project notes ("${projectDescription || ''}") if provided.
 - ${commandPrompt ? `Follow the user's additional guidelines: "${commandPrompt}".\n` : ''}- DO NOT use markdown. ALWAYS format your response as valid HTML using <ul> and <li> only for lists. Do NOT put bullet characters (•, -, *) inside the <li> text.
 - Do NOT add inline styles, background colors, or text colors.
 - Return ONLY the raw HTML string without any markdown code blocks.`

@@ -216,6 +216,17 @@ function ProjectsList({ data, theme, t }: { data: BuilderResumeData; theme: PdfT
             ? React.createElement(Text, { style: t.itemMeta }, project.organization)
             : null,
         ),
+        project.projectDescription
+          ? React.createElement(
+              View,
+              { style: { width: '100%', marginTop: 2, marginBottom: 4 } },
+              React.createElement(
+                Text,
+                { style: { ...t.body, fontFamily: 'Helvetica-Oblique' } },
+                project.projectDescription
+              )
+            )
+          : null,
         React.createElement(Blocks, { html: cleanDescriptionHtml(project.description), theme }),
       )
     }),

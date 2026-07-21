@@ -95,7 +95,9 @@ Rules:
 - Preserve targetJobDescription and additionalInstructions from the input when present.
 - Preserve ids for experience/education/skills/projects/achievements/customSections when possible.
 - Descriptions that are HTML must stay valid HTML using <p>/<ul>/<li>/<strong> only (no markdown).
-- Never invent employers, degrees, companies, or metrics that are not grounded in the provided resume/raw text.
+- Experience/work history bullets within <li> tags MUST follow the Google XYZ structure: "Accomplished [X], as measured by [Y], by doing [Z]."
+- Each experience bullet MUST begin with a strong, precise action verb (e.g., Engineered, Architected, Refactored, Provisioned).
+- Do not use brackets or placeholders (e.g., do not write [X%] or [X ms]). If quantitative metrics are not explicitly provided, estimate and insert realistic, technically-defensible metrics (e.g., 20%, 350ms, 15) that logically align with the described achievements. Never invent fake companies or dates.
 - When a job description is present, emphasize relevant skills and achievements and weave in missing keywords naturally.
 - When only a resume is present, improve wording, bullet impact, and structure without changing facts.
 - Ensure personalInfo.jobTitle aligns with the target role when a JD or role hint is provided.

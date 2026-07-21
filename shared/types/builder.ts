@@ -51,6 +51,7 @@ export interface BuilderProject {
   endDate?: string
   isCurrent?: boolean
   description?: string
+  projectDescription?: string
   linkUrl?: string
   linkName?: string
   targetRole?: string
