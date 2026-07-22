@@ -1,6 +1,7 @@
 import { createGeminiClient, resolveGeminiModelChain } from '../../utils/gemini'
 import {
   careerExpertGenerateConfig,
+  resolveUseMetrics,
   resumeGroundingBlock,
 } from '../../utils/careerExpertPrompt'
 import { formatGeminiError } from '../../utils/jobs'
@@ -56,6 +57,9 @@ export default withCredits(async (event) => {
   const experiences = Array.isArray(resumeData?.experience) ? resumeData.experience : []
   const education = Array.isArray(resumeData?.education) ? resumeData.education : []
   const skills = Array.isArray(resumeData?.skills) ? resumeData.skills : []
+  const applicantName = String(personalInfo.fullName || '').trim() || 'the applicant'
+  const useMetrics =
+    resolveUseMetrics(body?.useMetrics, resumeData) || body?.tailoringPreset === 'impact-first'
 
   const hasExistingDraft =
     typeof currentContent === 'string' && stripHtml(currentContent).length > 20
@@ -70,7 +74,7 @@ export default withCredits(async (event) => {
     ? `
 MODE: AI ENHANCEMENT (not a blank rewrite from scratch).
 Improve and tighten the applicant's existing draft below while preserving their voice and intent.
-Keep structure unless clarity clearly benefits from light reorganization.
+Keep the required structure (intro → bullets → ownership → close) unless clarity clearly benefits from light reorganization.
 Existing draft HTML:
 ${String(currentContent).slice(0, 4000)}
 `
@@ -85,7 +89,8 @@ ${extraInstructions}
 `
     : ''
 
-  const salutationName = (hiringManager || 'Hiring Manager').toString().trim() || 'Hiring Manager'
+  const salutationName =
+    (typeof hiringManager === 'string' && hiringManager.trim()) || 'Hiring Team'
   const companyLabel = company || 'the hiring organization'
 
   // Prefer compact structured fields; only fall back to raw text when thin
@@ -121,49 +126,60 @@ ${JSON.stringify(skills.slice(0, 24), null, 2).slice(0, 1500)}
   let presetRules = ''
   if (body?.tailoringPreset === 'ats-first') {
     presetRules = `
-- PERSONALITY PRESET: ATS-First. Optimize the cover letter for strict keyword alignment with the job description. Directly incorporate key skills and requirement phrases from the job description. Keep the tone highly direct and objective.`
+- PERSONALITY PRESET: ATS-First. Optimize for strict keyword alignment with the job description. Incorporate key skills and requirement phrases directly. Keep the tone highly direct and objective.`
   } else if (body?.tailoringPreset === 'impact-first') {
     presetRules = `
-- PERSONALITY PRESET: Impact/Metrics-First. Focus heavily on quantitative achievements, metrics, and business outcomes. Highlight achievements with clear percentages, statistics, or scale values in the middle paragraphs.`
+- PERSONALITY PRESET: Impact/Metrics-First. Prioritize the strongest quantified outcomes from the CV that map to the JD. Put those in the bulleted middle section.`
   } else if (body?.tailoringPreset === 'leadership') {
     presetRules = `
-- PERSONALITY PRESET: Leadership. Showcase mentoring, project leadership, strategic vision, initiative, and cross-functional collaboration. Highlight experience taking ownership and guiding teams.`
+- PERSONALITY PRESET: Leadership. Showcase mentoring, project leadership, initiative, and cross-functional ownership in the bullets and ownership paragraph.`
   } else if (body?.tailoringPreset === 'tech-expert') {
     presetRules = `
-- PERSONALITY PRESET: Tech Expert. Deepen technical descriptions. Highlight specific libraries, databases, frameworks, system reliability, or complex architecture decisions.`
+- PERSONALITY PRESET: Tech Expert. Deepen technical descriptions. Highlight specific libraries, databases, frameworks, reliability work, or architecture decisions that appear in both CV and JD.`
   }
 
-  const prompt = `Your task is to produce a highly persuasive, customized cover letter for a job applicant.
+  const prompt = `Produce a tailored, human-sounding cover letter for this applicant.
 Context: ${sourceNote}.
 ${presetRules}
 
 ${resumeContext}
 Target Job Details:
 Company Name: ${companyLabel}
-Hiring Manager: ${salutationName}
+Hiring Manager / Team: ${salutationName}
 Job Description:
 ${(jd || '(Not provided — draft a compelling letter from the resume/profile alone, suitable for a general application.)').slice(0, 8000)}
 
-Tone requested: ${tone || 'professional'} (adjust your writing style to be strictly ${tone || 'professional'}).
+Tone requested: ${tone || 'professional'} (match this tone exactly).
 ${enhanceBlock}
 ${userTasksBlock}
 
-CRITICAL INSTRUCTIONS:
-- Write the entire cover letter in well-formatted HTML suitable for a rich text editor.
-- Use <p> tags for paragraphs. Do not use markdown wrappers like \`\`\`html.
-- Do NOT include the applicant's contact header block or date at the top, just start with the salutation (e.g. "Dear ${salutationName},").
-- Structure the cover letter with exactly 4 distinct paragraphs:
-  1. The Hook: Direct statement connecting top technical strengths to a core challenge highlighted in the job description. No generic intro fluff (do not say "I am excited to apply" or similar).
-  2. Core Evidence: 1-2 concrete, high-impact achievements from the experience data that directly solve requirements in the job description, emphasizing metrics.
-  3. Strategic Alignment: Brief explanation of why this specific technical environment and target role fit current capabilities.
-  4. Concise Call to Action: Direct closing.
-- End with a professional sign-off and the applicant's name (${personalInfo.fullName || 'the applicant'}).
-- Every achievement and detail must begin with or use strong, precise action verbs, and subjective buzzwords must be eliminated.
-- Do not use brackets or placeholders (e.g., do not write [X%] or [X ms]). If quantitative metrics are not explicitly provided, estimate and insert realistic, technically-defensible metrics that logically align with the described achievements. Never invent fake companies or dates.
+CRITICAL OUTPUT RULES:
+- Write the entire cover letter body in well-formatted HTML for a rich text editor.
+- Use <p> for paragraphs and <ul><li> for the achievement list. Do not wrap the response in markdown fences.
+- Do NOT include the applicant's contact header, postal address block, or the current date — the PDF template already prints those.
+- Do NOT invent a recipient company address block.
+- Start with an optional subject line when a clear job title exists in the JD:
+  <p><strong>Re: Application for [Job Title from JD]</strong></p>
+- Then salutation: <p>Dear ${salutationName},</p>
+- Then follow this exact narrative structure:
+
+  [Paragraph 1 — Direct Introduction]
+  Open as a working engineer (or the applicant's real role family from the CV), with years of experience extracted from the CV, the product surface they build (frontend / fullstack / backend / cloud), and the core tech stack that overlaps the JD. One short paragraph. No "I am excited to apply" or robotic corporate openers.
+
+  [Paragraph 2 — Context + Bulleted Metrics]
+  One short framing sentence about recent work (prefer a real company/project from the CV), then a <ul> with 3–4 <li> items. Each item MUST start with <strong>Key Area</strong>: followed by an action verb, concrete tech from the CV, and a JD-aligned outcome${useMetrics ? ' (prefer quantified impact from the CV)' : ' (keep existing CV numbers only; do not invent new metrics)'}.
+
+  [Paragraph 3 — Ownership & Value Add]
+  Tie end-to-end ownership (infra, performance, workflows — only if grounded in the CV) to genuine interest in ${companyLabel}. Stay specific; no fluff.
+
+  [Closing]
+  Thank them briefly, invite a conversation, then:
+  <p>Sincerely,</p>
+  <p>${applicantName}</p>
+
 - Mirror exact technical keywords, tools, and terminology from the Job Description naturally.
-- Ensure the tone matches the requested tone exactly.
-- Keep the letter concise (about 250–350 words) so it fits on a single A4 page with a standard header.
-- Output ONLY the HTML string. Do not include any other conversational text.`
+- Keep the body concise (~250–350 words) so it fits one A4 page with the template header.
+- Output ONLY the HTML string.`
 
   let lastError: unknown = null
   for (const model of models) {
@@ -171,9 +187,12 @@ CRITICAL INSTRUCTIONS:
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
-        config: careerExpertGenerateConfig({
-          temperature: 0.7,
-        }),
+        config: careerExpertGenerateConfig(
+          {
+            temperature: 0.7,
+          },
+          { useMetrics, documentKind: 'cover_letter' },
+        ),
       })
 
       const text = cleanHtmlResponse(response.text || '')

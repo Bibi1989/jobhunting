@@ -4,7 +4,7 @@ const { toasts, dismissToast } = useAppToast()
 const kindClass: Record<string, string> = {
   success: 'border-emerald-500/40 bg-emerald-950/90 text-emerald-100',
   error: 'border-red-500/40 bg-red-950/90 text-red-100',
-  info: 'border-blue-500/40 bg-slate-900/95 text-slate-100',
+  info: 'border-[color:var(--app-border)] bg-[color:var(--app-bg-elevated)]/95 text-[color:var(--app-fg)]',
 }
 
 function runAction(toast: { id: number; action?: { onClick: () => void } }) {

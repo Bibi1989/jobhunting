@@ -1,0 +1,107 @@
+{
+  "prefs": {
+    "language": "Sprache",
+    "theme": "Design",
+    "switchToLight": "Zum hellen Design wechseln",
+    "switchToDark": "Zum dunklen Design wechseln"
+  },
+  "nav": {
+    "pricing": "Preise",
+    "jobScraper": "Job-Scraper",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "getStarted": "Loslegen",
+    "goToBuilder": "Zum Builder",
+    "myProjects": "Meine Projekte",
+    "templates": "Vorlagen",
+    "applyViaEmail": "Per E-Mail bewerben",
+    "portfolio": "Portfolio",
+    "analytics": "Analysen",
+    "allProjects": "Alle Projekte",
+    "aiPortfolio": "KI-Portfolio",
+    "account": "Konto",
+    "billing": "Abrechnung & Credits",
+    "logOut": "Abmelden",
+    "dashboard": "Dashboard",
+    "manageWorkspace": "Arbeitsbereich verwalten",
+    "navigate": "Navigation",
+    "back": "Zurück"
+  },
+  "auth": {
+    "welcomeBack": "Willkommen zurück",
+    "signInSubtitle": "Melden Sie sich bei JobFlow an, um Credits und Scraping zu nutzen.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "signingIn": "Anmeldung…",
+    "signIn": "Anmelden",
+    "noAccount": "Noch kein Konto?",
+    "register": "Registrieren",
+    "forgotPassword": "Passwort vergessen?",
+    "createAccount": "Konto erstellen",
+    "registerSubtitle": "Kostenlos starten — jederzeit für KI und Scraping upgraden.",
+    "creating": "Wird erstellt…",
+    "createAccountBtn": "Konto erstellen",
+    "haveAccount": "Bereits ein Konto?",
+    "forgotTitle": "Passwort vergessen",
+    "forgotSubtitle": "Geben Sie Ihre E-Mail-Adresse ein. Wir senden Ihnen einen Link zum Zurücksetzen.",
+    "sendReset": "Link senden",
+    "sending": "Wird gesendet…",
+    "backToSignIn": "Zurück zur Anmeldung",
+    "resetTitle": "Neues Passwort wählen",
+    "resetSubtitle": "Geben Sie ein neues Passwort für Ihr JobFlow-Konto ein.",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "updating": "Wird aktualisiert…",
+    "updatePassword": "Passwort aktualisieren",
+    "requestNewLink": "Neuen Link anfordern"
+  },
+  "account": {
+    "title": "Konto",
+    "signedInAs": "Angemeldet als",
+    "changePassword": "Passwort ändern",
+    "changePasswordHint": "Aktuelles Passwort eingeben und ein neues wählen (mindestens 8 Zeichen).",
+    "currentPassword": "Aktuelles Passwort",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "saving": "Speichern…",
+    "updatePassword": "Passwort aktualisieren",
+    "passwordUpdated": "Passwort erfolgreich aktualisiert."
+  },
+  "home": {
+    "badge": "Kostenloser Builder · Pro KI & Scraping",
+    "headline": "Landen Sie Ihren Traumjob",
+    "headlineAccent": "schneller & smarter",
+    "subtitle": "Starten Sie kostenlos mit einem Lebenslauf, Anschreiben, Portfolio und lokalem Keyword-ATS. Upgraden Sie auf Pro für Job-Scraping, Gemini-KI und unbegrenzte Projekte.",
+    "buildResume": "Lebenslauf erstellen",
+    "checkAts": "ATS-Score prüfen",
+    "features": {
+      "resumeTitle": "ATS-Lebenslauf-Builder",
+      "resumeDesc": "Erstellen und exportieren Sie Lebensläufe kostenlos. Pro schaltet KI-Anpassung und keyword-basierte Entwürfe frei.",
+      "coverTitle": "Intelligente Anschreiben",
+      "coverDesc": "Schreiben und speichern Sie ein Anschreiben kostenlos. Pro erstellt personalisierte Briefe passend zur Stellenanzeige.",
+      "atsTitle": "ATS-Checker",
+      "atsDesc": "Kostenlose lokale Keyword-Abdeckung. Pro bietet tiefe KI-ATS-Analyse und Korrekturen.",
+      "scraperTitle": "Job-Scraper",
+      "scraperDesc": "Pro: Anforderungen von Jobbörsen extrahieren und mit Ihrem Profil abgleichen."
+    }
+  },
+  "pricing": {
+    "title": "Preise",
+    "subtitle": "Kostenlos starten. Upgraden, wenn Sie KI und Scraping brauchen.",
+    "free": "Kostenlos",
+    "pro": "Pro",
+    "perMonth": "/ Monat",
+    "currentPlan": "Aktueller Plan",
+    "upgrade": "Auf Pro upgraden",
+    "manageBilling": "Abrechnung verwalten"
+  },
+  "metrics": {
+    "label": "Kennzahlen / Zahlen einbeziehen",
+    "hint": "Standardmäßig aus. Für Rollen ohne Quantifizierung auslassen. Gilt für KI-Entwurf, Verbessern und ATS-Fix."
+  },
+  "common": {
+    "loading": "Laden…",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "error": "Etwas ist schiefgelaufen"
+  }
+}

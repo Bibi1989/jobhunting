@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { BuilderResumeData, BuilderCoverLetter } from '~/shared/types/builder'
+import { DEFAULT_DESIGN_SETTINGS } from '~/shared/types/builder'
 import { downloadServerPdf } from '~/utils/downloadServerPdf'
 import { slugifyFilename } from '~/utils/download'
 import { coverLetterTemplates } from '~/utils/templates'
@@ -163,6 +164,7 @@ const resumeData = ref<BuilderResumeData>({
   templateId: 'cl-standard',
   themeColor: '#3b82f6',
   language: 'en',
+  design: { ...DEFAULT_DESIGN_SETTINGS },
   personalInfo: {
     fullName: '',
     jobTitle: '',
@@ -450,11 +452,12 @@ async function enhanceCoverLetter() {
         resumeData: resumeData.value,
         jobDescription: coverLetter.value.jobDescription || '',
         companyName: coverLetter.value.companyName || '',
-        hiringManager: coverLetter.value.hiringManager,
+        hiringManager: coverLetter.value.hiringManager || 'Hiring Team',
         tone: coverLetter.value.tone,
         currentContent: coverLetter.value.content,
         additionalInstructions: coverLetter.value.additionalInstructions || '',
         rawResumeText: rawResumeText.value || undefined,
+        useMetrics: resumeData.value?.useMetrics === true,
       },
     })
 
@@ -758,6 +761,13 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   <p class="text-[11px] text-slate-400">{{ tpl.desc }}</p>
                 </div>
               </button>
+            </div>
+            <div class="mt-8 pt-6 border-t border-white/10">
+              <div class="mb-4">
+                <h3 class="font-bold text-lg text-white mb-0.5">Design</h3>
+                <p class="text-blue-200/60 text-xs">Fonts, colors, header layout, and profile photo.</p>
+              </div>
+              <BuilderDesignPanel v-model="resumeData" />
             </div>
           </div>
 

@@ -1,5 +1,9 @@
 import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
-import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import {
+  careerExpertGenerateConfig,
+  metricsGuidance,
+  resolveUseMetrics,
+} from '../../utils/careerExpertPrompt'
 import { parseModelJson } from '../../utils/jsonParse'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
@@ -42,6 +46,8 @@ export default withCredits(async (event) => {
   const gaps = Array.isArray(atsResult.keywordGaps) ? atsResult.keywordGaps : []
   const wins = Array.isArray(atsResult.quickWins) ? atsResult.quickWins : []
 
+  const useMetrics = resolveUseMetrics(body?.useMetrics, resumeData)
+
   const userConstraints = fixInstructions
     ? `
 USER FIX INSTRUCTIONS (highest priority — must follow when they do not require inventing facts):
@@ -75,20 +81,24 @@ ${JSON.stringify(resumeData).slice(0, 14000)}
 Rules:
 - Return ONLY a valid JSON object with the FULL updated resume (same keys as input).
 - Preserve all ids for experience/education/skills/projects/achievements/customSections when possible.
-- Keep templateId, themeColor, language, name unchanged.
+- Keep templateId, themeColor, language, name, useMetrics unchanged.
 - Improve summary, bullets, skills, and section wording for ATS + the target role, unless the user instructions say otherwise.
 - Descriptions that are HTML must stay valid HTML using <p>/<ul>/<li>/<strong> only (no markdown).
 - Do not invent fake employers or degrees; strengthen existing content and weave in missing keywords naturally.
+- ${metricsGuidance(useMetrics)}
 - Do not add commentary outside the JSON object.`
 
   try {
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
-      config: careerExpertGenerateConfig({
-        temperature: 0.4,
-        responseMimeType: 'application/json',
-      }),
+      config: careerExpertGenerateConfig(
+        {
+          temperature: 0.4,
+          responseMimeType: 'application/json',
+        },
+        { useMetrics },
+      ),
     })
 
     const raw = (response.text || '').trim()
@@ -99,6 +109,7 @@ Rules:
     fixed.themeColor = resumeData.themeColor
     fixed.language = resumeData.language
     fixed.name = resumeData.name
+    fixed.useMetrics = useMetrics
 
     // Ensure required nested objects exist
     if (!fixed.personalInfo) fixed.personalInfo = resumeData.personalInfo

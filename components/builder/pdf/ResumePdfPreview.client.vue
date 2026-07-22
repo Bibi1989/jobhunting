@@ -42,6 +42,8 @@ function getResumeCacheKey() {
     lineHeight: layout.lineHeight,
     marginHorizontal: layout.marginHorizontal,
     marginVertical: layout.marginVertical,
+    themeColor: layout.themeColor,
+    design: layout.design,
     templateSlug,
     sectionsOrder,
   })

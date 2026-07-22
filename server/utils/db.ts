@@ -24,6 +24,8 @@ export const PRO_CREDITS = 150
 
 let pool: pg.Pool | null = null
 let schemaReady = false
+/** Single-flight so concurrent requests do not race CREATE TABLE. */
+let schemaPromise: Promise<void> | null = null
 
 function resolveDatabaseUrl(): string {
   const config = useRuntimeConfig()
@@ -82,22 +84,29 @@ export function getPool() {
 export async function ensureSchema() {
   if (schemaReady) return
 
-  const client = await getPool().connect()
-  try {
-    await migrate(client)
-    schemaReady = true
-  } catch (error) {
-    console.error('[ensureSchema] migration failed:', error)
-    throw createError({
-      statusCode: 503,
-      statusMessage:
-        error instanceof Error
-          ? `Database schema unavailable: ${error.message}`
-          : 'Database schema unavailable',
-    })
-  } finally {
-    client.release()
+  if (!schemaPromise) {
+    schemaPromise = (async () => {
+      const client = await getPool().connect()
+      try {
+        await migrate(client)
+        schemaReady = true
+      } catch (error) {
+        schemaPromise = null
+        console.error('[ensureSchema] migration failed:', error)
+        throw createError({
+          statusCode: 503,
+          statusMessage:
+            error instanceof Error
+              ? `Database schema unavailable: ${error.message}`
+              : 'Database schema unavailable',
+        })
+      } finally {
+        client.release()
+      }
+    })()
   }
+
+  await schemaPromise
 }
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
@@ -204,6 +213,49 @@ export async function setUserRole(userId: string, role: UserRole): Promise<AppUs
     [userId, role],
   )
   return result.rows[0] ? mapUser(result.rows[0]) : null
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string): Promise<AppUser | null> {
+  const result = await query<UserRow>(
+    `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [userId, passwordHash],
+  )
+  return result.rows[0] ? mapUser(result.rows[0]) : null
+}
+
+export async function invalidatePasswordResetTokens(userId: string): Promise<void> {
+  await query(
+    `UPDATE password_reset_tokens
+     SET used_at = NOW()
+     WHERE user_id = $1 AND used_at IS NULL`,
+    [userId],
+  )
+}
+
+export async function createPasswordResetToken(
+  userId: string,
+  tokenHash: string,
+  expiresAt: Date,
+): Promise<void> {
+  await invalidatePasswordResetTokens(userId)
+  await query(
+    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, $3)`,
+    [userId, tokenHash, expiresAt.toISOString()],
+  )
+}
+
+export async function consumePasswordResetToken(tokenHash: string): Promise<string | null> {
+  const result = await query<{ id: string; user_id: string }>(
+    `UPDATE password_reset_tokens
+     SET used_at = NOW()
+     WHERE token_hash = $1
+       AND used_at IS NULL
+       AND expires_at > NOW()
+     RETURNING id, user_id`,
+    [tokenHash],
+  )
+  return result.rows[0]?.user_id || null
 }
 
 /** Promote configured admin emails if they still have the default user role. */

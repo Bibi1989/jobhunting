@@ -1,130 +1,126 @@
 <script setup lang="ts">
-import { Sparkles, FileText, Briefcase, Search, UploadCloud, CheckCircle2, ArrowRight } from 'lucide-vue-next'
+import { Sparkles, FileText, Search, UploadCloud, CheckCircle2, ArrowRight } from 'lucide-vue-next'
 
-const features = [
+const { t } = useI18n()
+const { loggedIn, logout } = useSaaS()
+
+const features = computed(() => [
   {
-    title: 'ATS Resume Builder',
-    description: 'Build and export polished resumes on Free. Pro unlocks AI tailoring and keyword-matched drafts for each role.',
+    title: t('home.features.resumeTitle'),
+    description: t('home.features.resumeDesc'),
     icon: FileText,
     href: '/builder',
     color: 'text-indigo-400',
-    bg: 'bg-indigo-500/10 border-indigo-500/20'
+    bg: 'bg-indigo-500/10 border-indigo-500/20',
   },
   {
-    title: 'Smart Cover Letters',
-    description: 'Write and save a cover letter on Free. Pro generates personalized letters aligned to the job description.',
+    title: t('home.features.coverTitle'),
+    description: t('home.features.coverDesc'),
     icon: Sparkles,
     href: '/apply',
     color: 'text-purple-400',
-    bg: 'bg-purple-500/10 border-purple-500/20'
+    bg: 'bg-purple-500/10 border-purple-500/20',
   },
   {
-    title: 'ATS Checker',
-    description: 'Free local keyword coverage against any job description. Pro adds deep AI ATS analysis and fixes.',
+    title: t('home.features.atsTitle'),
+    description: t('home.features.atsDesc'),
     icon: CheckCircle2,
     href: '/ats-checker',
     color: 'text-emerald-400',
-    bg: 'bg-emerald-500/10 border-emerald-500/20'
+    bg: 'bg-emerald-500/10 border-emerald-500/20',
   },
   {
-    title: 'Job Scraper',
-    description: 'Pro: extract requirements from job boards and match them against your profile in one click.',
+    title: t('home.features.scraperTitle'),
+    description: t('home.features.scraperDesc'),
     icon: Search,
     href: '/scraper',
     color: 'text-blue-400',
-    bg: 'bg-blue-500/10 border-blue-500/20'
-  }
-]
-
-const { loggedIn, logout } = useSaaS()
+    bg: 'bg-blue-500/10 border-blue-500/20',
+  },
+])
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30">
-    <div class="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-5" />
-    
-    <!-- Navbar -->
-    <header class="relative z-10 border-b border-slate-900/80 bg-slate-950/50 backdrop-blur-md">
+  <div class="app-shell font-sans selection:bg-indigo-500/30">
+    <div class="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-5 pointer-events-none" />
+
+    <header class="relative z-10 border-b border-[color:var(--app-border)] bg-[color:var(--app-bg)]/50 backdrop-blur-md">
       <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
         <AppLogo />
-        <div class="flex items-center gap-4">
-          <NuxtLink to="/pricing" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Pricing</NuxtLink>
+        <div class="flex items-center gap-3 sm:gap-4">
+          <LocaleSwitcher />
+          <ThemeToggle />
+          <NuxtLink to="/pricing" class="text-sm font-semibold text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] transition-colors">{{ t('nav.pricing') }}</NuxtLink>
           <template v-if="loggedIn">
-            <NuxtLink to="/scraper" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Job Scraper</NuxtLink>
-            <button @click="logout" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Sign out</button>
-            <NuxtLink to="/builder" class="px-4 py-2 bg-white text-slate-950 hover:bg-slate-200 text-sm font-bold rounded-xl transition-all shadow-sm">
-              Go to Builder
+            <NuxtLink to="/scraper" class="hidden sm:inline text-sm font-semibold text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] transition-colors">{{ t('nav.jobScraper') }}</NuxtLink>
+            <button type="button" class="text-sm font-semibold text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] transition-colors" @click="logout">{{ t('nav.signOut') }}</button>
+            <NuxtLink to="/builder" class="px-4 py-2 bg-[color:var(--app-fg)] text-[color:var(--app-bg)] hover:opacity-90 text-sm font-bold rounded-xl transition-all shadow-sm">
+              {{ t('nav.goToBuilder') }}
             </NuxtLink>
           </template>
           <template v-else>
-            <NuxtLink to="/login" class="text-sm font-semibold text-slate-300 hover:text-white transition-colors">Sign in</NuxtLink>
-            <NuxtLink to="/builder" class="px-4 py-2 bg-white text-slate-950 hover:bg-slate-200 text-sm font-bold rounded-xl transition-all shadow-sm">
-              Get Started
+            <NuxtLink to="/login" class="text-sm font-semibold text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] transition-colors">{{ t('nav.signIn') }}</NuxtLink>
+            <NuxtLink to="/builder" class="px-4 py-2 bg-[color:var(--app-fg)] text-[color:var(--app-bg)] hover:opacity-90 text-sm font-bold rounded-xl transition-all shadow-sm">
+              {{ t('nav.getStarted') }}
             </NuxtLink>
           </template>
         </div>
       </div>
     </header>
 
-    <!-- Hero Section -->
     <main class="relative z-10 max-w-[1400px] mx-auto px-6 pt-24 pb-32">
       <div class="flex flex-col items-center text-center max-w-4xl mx-auto mb-20">
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-8">
           <Sparkles :size="14" />
-          Free builder · Pro AI & scrape
+          {{ t('home.badge') }}
         </div>
-        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-          Land your dream job <br class="hidden md:block" />
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-[color:var(--app-fg)] mb-6 leading-tight">
+          {{ t('home.headline') }} <br class="hidden md:block" />
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400">
-            smarter & faster
+            {{ t('home.headlineAccent') }}
           </span>
         </h1>
-        <p class="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed">
-          Start free with one resume, cover letter, portfolio, and local keyword ATS. Upgrade to Pro for job scrape, Gemini AI, and unlimited projects.
+        <p class="text-lg md:text-xl text-[color:var(--app-muted)] mb-10 max-w-2xl leading-relaxed">
+          {{ t('home.subtitle') }}
         </p>
         <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
           <NuxtLink to="/builder" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all hover:scale-[1.02]">
-            Build Your Resume <ArrowRight :size="18" />
+            {{ t('home.buildResume') }} <ArrowRight :size="18" />
           </NuxtLink>
-          <NuxtLink to="/ats-checker" class="w-full sm:w-auto px-8 py-4 bg-slate-900 border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all">
+          <NuxtLink to="/ats-checker" class="w-full sm:w-auto px-8 py-4 bg-[color:var(--app-bg-elevated)] border border-[color:var(--app-border)] hover:border-indigo-400 text-[color:var(--app-fg)] rounded-2xl font-bold flex items-center justify-center gap-2 transition-all">
             <UploadCloud :size="18" class="text-emerald-400" />
-            Check ATS Score
+            {{ t('home.checkAts') }}
           </NuxtLink>
         </div>
       </div>
 
-      <!-- Feature Categories -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <NuxtLink 
-          v-for="feat in features" 
-          :key="feat.title" 
+        <NuxtLink
+          v-for="feat in features"
+          :key="feat.href"
           :to="feat.href"
-          class="group p-6 rounded-3xl bg-slate-900/40 border border-slate-800/80 hover:bg-slate-900 transition-all duration-300 hover:shadow-xl flex flex-col items-start gap-4"
+          class="group p-6 rounded-3xl bg-[color:var(--app-bg-elevated)]/60 border border-[color:var(--app-border)] hover:opacity-95 transition-all duration-300 hover:shadow-xl flex flex-col items-start gap-4"
         >
           <div :class="['p-3 rounded-2xl border', feat.bg, feat.color, 'group-hover:scale-110 transition-transform duration-300']">
             <component :is="feat.icon" :size="24" />
           </div>
-          <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">{{ feat.title }}</h3>
-          <p class="text-sm text-slate-400 leading-relaxed">{{ feat.description }}</p>
+          <h3 class="text-lg font-bold text-[color:var(--app-fg)] group-hover:text-indigo-400 transition-colors">{{ feat.title }}</h3>
+          <p class="text-sm text-[color:var(--app-muted)] leading-relaxed">{{ feat.description }}</p>
         </NuxtLink>
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-900/80 py-12 relative z-10">
-      <div class="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-500 text-sm font-medium">
-        <p>© 2026 JobFlow. All rights reserved.</p>
+    <footer class="border-t border-[color:var(--app-border)] py-12 relative z-10">
+      <div class="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[color:var(--app-muted)] text-sm font-medium">
+        <p>© 2026 JobFlow</p>
         <div class="flex items-center gap-6 flex-wrap justify-center">
           <a
             href="/docs/BUSINESS_PLAN.pdf"
             download="JobFlow-Business-Plan.pdf"
-            class="hover:text-slate-300 transition-colors"
+            class="hover:text-[color:var(--app-fg)] transition-colors"
           >
             Business Plan (PDF)
           </a>
-          <a href="#" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
-          <a href="#" class="hover:text-slate-300 transition-colors">Terms of Service</a>
-          <a href="#" class="hover:text-slate-300 transition-colors">Contact</a>
         </div>
       </div>
     </footer>

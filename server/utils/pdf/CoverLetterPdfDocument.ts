@@ -1,8 +1,17 @@
 import React from 'react'
-import { Document, Page, View, Text, StyleSheet, Link } from '@react-pdf/renderer'
-import type { BuilderCoverLetter, BuilderResumeData } from '~/shared/types/builder'
+import { Document, Page, View, Text, StyleSheet, Link, Image } from '@react-pdf/renderer'
+import type { BuilderCoverLetter, BuilderDesignSettings, BuilderResumeData } from '~/shared/types/builder'
 import { htmlToBlocks, stripHtmlToPlain } from './types'
 import { buildContactEntries, type ContactEntry } from '~/shared/pdf/contact'
+import {
+  detailsSeparatorChar,
+  fontFacesForFamily,
+  photoBorderRadiusPx,
+  resolveDesign,
+  resolveHeaderBandColor,
+  resolvePhotoSize,
+} from '~/shared/pdf/designOverrides'
+import { ensureFontRegistered } from '~/shared/pdf/googleFonts'
 
 const TEAL = '#006a61'
 const NAVY = '#091426'
@@ -146,57 +155,113 @@ function renderStandard(
   letter: BuilderCoverLetter | undefined,
   letterDate: string,
   content: string,
+  design: BuilderDesignSettings,
 ) {
+  const faces = fontFacesForFamily(design.fontFamily || 'Inter')
+  const paper = (design.backgroundColor || '').trim() || '#ffffff'
+  const ink = (design.bodyTextColor || '').trim() || SLATE
+  const accent = (design.accentColor || '').trim()
+  const nameColor = accent && (design.accentTargets?.name ?? true) ? accent : ink
+  const titleColor =
+    (design.sectionTitleColor || '').trim() ||
+    (accent && (design.accentTargets?.jobTitle ?? true) ? accent : MUTED)
+  const lineColor = (design.lineBorderColor || '').trim() || ink
+  const nameSize = Number(design.nameFontSize ?? 22) || 22
+  const titleSize = Number(design.jobTitleFontSize ?? 10) || 10
+  const bodySize = Number(design.bodyFontSize ?? 11) || 11
+  const headerAlign = (design.headerAlign || 'center') as 'left' | 'center' | 'right'
+  const headerBg = resolveHeaderBandColor(design, '')
+  const showPhoto = Boolean(design.showPhoto && p.photoDataUrl)
+  const photoSize = resolvePhotoSize(design)
+  const sep = detailsSeparatorChar(design)
+  const weightBold = faces.useWeight ? 700 : undefined
+  const weightRegular = faces.useWeight ? 400 : undefined
+  const headerText = (design.headerTextColor || '').trim()
+  const resolvedNameColor = headerText || nameColor
+  const resolvedTitleColor = headerText || titleColor
+  const contactTextColor = headerText || MUTED
+  const alignItems =
+    headerAlign === 'center' ? 'center' : headerAlign === 'right' ? 'flex-end' : 'flex-start'
+
   const styles = StyleSheet.create({
     page: {
       paddingTop: 40,
       paddingBottom: 40,
       paddingHorizontal: 44,
-      fontFamily: 'Times-Roman',
-      fontSize: 11,
-      color: SLATE,
-      backgroundColor: '#ffffff',
+      fontFamily: faces.regular,
+      ...(weightRegular != null ? { fontWeight: weightRegular } : null),
+      fontSize: bodySize,
+      color: ink,
+      backgroundColor: paper,
     },
     header: {
-      alignItems: 'center',
+      alignItems,
       marginBottom: 22,
       paddingBottom: 14,
       borderBottomWidth: 2,
-      borderBottomColor: SLATE,
+      borderBottomColor: lineColor,
+      ...(headerBg
+        ? {
+            backgroundColor: headerBg,
+            marginHorizontal: -44,
+            marginTop: -40,
+            paddingHorizontal: 44,
+            paddingTop: 40,
+            borderBottomWidth: 0,
+          }
+        : null),
     },
     name: {
-      fontSize: 22,
-      fontFamily: 'Times-Bold',
+      fontSize: nameSize,
+      fontFamily: faces.bold,
+      ...(weightBold != null ? { fontWeight: weightBold } : null),
       letterSpacing: 1.2,
       textTransform: 'uppercase',
-      textAlign: 'center',
+      textAlign: headerAlign,
       marginBottom: 4,
+      color: resolvedNameColor,
+      width: '100%',
     },
     title: {
-      fontSize: 10,
-      fontFamily: 'Helvetica',
+      fontSize: titleSize,
+      fontFamily: faces.regular,
+      ...(weightRegular != null ? { fontWeight: weightRegular } : null),
       letterSpacing: 1.6,
       textTransform: 'uppercase',
-      color: MUTED,
-      textAlign: 'center',
+      color: resolvedTitleColor,
+      textAlign: headerAlign,
       marginBottom: 8,
+      width: '100%',
     },
     contact: {
       fontSize: 8,
-      fontFamily: 'Helvetica',
+      fontFamily: faces.regular,
+      ...(weightRegular != null ? { fontWeight: weightRegular } : null),
       letterSpacing: 0.4,
-      color: MUTED,
-      textAlign: 'center',
+      color: contactTextColor,
+      textAlign: headerAlign,
     },
-    recipient: { marginBottom: 18, fontFamily: 'Helvetica', fontSize: 11 },
-  })
+    recipient: {
+      marginBottom: 18,
+      fontFamily: faces.regular,
+      ...(weightRegular != null ? { fontWeight: weightRegular } : null),
+      fontSize: bodySize,
+    },
+    photo: {
+      width: photoSize,
+      height: photoSize,
+      borderRadius: photoBorderRadiusPx(photoSize, design),
+      marginBottom: 10,
+      objectFit: 'cover',
+    },
+  } as any)
 
   const entries = buildContactEntries(p)
   const body = buildBodyChildren(content, {
-    fontSize: 11,
+    fontSize: bodySize,
     lineHeight: 1.5,
-    fontFamily: 'Times-Roman',
-    color: SLATE,
+    fontFamily: faces.regular,
+    color: ink,
   })
 
   return React.createElement(
@@ -205,14 +270,17 @@ function renderStandard(
     React.createElement(
       View,
       { style: styles.header, wrap: false },
+      showPhoto
+        ? React.createElement(Image, { src: p.photoDataUrl!, style: styles.photo })
+        : null,
       React.createElement(Text, { style: styles.name }, p.fullName || 'Your Name'),
       p.jobTitle ? React.createElement(Text, { style: styles.title }, p.jobTitle) : null,
       React.createElement(ContactLinkRow, {
         entries,
         style: styles.contact,
-        linkColor: SLATE,
-        separator: '  |  ',
-        centered: true,
+        linkColor: resolvedNameColor,
+        separator: `  ${sep}  `,
+        centered: headerAlign === 'center',
       }),
     ),
     letter?.companyName || letter?.hiringManager
@@ -222,7 +290,7 @@ function renderStandard(
           React.createElement(Text, null, letterDate),
           React.createElement(
             Text,
-            { style: { marginTop: 10, fontFamily: 'Helvetica-Bold' } },
+            { style: { marginTop: 10, fontFamily: faces.bold } },
             letter?.hiringManager || 'Hiring Manager',
           ),
           letter?.companyName ? React.createElement(Text, null, letter.companyName) : null,
@@ -551,6 +619,8 @@ export function createCoverLetterPdfDocument(
   const content = letter?.content || ''
   const letterDate = formatLetterDate()
   const templateId = resolveTemplateId(data)
+  const design = resolveDesign(data)
+  ensureFontRegistered(design.fontFamily || 'Inter')
 
   let page: React.ReactElement
   if (templateId === 'cl-creative') {
@@ -560,7 +630,7 @@ export function createCoverLetterPdfDocument(
   } else if (templateId === 'cl-tech') {
     page = renderTech(p, letter, letterDate, content)
   } else {
-    page = renderStandard(p, letter, letterDate, content)
+    page = renderStandard(p, letter, letterDate, content, design)
   }
 
   return React.createElement(

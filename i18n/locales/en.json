@@ -1,0 +1,107 @@
+{
+  "prefs": {
+    "language": "Language",
+    "theme": "Theme",
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "nav": {
+    "pricing": "Pricing",
+    "jobScraper": "Job Scraper",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "getStarted": "Get Started",
+    "goToBuilder": "Go to Builder",
+    "myProjects": "My Projects",
+    "templates": "Templates",
+    "applyViaEmail": "Apply via Email",
+    "portfolio": "Portfolio",
+    "analytics": "Analytics",
+    "allProjects": "All Projects",
+    "aiPortfolio": "AI Portfolio",
+    "account": "Account",
+    "billing": "Billing & credits",
+    "logOut": "Log out",
+    "dashboard": "Dashboard",
+    "manageWorkspace": "Manage Workspace",
+    "navigate": "Navigate",
+    "back": "Back"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to JobFlow to use credits and scraping.",
+    "email": "Email",
+    "password": "Password",
+    "signingIn": "Signing in…",
+    "signIn": "Sign in",
+    "noAccount": "No account?",
+    "register": "Register",
+    "forgotPassword": "Forgot password?",
+    "createAccount": "Create your account",
+    "registerSubtitle": "Start free — upgrade anytime for AI and scrape.",
+    "creating": "Creating…",
+    "createAccountBtn": "Create account",
+    "haveAccount": "Already have an account?",
+    "forgotTitle": "Forgot password",
+    "forgotSubtitle": "Enter your account email and we’ll send a link to reset your password.",
+    "sendReset": "Send reset link",
+    "sending": "Sending…",
+    "backToSignIn": "Back to sign in",
+    "resetTitle": "Choose a new password",
+    "resetSubtitle": "Enter a new password for your JobFlow account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "updating": "Updating…",
+    "updatePassword": "Update password",
+    "requestNewLink": "Request a new link"
+  },
+  "account": {
+    "title": "Account",
+    "signedInAs": "Signed in as",
+    "changePassword": "Change password",
+    "changePasswordHint": "Use your current password, then choose a new one (at least 8 characters).",
+    "currentPassword": "Current password",
+    "confirmNewPassword": "Confirm new password",
+    "saving": "Saving…",
+    "updatePassword": "Update password",
+    "passwordUpdated": "Password updated successfully."
+  },
+  "home": {
+    "badge": "Free builder · Pro AI & scrape",
+    "headline": "Land your dream job",
+    "headlineAccent": "smarter & faster",
+    "subtitle": "Start free with one resume, cover letter, portfolio, and local keyword ATS. Upgrade to Pro for job scrape, Gemini AI, and unlimited projects.",
+    "buildResume": "Build Your Resume",
+    "checkAts": "Check ATS Score",
+    "features": {
+      "resumeTitle": "ATS Resume Builder",
+      "resumeDesc": "Build and export polished resumes on Free. Pro unlocks AI tailoring and keyword-matched drafts for each role.",
+      "coverTitle": "Smart Cover Letters",
+      "coverDesc": "Write and save a cover letter on Free. Pro generates personalized letters aligned to the job description.",
+      "atsTitle": "ATS Checker",
+      "atsDesc": "Free local keyword coverage against any job description. Pro adds deep AI ATS analysis and fixes.",
+      "scraperTitle": "Job Scraper",
+      "scraperDesc": "Pro: extract requirements from job boards and match them against your profile in one click."
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "Start free. Upgrade when you need AI and scrape.",
+    "free": "Free",
+    "pro": "Pro",
+    "perMonth": "/ month",
+    "currentPlan": "Current plan",
+    "upgrade": "Upgrade to Pro",
+    "manageBilling": "Manage billing"
+  },
+  "metrics": {
+    "label": "Include metrics / numbers",
+    "hint": "Off by default. Leave off for roles where quantification doesn’t fit. Applies to AI draft, enhance, and ATS fix."
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "error": "Something went wrong"
+  }
+}

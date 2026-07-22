@@ -4,11 +4,36 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: false },
-  modules: ['nuxt-auth-utils'],
+  modules: ['nuxt-auth-utils', '@nuxtjs/color-mode', '@nuxtjs/i18n'],
+  colorMode: {
+    preference: 'dark',
+    fallback: 'dark',
+    classSuffix: '',
+    storageKey: 'jobflow-color-mode',
+  },
+  i18n: {
+    locales: [
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
+      { code: 'de', language: 'de-DE', name: 'Deutsch', file: 'de.json' },
+    ],
+    lazy: true,
+    langDir: 'locales', // resolved under web/i18n/locales by @nuxtjs/i18n
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'jobflow_i18n',
+      redirectOn: 'root',
+      fallbackLocale: 'en',
+    },
+  },
   app: {
     head: {
       title: 'JobFlow',
       titleTemplate: '%s · JobFlow',
+      htmlAttrs: {
+        lang: 'en',
+      },
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'apple-touch-icon', href: '/favicon.svg' },

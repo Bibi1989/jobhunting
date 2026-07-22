@@ -172,8 +172,8 @@ function onBlur(event: FocusEvent) {
 <style scoped>
 .builder-rich-text :deep(.ql-toolbar.ql-snow) {
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--app-border);
+  background-color: var(--app-input);
 }
 .builder-rich-text :deep(.ql-container.ql-snow) {
   border: none;
@@ -184,7 +184,7 @@ function onBlur(event: FocusEvent) {
   overflow-y: auto;
 }
 .builder-rich-text :deep(.ql-editor) {
-  color: #e2e8f0 !important;
+  color: var(--app-fg) !important;
   background: transparent !important;
   min-height: inherit;
 }
@@ -197,7 +197,7 @@ function onBlur(event: FocusEvent) {
   color: inherit !important;
 }
 .builder-rich-text :deep(.ql-editor.ql-blank::before) {
-  color: #64748b;
+  color: var(--app-muted);
   font-style: italic;
 }
 /* Quill 2 draws bullets via .ql-ui:before */
@@ -222,16 +222,17 @@ function onBlur(event: FocusEvent) {
   padding-left: 0.15rem;
 }
 .builder-rich-text :deep(.ql-snow .ql-stroke) {
-  stroke: #94a3b8;
+  stroke: var(--app-muted);
 }
 .builder-rich-text :deep(.ql-snow .ql-fill) {
-  fill: #94a3b8;
+  fill: var(--app-muted);
 }
 .builder-rich-text :deep(.ql-snow .ql-picker) {
-  color: #94a3b8;
+  color: var(--app-muted);
 }
 .builder-rich-text :deep(.ql-snow .ql-picker-options) {
-  background-color: #1e293b;
-  border-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--app-bg-elevated);
+  border-color: var(--app-border);
+  color: var(--app-fg);
 }
 </style>

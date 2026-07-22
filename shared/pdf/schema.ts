@@ -178,5 +178,6 @@ export function withLayoutState(data: BuilderResumeData): BuilderResumeData {
     templateId: data.templateId || templateSlug,
     templateSlug,
     sectionsOrder: normalizeSectionsOrder(data.sectionsOrder, data.customSections || []),
+    useMetrics: data.useMetrics === true,
   }
 }

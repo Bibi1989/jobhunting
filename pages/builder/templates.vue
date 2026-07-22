@@ -21,17 +21,17 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
       <div class="max-w-[1200px] mx-auto px-6">
         <!-- Header Section -->
         <div class="mb-12">
-          <h1 class="font-serif text-4xl text-white mb-3">Template Gallery</h1>
-          <p class="text-blue-200/80 max-w-xl text-lg">Choose from our curated Stitch resume layouts and cover letter styles. Switch templates instantly while preserving your data.</p>
+          <h1 class="font-serif text-4xl text-app-fg mb-3">Template Gallery</h1>
+          <p class="text-app-muted max-w-xl text-lg">Choose from our curated Stitch resume layouts and cover letter styles. Switch templates instantly while preserving your data.</p>
         </div>
 
         <!-- Filters & Categories -->
-        <div class="sticky top-16 z-30 bg-slate-900/60 backdrop-blur-md py-4 mb-10 border-b border-white/10">
+        <div class="sticky top-16 z-30 bg-app-bg-elevated/80 backdrop-blur-md py-4 mb-10 border-b border-app-border">
           <div class="flex flex-wrap items-center gap-6">
             <button 
               v-for="filter in filters" :key="filter"
               @click="activeFilter = filter"
-              :class="['font-semibold text-sm pb-1 border-b-2 transition-colors', activeFilter === filter ? 'text-blue-400 border-blue-400' : 'text-slate-400 border-transparent hover:text-slate-200']"
+              :class="['font-semibold text-sm pb-1 border-b-2 transition-colors', activeFilter === filter ? 'text-blue-500 border-blue-500' : 'text-app-muted border-transparent hover:text-app-fg']"
             >
               {{ filter }}
             </button>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Eye, EyeOff } from 'lucide-vue-next'
+const { t } = useI18n()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
-  const { fetchSession, refreshCredits, applySessionUser } = useSaaS()
+const { fetchSession, refreshCredits, applySessionUser } = useSaaS()
 
 async function onSubmit() {
   loading.value = true
@@ -49,59 +50,62 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-slate-100 flex items-center justify-center p-6">
-    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-xl p-8 shadow-2xl">
+  <div class="app-shell flex items-center justify-center p-6">
+    <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+      <LocaleSwitcher />
+      <ThemeToggle />
+    </div>
+    <div class="w-full max-w-md rounded-2xl app-panel backdrop-blur-xl p-8 shadow-2xl">
       <div class="mb-6">
         <AppLogo :show-tagline="false" />
       </div>
-      <h1 class="text-2xl font-bold text-white mb-1">Create your account</h1>
-      <p class="text-sm text-slate-400 mb-6">Free tier includes 10 AI/scrape credits to get started.</p>
+      <h1 class="text-2xl font-bold text-[color:var(--app-fg)] mb-1">{{ t('auth.createAccount') }}</h1>
+      <p class="text-sm text-[color:var(--app-muted)] mb-6">{{ t('auth.registerSubtitle') }}</p>
 
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div>
-          <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Email</label>
+          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.email') }}</label>
           <input
             v-model="email"
             type="email"
             required
-            class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white outline-none focus:border-indigo-400"
+            class="mt-1 w-full rounded-xl bg-[color:var(--app-input)] border border-[color:var(--app-border)] px-4 py-2.5 text-[color:var(--app-fg)] outline-none focus:border-indigo-400"
           />
         </div>
         <div>
-          <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Password</label>
+          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.password') }}</label>
           <div class="relative mt-1">
             <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               required
               minlength="8"
-              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-white outline-none focus:border-indigo-400 pr-10"
+              class="w-full rounded-xl bg-[color:var(--app-input)] border border-[color:var(--app-border)] px-4 py-2.5 text-[color:var(--app-fg)] outline-none focus:border-indigo-400 pr-10"
             />
             <button
               type="button"
-              class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white focus:outline-none transition-colors"
-              @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] focus:outline-none transition-colors"
               title="Toggle password visibility"
+              @click="showPassword = !showPassword"
             >
               <Eye v-if="!showPassword" :size="18" />
               <EyeOff v-else :size="18" />
             </button>
           </div>
-          <p class="mt-1 text-[11px] text-slate-500">At least 8 characters.</p>
         </div>
         <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
         <button
           type="submit"
           :disabled="loading"
-          class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 font-bold text-sm disabled:opacity-50"
+          class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 font-bold text-sm disabled:opacity-50 text-white"
         >
-          {{ loading ? 'Creating…' : 'Create account' }}
+          {{ loading ? t('auth.creating') : t('auth.createAccountBtn') }}
         </button>
       </form>
 
-      <p class="mt-6 text-sm text-slate-400 text-center">
-        Already have an account?
-        <NuxtLink to="/login" class="text-indigo-300 hover:text-indigo-200 font-semibold">Sign in</NuxtLink>
+      <p class="mt-6 text-sm text-[color:var(--app-muted)] text-center">
+        {{ t('auth.haveAccount') }}
+        <NuxtLink to="/login" class="text-indigo-400 hover:text-indigo-300 font-semibold">{{ t('auth.signIn') }}</NuxtLink>
       </p>
     </div>
   </div>

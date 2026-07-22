@@ -9,8 +9,8 @@ const { creditsRemaining, planTier, loggedIn, pending } = useSaaS()
     class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer"
     :class="
       creditsRemaining > 0
-        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
-        : 'border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+        : 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20'
     "
     title="Credits & billing"
   >

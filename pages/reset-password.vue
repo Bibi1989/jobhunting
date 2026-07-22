@@ -1,35 +1,45 @@
 <script setup lang="ts">
 import { Eye, EyeOff } from 'lucide-vue-next'
+
 const { t } = useI18n()
-const email = ref('')
-const password = ref('')
-const showPassword = ref(false)
-const loading = ref(false)
-const error = ref<string | null>(null)
 const route = useRoute()
 const { fetchSession, refreshCredits, applySessionUser } = useSaaS()
 
+const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
+const password = ref('')
+const confirm = ref('')
+const showPassword = ref(false)
+const loading = ref(false)
+const error = ref<string | null>(null)
+
 async function onSubmit() {
-  loading.value = true
   error.value = null
+  if (password.value !== confirm.value) {
+    error.value = 'Passwords do not match.'
+    return
+  }
+  if (!token.value) {
+    error.value = 'Missing reset token. Open the link from your email.'
+    return
+  }
+
+  loading.value = true
   try {
-    await $fetch<{ user: { id: string; email: string; planTier?: SaasPlanTier; role?: SaasUserRole; creditsRemaining?: number } }>(
-      '/api/auth/login',
+    const res = await $fetch<{ ok: boolean; user: { id: string; email: string; planTier?: SaasPlanTier; role?: SaasUserRole; creditsRemaining?: number } }>(
+      '/api/auth/reset-password',
       {
         method: 'POST',
-        body: { email: email.value, password: password.value },
+        body: { token: token.value, password: password.value },
         credentials: 'include',
       },
-    ).then((res) => {
-      if (res?.user) applySessionUser(res.user)
-    })
+    )
+    if (res?.user) applySessionUser(res.user)
     await fetchSession()
     await refreshCredits()
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-    await navigateTo(redirect)
+    await navigateTo('/')
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string; detail?: string }; statusMessage?: string }
-    error.value = e.data?.statusMessage || e.data?.detail || e.statusMessage || 'Login failed'
+    error.value = e.data?.statusMessage || e.data?.detail || e.statusMessage || 'Reset failed'
   } finally {
     loading.value = false
   }
@@ -46,21 +56,12 @@ async function onSubmit() {
       <div class="mb-6">
         <AppLogo :show-tagline="false" />
       </div>
-      <h1 class="text-2xl font-bold text-[color:var(--app-fg)] mb-1">{{ t('auth.welcomeBack') }}</h1>
-      <p class="text-sm text-[color:var(--app-muted)] mb-6">{{ t('auth.signInSubtitle') }}</p>
+      <h1 class="text-2xl font-bold text-[color:var(--app-fg)] mb-1">{{ t('auth.resetTitle') }}</h1>
+      <p class="text-sm text-[color:var(--app-muted)] mb-6">{{ t('auth.resetSubtitle') }}</p>
 
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div>
-          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.email') }}</label>
-          <input
-            v-model="email"
-            type="email"
-            required
-            class="mt-1 w-full rounded-xl bg-[color:var(--app-input)] border border-[color:var(--app-border)] px-4 py-2.5 text-[color:var(--app-fg)] outline-none focus:border-indigo-400"
-          />
-        </div>
-        <div>
-          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.password') }}</label>
+          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.newPassword') }}</label>
           <div class="relative mt-1">
             <input
               v-model="password"
@@ -79,25 +80,29 @@ async function onSubmit() {
               <EyeOff v-else :size="18" />
             </button>
           </div>
-          <p class="mt-2 text-right">
-            <NuxtLink to="/forgot-password" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
-              {{ t('auth.forgotPassword') }}
-            </NuxtLink>
-          </p>
+        </div>
+        <div>
+          <label class="text-xs uppercase tracking-wider text-[color:var(--app-muted)] font-semibold">{{ t('auth.confirmPassword') }}</label>
+          <input
+            v-model="confirm"
+            type="password"
+            required
+            minlength="8"
+            class="mt-1 w-full rounded-xl bg-[color:var(--app-input)] border border-[color:var(--app-border)] px-4 py-2.5 text-[color:var(--app-fg)] outline-none focus:border-indigo-400"
+          />
         </div>
         <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
         <button
           type="submit"
-          :disabled="loading"
+          :disabled="loading || !token"
           class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 font-bold text-sm disabled:opacity-50 text-white"
         >
-          {{ loading ? t('auth.signingIn') : t('auth.signIn') }}
+          {{ loading ? t('auth.updating') : t('auth.updatePassword') }}
         </button>
       </form>
 
       <p class="mt-6 text-sm text-[color:var(--app-muted)] text-center">
-        {{ t('auth.noAccount') }}
-        <NuxtLink to="/register" class="text-indigo-400 hover:text-indigo-300 font-semibold">{{ t('auth.register') }}</NuxtLink>
+        <NuxtLink to="/forgot-password" class="text-indigo-400 hover:text-indigo-300 font-semibold">{{ t('auth.requestNewLink') }}</NuxtLink>
       </p>
     </div>
   </div>

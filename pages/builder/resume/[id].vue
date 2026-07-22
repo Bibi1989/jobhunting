@@ -3,6 +3,7 @@ import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { resumeTemplates, getResumeTemplate, resolveResumeTemplateId } from '~/utils/templates'
 import type { BuilderResumeData, BuilderCustomSection } from '~/shared/types/builder'
+import { DEFAULT_DESIGN_SETTINGS } from '~/shared/types/builder'
 import { downloadServerPdf } from '~/utils/downloadServerPdf'
 import {
   normalizeBulletListHtml,
@@ -313,6 +314,8 @@ const resumeData = ref<BuilderResumeData>({
   lineHeight: 1.35,
   marginHorizontal: 32,
   marginVertical: 32,
+  design: { ...DEFAULT_DESIGN_SETTINGS },
+  useMetrics: false,
   personalInfo: {
     fullName: 'Jonathan R. Sterling',
     jobTitle: 'Product Designer',
@@ -441,6 +444,7 @@ async function draftResumeWithAi() {
         rawResumeText: rawResumeText.value || undefined,
         targetRole: resumeData.value.personalInfo.jobTitle,
         tailoringPreset: tailoringPreset.value,
+        useMetrics: resumeData.value.useMetrics === true,
       },
     })
 
@@ -454,6 +458,7 @@ async function draftResumeWithAi() {
         next.targetJobDescription || resumeData.value.targetJobDescription || ''
       next.additionalInstructions =
         next.additionalInstructions || resumeData.value.additionalInstructions || ''
+      next.useMetrics = resumeData.value.useMetrics === true
       if (alsoGenerateCoverLetter.value) {
         toast.info('Drafting cover letter…')
         try {
@@ -463,19 +468,20 @@ async function draftResumeWithAi() {
               resumeData: response.resumeData,
               jobDescription: resumeData.value.targetJobDescription || '',
               companyName: '',
-              hiringManager: 'Hiring Manager',
+              hiringManager: 'Hiring Team',
               tone: 'professional',
               currentContent: '',
               additionalInstructions: resumeData.value.additionalInstructions || '',
               rawResumeText: rawResumeText.value || undefined,
               tailoringPreset: tailoringPreset.value,
+              useMetrics: resumeData.value.useMetrics === true,
             },
           })
           if (clResponse?.content) {
             next.coverLetter = {
               jobDescription: resumeData.value.targetJobDescription || '',
               companyName: '',
-              hiringManager: 'Hiring Manager',
+              hiringManager: 'Hiring Team',
               tone: 'professional',
               content: clResponse.content,
               additionalInstructions: resumeData.value.additionalInstructions || '',
@@ -684,6 +690,7 @@ async function fixAtsIssues() {
         atsResult: atsResult.value,
         jobDescription: resumeData.value.targetJobDescription || undefined,
         fixInstructions: atsFixInstructions.value.trim() || undefined,
+        useMetrics: resumeData.value.useMetrics === true,
       },
     })
     if (response?.resumeData) {
@@ -692,6 +699,7 @@ async function fixAtsIssues() {
       next.templateId = resolveResumeTemplateId(next.templateId || resumeData.value.templateId)
       next.templateSlug = next.templateId
       next.sectionsOrder = normalizeSectionsOrder(next.sectionsOrder, next.customSections || [])
+      next.useMetrics = resumeData.value.useMetrics === true
       resumeData.value = next
       atsResult.value = null
       await refreshCredits()
@@ -707,9 +715,9 @@ async function fixAtsIssues() {
 }
 
 function atsSeverityClass(severity: string) {
-  if (severity === 'critical') return 'border-red-500/40 bg-red-500/10 text-red-200'
-  if (severity === 'warning') return 'border-amber-500/40 bg-amber-500/10 text-amber-100'
-  return 'border-sky-500/40 bg-sky-500/10 text-sky-100'
+  if (severity === 'critical') return 'border-red-500/40 bg-red-500/10 text-red-900 dark:text-red-200'
+  if (severity === 'warning') return 'border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100'
+  return 'border-sky-500/40 bg-sky-500/10 text-sky-950 dark:text-sky-100'
 }
 
 function normalizeEnhancedHtml(raw: string, asBullets = false) {
@@ -1185,7 +1193,8 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
         experiences: type === 'summary' ? resumeData.value.experience : undefined,
         targetRole: item.targetRole || '',
         commandPrompt: item.commandPrompt || '',
-        projectDescription: item.projectDescription || ''
+        projectDescription: item.projectDescription || '',
+        useMetrics: resumeData.value.useMetrics === true,
       }
     })
 
@@ -1634,6 +1643,14 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 </label>
               </div>
             </div>
+            <!-- Design customization -->
+            <div class="mt-8 pt-6 border-t border-white/10">
+              <div class="mb-4">
+                <h3 class="font-bold text-lg text-white mb-0.5">Design</h3>
+                <p class="text-blue-200/60 text-xs">Fonts, colors, header layout, and profile photo.</p>
+              </div>
+              <BuilderDesignPanel v-model="resumeData" />
+            </div>
           </div>
 
           <div v-if="activeTab === 'layout'" class="space-y-6">
@@ -1820,6 +1837,19 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   placeholder="Optional. Example: Emphasize leadership and TypeScript. Keep bullets concise."
                 />
                 <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
+              </div>
+
+              <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-1.5">
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    class="rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/40"
+                    :checked="resumeData.useMetrics === true"
+                    @change="resumeData.useMetrics = ($event.target as HTMLInputElement).checked"
+                  >
+                  <span class="text-sm font-semibold text-slate-200">{{ $t('metrics.label') }}</span>
+                </label>
+                <p class="text-[11px] text-slate-500 pl-7">{{ $t('metrics.hint') }}</p>
               </div>
 
               <!-- Tailoring Preset Selector -->
@@ -2374,6 +2404,18 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   placeholder="What to fix or leave alone. Example: Improve bullets and keywords, but do not change company names or dates. Keep the summary short."
                 />
               </div>
+              <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-1.5">
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    class="rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/40"
+                    :checked="resumeData.useMetrics === true"
+                    @change="resumeData.useMetrics = ($event.target as HTMLInputElement).checked"
+                  >
+                  <span class="text-sm font-semibold text-slate-200">{{ $t('metrics.label') }}</span>
+                </label>
+                <p class="text-[11px] text-slate-500 pl-7">{{ $t('metrics.hint') }}</p>
+              </div>
               <div class="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -2405,33 +2447,33 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             </div>
 
             <div v-if="atsResult" class="space-y-6">
-              <div class="rounded-xl border border-white/10 bg-white/5 p-6 flex flex-wrap items-center gap-6">
+              <div class="rounded-xl border border-app-border bg-app-input p-6 flex flex-wrap items-center gap-6">
                 <div class="flex flex-col items-center justify-center w-28 h-28 rounded-full border-4 border-indigo-400/60 bg-indigo-500/10">
-                  <span class="text-3xl font-black text-white">{{ atsResult.score }}</span>
-                  <span class="text-[10px] uppercase tracking-widest text-indigo-200">/ 100</span>
+                  <span class="text-3xl font-black text-app-fg">{{ atsResult.score }}</span>
+                  <span class="text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-200">/ 100</span>
                 </div>
                 <div class="flex-1 min-w-[200px]">
-                  <p class="text-xs uppercase tracking-widest text-slate-400 mb-1">Grade {{ atsResult.grade }}</p>
-                  <p class="text-slate-200 text-sm leading-relaxed">{{ atsResult.summary }}</p>
+                  <p class="text-xs uppercase tracking-widest text-app-muted mb-1">Grade {{ atsResult.grade }}</p>
+                  <p class="text-app-fg text-sm leading-relaxed">{{ atsResult.summary }}</p>
                 </div>
               </div>
 
               <div v-if="atsResult.strengths.length">
-                <h3 class="text-xs uppercase tracking-widest text-emerald-300/80 font-semibold mb-2">Strengths</h3>
+                <h3 class="text-xs uppercase tracking-widest text-emerald-700 dark:text-emerald-300/80 font-semibold mb-2">Strengths</h3>
                 <ul class="space-y-1.5">
                   <li
                     v-for="(s, i) in atsResult.strengths"
                     :key="`str-${i}`"
-                    class="text-sm text-slate-300 flex gap-2"
+                    class="text-sm text-app-fg flex gap-2"
                   >
-                    <span class="material-symbols-outlined text-emerald-400 text-[16px] mt-0.5">check_circle</span>
+                    <span class="material-symbols-outlined text-emerald-500 text-[16px] mt-0.5">check_circle</span>
                     <span>{{ s }}</span>
                   </li>
                 </ul>
               </div>
 
               <div v-if="atsResult.issues.length">
-                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Issues</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">Issues</h3>
                 <div class="space-y-3">
                   <div
                     v-for="(issue, i) in atsResult.issues"
@@ -2440,34 +2482,34 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     :class="atsSeverityClass(issue.severity)"
                   >
                     <div class="flex items-center gap-2 mb-1">
-                      <span class="text-[10px] uppercase font-bold tracking-wider opacity-80">{{ issue.severity }}</span>
-                      <span class="text-[10px] uppercase tracking-wider opacity-60">{{ issue.category }}</span>
+                      <span class="text-[10px] uppercase font-bold tracking-wider opacity-90">{{ issue.severity }}</span>
+                      <span class="text-[10px] uppercase tracking-wider opacity-70">{{ issue.category }}</span>
                     </div>
-                    <p class="font-medium mb-1">{{ issue.message }}</p>
-                    <p class="opacity-80 text-xs leading-relaxed">{{ issue.suggestion }}</p>
+                    <p class="font-semibold mb-1 text-inherit">{{ issue.message }}</p>
+                    <p class="opacity-90 text-xs leading-relaxed text-inherit">{{ issue.suggestion }}</p>
                   </div>
                 </div>
               </div>
 
               <!-- Detailed Keyword Explainability -->
               <div v-if="atsResult.keywordsAnalysis && atsResult.keywordsAnalysis.length" class="space-y-3">
-                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Keyword Alignment Analysis</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">Keyword Alignment Analysis</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     v-for="(k, i) in atsResult.keywordsAnalysis"
                     :key="`kwa-${i}`"
-                    class="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]"
+                    class="flex items-center justify-between p-3 rounded-lg border border-app-border bg-app-input"
                   >
                     <div class="text-left">
-                      <p class="text-sm font-semibold text-white">{{ k.keyword }}</p>
-                      <p v-if="k.status === 'found'" class="text-[10px] text-slate-400">
-                        Found in: <span class="text-blue-300 capitalize font-medium">{{ k.foundInSection }}</span> ({{ k.count }}x)
+                      <p class="text-sm font-semibold text-app-fg">{{ k.keyword }}</p>
+                      <p v-if="k.status === 'found'" class="text-[10px] text-app-muted">
+                        Found in: <span class="text-indigo-600 dark:text-blue-300 capitalize font-medium">{{ k.foundInSection }}</span> ({{ k.count }}x)
                       </p>
-                      <p v-else class="text-[10px] text-slate-400">Not found in resume</p>
+                      <p v-else class="text-[10px] text-app-muted">Not found in resume</p>
                     </div>
                     <span
                       class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                      :class="k.status === 'found' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'"
+                      :class="k.status === 'found' ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30'"
                     >
                       {{ k.status }}
                     </span>
@@ -2477,29 +2519,29 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
               <!-- Fallback Legacy Keyword Gaps -->
               <div v-else-if="atsResult.keywordGaps.length" class="flex flex-wrap gap-2">
-                <h3 class="w-full text-xs uppercase tracking-widest text-slate-400 font-semibold mb-1">Keyword gaps</h3>
+                <h3 class="w-full text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">Keyword gaps</h3>
                 <span
                   v-for="(kw, i) in atsResult.keywordGaps"
                   :key="`kw-${i}`"
-                  class="text-[11px] px-2 py-1 rounded-full bg-white/10 text-slate-200 border border-white/10"
+                  class="text-[11px] px-2 py-1 rounded-full bg-app-input text-app-fg border border-app-border"
                 >{{ kw }}</span>
               </div>
 
               <!-- Suggested Section Changes & Rewrites -->
               <div v-if="atsResult.sectionChanges && atsResult.sectionChanges.length" class="space-y-4">
-                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Suggested Section Rewrites</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">Suggested Section Rewrites</h3>
                 <div class="space-y-4">
                   <div
                     v-for="(sc, i) in atsResult.sectionChanges"
                     :key="`sc-${i}`"
-                    class="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3"
+                    class="rounded-xl border border-app-border bg-app-panel p-4 space-y-3"
                   >
-                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
-                      <h4 class="text-xs font-bold text-blue-300 uppercase tracking-wider capitalize text-left">
+                    <div class="flex justify-between items-center border-b border-app-border pb-2">
+                      <h4 class="text-xs font-bold text-indigo-700 dark:text-blue-300 uppercase tracking-wider capitalize text-left">
                         {{ sc.section }} Section
                       </h4>
                     </div>
-                    <p class="text-xs text-slate-400 leading-relaxed italic text-left">
+                    <p class="text-xs text-app-muted leading-relaxed italic text-left">
                       {{ sc.relevanceReason }}
                     </p>
 
@@ -2507,27 +2549,27 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                       <div
                         v-for="(rw, rwIdx) in sc.suggestedRewrites"
                         :key="`rw-${rwIdx}`"
-                        class="space-y-2 border-t border-white/5 pt-3 first:border-t-0 first:pt-0 text-left"
+                        class="space-y-2 border-t border-app-border pt-3 first:border-t-0 first:pt-0 text-left"
                       >
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded text-xs text-rose-200">
-                            <span class="text-[9px] uppercase font-bold text-rose-400 block mb-1">Original</span>
-                            <p class="italic">{{ rw.original }}</p>
+                          <div class="p-2.5 bg-rose-500/10 border border-rose-500/25 rounded text-xs text-rose-950 dark:text-rose-100">
+                            <span class="text-[9px] uppercase font-bold text-rose-700 dark:text-rose-400 block mb-1">Original</span>
+                            <p class="italic text-rose-950 dark:text-rose-100/95">{{ rw.original }}</p>
                           </div>
-                          <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-xs text-emerald-200 relative">
-                            <span class="text-[9px] uppercase font-bold text-emerald-400 block mb-1">Suggested</span>
-                            <p class="italic pr-14">{{ rw.suggested }}</p>
+                          <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded text-xs text-emerald-950 dark:text-emerald-100 relative">
+                            <span class="text-[9px] uppercase font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Suggested</span>
+                            <p class="italic pr-14 text-emerald-950 dark:text-emerald-100/95">{{ rw.suggested }}</p>
                             <button
                               type="button"
-                              class="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-white rounded text-[10px] font-semibold hover:bg-emerald-400 transition duration-200 cursor-pointer"
+                              class="absolute top-2 right-2 px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-semibold hover:bg-emerald-500 transition duration-200 cursor-pointer"
                               @click="applySuggestedRewrite(sc.section, rw.original, rw.suggested)"
                             >
                               Apply
                             </button>
                           </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 leading-relaxed">
-                          <strong class="text-slate-300">Why this rewrite:</strong> {{ rw.explanation }}
+                        <p class="text-[10px] text-app-muted leading-relaxed">
+                          <strong class="text-app-fg">Why this rewrite:</strong> {{ rw.explanation }}
                         </p>
                       </div>
                     </div>
@@ -2536,8 +2578,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               </div>
 
               <div v-if="atsResult.quickWins.length">
-                <h3 class="text-xs uppercase tracking-widest text-blue-300/80 font-semibold mb-2">Quick wins</h3>
-                <ol class="list-decimal list-inside space-y-1.5 text-sm text-slate-300">
+                <h3 class="text-xs uppercase tracking-widest text-indigo-700 dark:text-blue-300/80 font-semibold mb-2">Quick wins</h3>
+                <ol class="list-decimal list-inside space-y-1.5 text-sm text-app-fg">
                   <li v-for="(w, i) in atsResult.quickWins" :key="`qw-${i}`">{{ w }}</li>
                 </ol>
               </div>

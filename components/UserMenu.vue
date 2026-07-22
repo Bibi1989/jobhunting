@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { loggedIn, sessionUser, creditsRemaining, planTier, isPro, isAdmin, logout } = useSaaS()
+const { t } = useI18n()
 const open = ref(false)
 
 const initials = computed(() => {
@@ -29,7 +30,7 @@ async function onLogout() {
     <button
       type="button"
       class="w-10 h-10 rounded-full border border-indigo-400/40 bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-xs font-bold flex items-center justify-center cursor-pointer shadow-md shadow-indigo-500/20 hover:scale-105 transition-transform"
-      :title="sessionUser?.email || 'Account'"
+      :title="sessionUser?.email || t('nav.account')"
       aria-haspopup="menu"
       :aria-expanded="open"
       @click="open = !open"
@@ -40,32 +41,40 @@ async function onLogout() {
 
     <div
       v-if="open"
-      class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950 shadow-2xl z-50 overflow-hidden"
+      class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-bg-elevated)] shadow-2xl z-50 overflow-hidden"
       role="menu"
     >
-      <div class="px-3 py-2 border-b border-slate-800">
-        <p class="text-xs text-slate-400 truncate">{{ sessionUser?.email }}</p>
-        <p class="text-[11px] text-indigo-300 mt-0.5">
+      <div class="px-3 py-2 border-b border-[color:var(--app-border)]">
+        <p class="text-xs text-[color:var(--app-muted)] truncate">{{ sessionUser?.email }}</p>
+        <p class="text-[11px] text-indigo-400 mt-0.5">
           {{ planTier }} · {{ creditsRemaining }} cr
-          <span v-if="isPro" class="text-emerald-400">· pro</span>
-          <span v-if="isAdmin" class="text-amber-300">· admin</span>
+          <span v-if="isPro" class="text-emerald-500">· pro</span>
+          <span v-if="isAdmin" class="text-amber-500">· admin</span>
         </p>
       </div>
       <NuxtLink
-        to="/pricing"
-        class="block px-3 py-2.5 text-sm text-slate-200 hover:bg-slate-900 cursor-pointer"
+        to="/account"
+        class="block px-3 py-2.5 text-sm text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)] cursor-pointer"
         role="menuitem"
         @click="open = false"
       >
-        Billing & credits
+        {{ t('nav.account') }}
+      </NuxtLink>
+      <NuxtLink
+        to="/pricing"
+        class="block px-3 py-2.5 text-sm text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)] cursor-pointer"
+        role="menuitem"
+        @click="open = false"
+      >
+        {{ t('nav.billing') }}
       </NuxtLink>
       <button
         type="button"
-        class="w-full text-left px-3 py-2.5 text-sm text-red-300 hover:bg-slate-900 cursor-pointer"
+        class="w-full text-left px-3 py-2.5 text-sm text-red-400 hover:bg-[color:var(--app-input)] cursor-pointer"
         role="menuitem"
         @click="onLogout"
       >
-        Log out
+        {{ t('nav.logOut') }}
       </button>
     </div>
   </div>

@@ -209,28 +209,28 @@ function escapeText(text: string) {
   align-items: center;
   gap: 0.25rem;
   padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-input);
 }
 .bullet-rich__btn {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 0.35rem;
   border: 1px solid transparent;
-  color: #cbd5e1;
+  color: var(--app-muted);
   font-size: 0.8rem;
   line-height: 1;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .bullet-rich__btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--app-input);
+  border-color: var(--app-border);
+  color: var(--app-fg);
 }
 .bullet-rich__hint {
   margin-left: 0.35rem;
   font-size: 10px;
-  color: #64748b;
+  color: var(--app-muted);
 }
 .bullet-rich__body {
   padding: 0.55rem 0.65rem 0.75rem;
@@ -239,7 +239,7 @@ function escapeText(text: string) {
   margin: 0;
   padding: 0 0 0 1.15rem;
   min-height: inherit;
-  color: #e2e8f0;
+  color: var(--app-fg);
   font-size: 0.875rem;
   line-height: 1.55;
   outline: none;
@@ -252,7 +252,7 @@ function escapeText(text: string) {
 .bullet-rich__editor :deep(strong),
 .bullet-rich__editor :deep(b) {
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--app-fg);
 }
 .bullet-rich__editor :deep(em),
 .bullet-rich__editor :deep(i) {
@@ -264,7 +264,7 @@ function escapeText(text: string) {
 }
 .bullet-rich__editor[data-empty='true']:before {
   content: attr(data-placeholder);
-  color: #64748b;
+  color: var(--app-muted);
   font-style: italic;
   pointer-events: none;
   display: block;

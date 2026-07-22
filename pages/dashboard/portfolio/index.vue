@@ -291,8 +291,8 @@ function primaryContactHref(data: PortfolioProfileData) {
 <template>
   <div class="px-6 py-10 max-w-7xl mx-auto">
     <header class="mb-8">
-      <h1 class="font-serif text-4xl text-white mb-2">AI Portfolio Builder</h1>
-      <p class="text-blue-200/60 max-w-3xl">
+      <h1 class="font-serif text-4xl text-app-fg mb-2">AI Portfolio Builder</h1>
+      <p class="text-app-muted max-w-3xl">
         Generate a live portfolio from your CV, publish it, and host it on your own domain.
         Saved portfolios stay here so you can open or share them anytime.
       </p>

@@ -29,19 +29,19 @@ onBeforeUnmount(() => {
     >
       <button
         type="button"
-        class="absolute inset-0 bg-slate-950/75 backdrop-blur-sm cursor-pointer"
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
         aria-label="Dismiss"
         @click="cancel"
       />
       <div
-        class="relative w-full max-w-md rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl shadow-black/40 overflow-hidden"
+        class="relative w-full max-w-md rounded-2xl border border-[color:var(--app-border)] bg-[color:var(--app-bg-elevated)] shadow-2xl overflow-hidden"
       >
         <div class="h-0.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-400" />
         <div class="p-5">
-          <h2 id="app-confirm-title" class="text-lg font-bold text-white">
+          <h2 id="app-confirm-title" class="text-lg font-bold text-[color:var(--app-fg)]">
             {{ state.title }}
           </h2>
-          <p class="mt-2 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+          <p class="mt-2 text-sm text-[color:var(--app-muted)] leading-relaxed whitespace-pre-wrap">
             {{ state.message }}
           </p>
           <div class="mt-6 flex flex-wrap justify-end gap-2">

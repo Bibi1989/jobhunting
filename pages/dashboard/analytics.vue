@@ -50,8 +50,8 @@ const hasUsage = computed(() => portfolios.value.length > 0)
 <template>
   <div class="px-6 py-10 max-w-7xl mx-auto">
     <header class="mb-8">
-      <h1 class="font-serif text-4xl text-white mb-2">Analytics</h1>
-      <p class="text-blue-200/60">A snapshot of your workspace, documents, and published portfolios.</p>
+      <h1 class="font-serif text-4xl text-app-fg mb-2">Analytics</h1>
+      <p class="text-app-muted">A snapshot of your workspace, documents, and published portfolios.</p>
       <div class="w-full h-px bg-white/10 mt-6"></div>
     </header>
 

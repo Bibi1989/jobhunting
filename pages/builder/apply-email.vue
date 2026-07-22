@@ -38,6 +38,7 @@ const resumeOptions = computed(() =>
 const emptyResumeData = (): BuilderResumeData => ({
   name: 'Apply via Email',
   templateId: 'modern',
+  useMetrics: false,
   personalInfo: {
     fullName: '',
     location: '',
@@ -123,7 +124,7 @@ watch(
             <span class="material-symbols-outlined">mail</span>
           </div>
           <div>
-            <p class="font-semibold text-white text-sm">Apply via Email</p>
+            <p class="font-semibold text-app-fg text-sm">Apply via Email</p>
             <p class="text-[10px] text-slate-500 uppercase tracking-wider">Compose & send</p>
           </div>
         </div>
@@ -164,7 +165,7 @@ watch(
       <div class="max-w-3xl">
         <div v-if="activeTab === 'compose'" class="space-y-6">
           <div>
-            <h1 class="text-2xl font-bold text-white mb-1">Compose application email</h1>
+            <h1 class="text-2xl font-bold text-app-fg mb-1">Compose application email</h1>
             <p class="text-sm text-slate-400">
               Generate a tailored email, attach your resume or cover letter, then send or copy.
             </p>
@@ -209,7 +210,7 @@ watch(
 
         <div v-else class="space-y-6">
           <div>
-            <h1 class="text-2xl font-bold text-white mb-1">Saved emails</h1>
+            <h1 class="text-2xl font-bold text-app-fg mb-1">Saved emails</h1>
             <p class="text-sm text-slate-400">
               Reuse application emails you saved from the Compose tab.
             </p>
