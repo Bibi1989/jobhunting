@@ -101,6 +101,12 @@ export default defineNuxtConfig({
        * (do not bake process.env here — Nuxt must apply env overrides at runtime)
        */
       apiBackend: 'nuxt',
+      /**
+       * Chrome Web Store listing URL. When set, /extension/install shows
+       * “Add to Chrome” and opens this URL (Chrome’s install prompt lives there).
+       * Override with NUXT_PUBLIC_CHROME_EXTENSION_STORE_URL
+       */
+      chromeExtensionStoreUrl: '',
     },
   },
 })

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Document, Page, View, Text, StyleSheet, Link, Image } from '@react-pdf/renderer'
 import type { BuilderCoverLetter, BuilderDesignSettings, BuilderResumeData } from '~/shared/types/builder'
-import { htmlToBlocks, stripHtmlToPlain } from './types'
+import { htmlToBlocks, htmlToInlineRuns, stripHtmlToPlain } from './types'
 import { buildContactEntries, type ContactEntry } from '~/shared/pdf/contact'
 import {
   detailsSeparatorChar,
@@ -35,6 +35,28 @@ function resolveTemplateId(data: BuilderResumeData) {
   return 'cl-standard'
 }
 
+function renderRichText(html: string | undefined, plain: string) {
+  const runs = htmlToInlineRuns(html || plain)
+  const hasMarks = runs.some((r) => r.bold || r.italic || r.underline)
+  if (!runs.length || !hasMarks) {
+    return plain || ' '
+  }
+  return runs.map((run, index) =>
+    React.createElement(
+      Text,
+      {
+        key: `r-${index}`,
+        style: {
+          fontWeight: run.bold ? 700 : undefined,
+          fontStyle: run.italic ? 'italic' : undefined,
+          textDecoration: run.underline ? 'underline' : undefined,
+        },
+      },
+      run.text,
+    ),
+  )
+}
+
 function buildBodyChildren(content: string, textStyle: TextStyle) {
   const blocks = htmlToBlocks(content, true)
   const plainFallback = stripHtmlToPlain(content)
@@ -59,13 +81,17 @@ function buildBodyChildren(content: string, textStyle: TextStyle) {
           wrap: false,
         },
         React.createElement(Text, { style: [textStyle, { width: 12 }] }, '•'),
-        React.createElement(Text, { style: [textStyle, { flex: 1 }] }, block.text),
+        React.createElement(
+          Text,
+          { style: [textStyle, { flex: 1 }] },
+          renderRichText(block.html, block.text),
+        ),
       )
     }
     return React.createElement(
       Text,
       { key: `lp-${index}`, style: [textStyle, { marginBottom: 10 }] },
-      block.text,
+      renderRichText(block.html, block.text),
     )
   })
 }

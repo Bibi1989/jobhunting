@@ -29,6 +29,7 @@ export interface PdfDownloadPayload {
 export {
   stripHtmlToPlain,
   htmlToBlocks,
+  htmlToInlineRuns,
   formatDateRange,
   type PdfTextBlock,
 } from '~/shared/pdf/text'

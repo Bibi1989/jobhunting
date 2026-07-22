@@ -879,7 +879,8 @@ onMounted(async () => {
 })
 
 async function applyJobPrefillFromRoute() {
-  const fromApply = String(route.query.from || '') === 'apply'
+  const from = String(route.query.from || '')
+  const fromApply = from === 'apply' || from === 'chrome-extension'
   const jobId = route.query.jobId
 
   if (!fromApply && !jobId) return
@@ -898,7 +899,11 @@ async function applyJobPrefillFromRoute() {
           uploadedResumeName.value = docs.resume.originalName || 'Uploaded resume'
         }
         activeTab.value = 'targetRole'
-        toast.info('Add a job description to tailor your resume.')
+        toast.info(
+          from === 'chrome-extension'
+            ? 'Extension handoff had no job text. Paste a job description to continue.'
+            : 'Add a job description to tailor your resume.',
+        )
         return
       }
 
@@ -966,7 +971,9 @@ async function applyJobPrefillFromRoute() {
       toast.success(
         prefill.resumeFile || uploadedResumeName.value
           ? 'Job description and resume loaded into Target Role.'
-          : 'Job description loaded. Upload a CV or draft from the description.',
+          : from === 'chrome-extension'
+            ? 'Job description imported from Chrome. Upload a CV or run AI draft.'
+            : 'Job description loaded. Upload a CV or draft from the description.',
       )
       return
     }
@@ -1788,6 +1795,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 Upload a resume and/or paste a job description — either is enough to draft; both is best. Uploads are limited to 3 pages.
               </p>
             </div>
+            <ExtensionInstallBanner class="mb-5" />
             <div class="space-y-5">
               <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3 flex-wrap">

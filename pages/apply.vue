@@ -156,6 +156,8 @@ async function generate() {
         </div>
       </div>
 
+      <ExtensionInstallBanner class="mb-6" />
+
       <div class="grid gap-8 lg:grid-cols-12 items-start">
         <section class="lg:col-span-5 space-y-6 glass-panel rounded-3xl p-6 relative overflow-hidden group">
           <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-30 group-hover:opacity-100 transition-opacity duration-500" />

@@ -114,6 +114,9 @@ const features = computed(() => [
       <div class="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[color:var(--app-muted)] text-sm font-medium">
         <p>© 2026 JobFlow</p>
         <div class="flex items-center gap-6 flex-wrap justify-center">
+          <NuxtLink to="/privacy" class="hover:text-[color:var(--app-fg)] transition-colors">
+            Privacy
+          </NuxtLink>
           <a
             href="/docs/BUSINESS_PLAN.pdf"
             download="JobFlow-Business-Plan.pdf"

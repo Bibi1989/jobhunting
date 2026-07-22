@@ -6,6 +6,7 @@ import {
 } from '../../utils/careerExpertPrompt'
 import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
+import { dedupeCoverLetterHtml } from '~/utils/richText'
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
@@ -75,6 +76,8 @@ export default withCredits(async (event) => {
 MODE: AI ENHANCEMENT (not a blank rewrite from scratch).
 Improve and tighten the applicant's existing draft below while preserving their voice and intent.
 Keep the required structure (intro → bullets → ownership → close) unless clarity clearly benefits from light reorganization.
+Return ONE complete letter only — never append a second copy of the letter after the first.
+Do not paste the existing draft above/below your improved version.
 Existing draft HTML:
 ${String(currentContent).slice(0, 4000)}
 `
@@ -156,6 +159,7 @@ ${userTasksBlock}
 CRITICAL OUTPUT RULES:
 - Write the entire cover letter body in well-formatted HTML for a rich text editor.
 - Use <p> for paragraphs and <ul><li> for the achievement list. Do not wrap the response in markdown fences.
+- Output EXACTLY ONE letter. Never duplicate the salutation, bullets, or closing. Never concatenate two drafts.
 - Do NOT include the applicant's contact header, postal address block, or the current date — the PDF template already prints those.
 - Do NOT invent a recipient company address block.
 - Start with an optional subject line when a clear job title exists in the JD:
@@ -195,7 +199,7 @@ CRITICAL OUTPUT RULES:
         ),
       })
 
-      const text = cleanHtmlResponse(response.text || '')
+      const text = dedupeCoverLetterHtml(cleanHtmlResponse(response.text || ''))
       if (!text || stripHtml(text).length < 20) {
         throw new Error('Model returned an empty cover letter')
       }

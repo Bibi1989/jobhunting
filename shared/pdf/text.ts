@@ -127,13 +127,52 @@ export function htmlToInlineRuns(html?: string | null): PdfInlineRun[] {
   return runs.filter((r) => r.text.length)
 }
 
+/** Parse Quill/HTML into paragraphs + bullets in document order. */
+function htmlToOrderedBlocks(source: string): PdfTextBlock[] {
+  const blocks: PdfTextBlock[] = []
+  const blockRe = /<(p|div|h[1-6]|ul|ol)\b[^>]*>([\s\S]*?)<\/\1>/gi
+  let match: RegExpExecArray | null
+  while ((match = blockRe.exec(source)) !== null) {
+    const tag = match[1]!.toLowerCase()
+    const inner = match[2] || ''
+    if (tag === 'ul' || tag === 'ol') {
+      const lis = [...inner.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+      for (const li of lis) {
+        const fragment = sanitizeInlineHtml(li[1])
+        const text = stripHtmlToPlain(fragment)
+          .replace(/\s*\n+\s*/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        if (text) blocks.push({ type: 'bullet', text, html: fragment })
+      }
+      continue
+    }
+    const fragment = sanitizeInlineHtml(inner)
+    const text = stripHtmlToPlain(fragment)
+      .replace(/\s*\n+\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (text) blocks.push({ type: 'paragraph', text, html: fragment })
+  }
+  return blocks
+}
+
 /** Parse Quill/HTML descriptions into paragraphs + bullets for PDF Text nodes. */
 export function htmlToBlocks(html?: string | null, forceParagraphs = false): PdfTextBlock[] {
   if (!html) return []
   const source = String(html)
   const blocks: PdfTextBlock[] = []
 
+  const hasBlockParagraph = /<(p|div|h[1-6])\b/i.test(source)
   const liMatches = [...source.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+
+  // Cover letters (and any mixed p + list HTML) must keep document order.
+  // The old path returned only <li> nodes and dropped surrounding paragraphs.
+  if (forceParagraphs || (hasBlockParagraph && liMatches.length > 0)) {
+    const ordered = htmlToOrderedBlocks(source)
+    if (ordered.length) return ordered
+  }
+
   if (liMatches.length) {
     for (const match of liMatches) {
       const fragment = sanitizeInlineHtml(match[1])

@@ -252,6 +252,71 @@ export function toQuillEditorHtml(html?: string | null): string {
   return out
 }
 
+/**
+ * Collapse accidental double letters (AI enhance sometimes concatenates
+ * the previous draft with a full rewrite).
+ */
+export function dedupeCoverLetterHtml(html?: string | null): string {
+  const source = String(html || '').trim()
+  if (!source) return ''
+
+  const strip = (value: string) =>
+    value.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+
+  const collect = (re: RegExp) => {
+    const indexes: number[] = []
+    const copy = new RegExp(re.source, re.flags)
+    let match: RegExpExecArray | null
+    while ((match = copy.exec(source)) !== null) indexes.push(match.index)
+    return indexes
+  }
+
+  // Prefer subject-line starts (one per letter). Do not split on every "Dear"
+  // inside a single letter.
+  let starts = collect(
+    /<(?:p|div)\b[^>]*>\s*(?:<(?:strong|b)\b[^>]*>\s*)?Re:\s*Application/gi,
+  )
+
+  if (starts.length < 2) {
+    const dearStarts = collect(/<(?:p|div)\b[^>]*>\s*Dear\s+/gi)
+    if (dearStarts.length >= 2) {
+      const between = source.slice(dearStarts[0], dearStarts[1])
+      // Only treat as two letters when a closing sits between salutations
+      if (/\bSincerely\b/i.test(between)) starts = dearStarts
+    }
+  }
+
+  if (starts.length >= 2) {
+    const parts = starts.map((start, i) => {
+      const end = i + 1 < starts.length ? starts[i + 1]! : source.length
+      return source.slice(start, end).trim()
+    })
+    // Prefer the last complete letter (usually the improved rewrite)
+    const complete = [...parts]
+      .reverse()
+      .find((part) => /\bSincerely\b/i.test(part) && strip(part).length > 80)
+    if (complete) return complete
+    const longest = [...parts].sort((a, b) => strip(b).length - strip(a).length)[0]
+    if (longest && strip(longest).length > 80) return longest
+  }
+
+  // Plain-text near-half duplication (same letter pasted twice without clear markers)
+  const plain = strip(source)
+  if (plain.length > 500) {
+    const mid = Math.floor(plain.length / 2)
+    const left = plain.slice(0, mid)
+    const right = plain.slice(mid)
+    const probe = left.slice(0, 120).toLowerCase()
+    if (probe.length > 40 && right.toLowerCase().includes(probe.slice(0, 60))) {
+      const cut = Math.floor(source.length * (left.length / Math.max(1, plain.length)))
+      const first = source.slice(0, cut).trim()
+      if (strip(first).length > 80) return first
+    }
+  }
+
+  return source
+}
+
 export function formatResumeDateRange(
   start?: string,
   end?: string,

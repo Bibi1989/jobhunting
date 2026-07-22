@@ -8,6 +8,7 @@ import { slugifyFilename } from '~/utils/download'
 import { coverLetterTemplates } from '~/utils/templates'
 import { loadBuilderJobPrefill, parseResumeTextToBuilder } from '~/utils/builderJobPrefill'
 import { useAiUndo } from '~/composables/useAiUndo'
+import { dedupeCoverLetterHtml } from '~/utils/richText'
 
 const toast = useAppToast()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
@@ -229,6 +230,7 @@ onMounted(async () => {
 
       if (data.coverLetter) {
         Object.assign(coverLetter.value, data.coverLetter)
+        coverLetter.value.content = dedupeCoverLetterHtml(coverLetter.value.content)
       } else {
         resumeData.value.coverLetter = coverLetter.value
       }
@@ -466,7 +468,7 @@ async function enhanceCoverLetter() {
       pushAiUndo('coverLetter:content', 'Undo cover letter draft', () => {
         coverLetter.value.content = previous
       })
-      coverLetter.value.content = response.content
+      coverLetter.value.content = dedupeCoverLetterHtml(response.content)
       notifyAiSuccess(hasJd && hasResume ? 'Cover letter drafted. 1 credit used.' : 'Cover letter drafted from available details. 1 credit used.')
       activeTab.value = 'content'
       mobilePane.value = 'edit'
@@ -836,6 +838,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                 Upload a resume and/or paste a job description, either is enough to draft; both is best. Uploads are limited to 3 pages.
               </p>
             </div>
+            <ExtensionInstallBanner class="mb-5" />
             <div class="space-y-5">
               <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3 flex-wrap">
@@ -988,7 +991,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
             <BuilderRichTextEditor
               v-model="coverLetter.content"
-              editor-class="min-h-[420px] text-slate-100"
+              editor-class="min-h-[420px]"
             />
           </div>
         </section>
@@ -1027,8 +1030,8 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
 :deep(.ql-toolbar.ql-snow) {
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--app-border);
+  background-color: var(--app-input);
 }
 :deep(.ql-container.ql-snow) {
   border: none;
@@ -1036,24 +1039,25 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
   font-size: 0.875rem;
 }
 :deep(.ql-snow .ql-stroke) {
-  stroke: #94a3b8;
+  stroke: var(--app-muted);
 }
 :deep(.ql-snow .ql-fill) {
-  fill: #94a3b8;
+  fill: var(--app-muted);
 }
 :deep(.ql-snow .ql-picker) {
-  color: #94a3b8;
+  color: var(--app-muted);
 }
 :deep(.ql-snow .ql-picker-options) {
-  background-color: #1e293b;
-  border-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--app-bg-elevated);
+  border-color: var(--app-border);
+  color: var(--app-fg);
 }
 :deep(.ql-editor) {
   min-height: 380px;
-  color: #e2e8f0;
+  color: var(--app-fg) !important;
 }
 :deep(.ql-editor.ql-blank::before) {
-  color: #64748b;
+  color: var(--app-muted);
   font-style: italic;
 }
 
