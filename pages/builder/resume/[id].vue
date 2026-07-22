@@ -23,6 +23,7 @@ import { cloneJson, useAiUndo } from '~/composables/useAiUndo'
 const toast = useAppToast()
 const confirmDialog = useAppConfirm()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
+const showApplyModal = ref(false)
 const {
   canUndo: canUndoAi,
   lastLabel: lastAiUndoLabel,
@@ -259,6 +260,15 @@ function selectBuilderTab(id: string) {
   activeTab.value = id
   mobileNavOpen.value = false
   mobilePane.value = 'edit'
+}
+
+function goToApplyEmailPage() {
+  mobileNavOpen.value = false
+  if (resumeId && resumeId !== 'new') {
+    void navigateTo(`/builder/apply-email?resume=${resumeId}`)
+    return
+  }
+  void navigateTo('/builder/apply-email')
 }
 
 function goBack() {
@@ -1352,6 +1362,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
           <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
         </button>
+        <button @click="showApplyModal = true" class="px-2.5 sm:px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">mail</span>
+          <span class="hidden sm:inline">Apply via Email</span>
+          <span class="sm:hidden">Apply</span>
+        </button>
         <button @click="exportPdf" :disabled="exporting" class="px-2.5 sm:px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50">
           <span class="sm:hidden">{{ exporting ? '…' : 'PDF' }}</span>
           <span class="hidden sm:inline">{{ exporting ? 'Exporting...' : 'Export PDF' }}</span>
@@ -1395,6 +1410,17 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               </button>
             </li>
           </ul>
+          <div class="mt-4 pt-4 mx-2 border-t border-white/10">
+            <button
+              type="button"
+              class="w-full flex items-center gap-4 px-4 py-3 text-sm transition-all cursor-pointer text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+              @click="goToApplyEmailPage"
+            >
+              <span class="material-symbols-outlined">mail</span>
+              <span class="flex-1 text-left font-semibold">Apply via Email</span>
+              <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Pro</span>
+            </button>
+          </div>
         </nav>
       </aside>
 
@@ -1417,6 +1443,16 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 </button>
               </li>
             </ul>
+            <div class="mt-4 pt-4 mx-1 border-t border-white/10">
+              <button
+                type="button"
+                class="w-full flex items-center gap-3 px-4 py-3 text-sm cursor-pointer text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                @click="goToApplyEmailPage"
+              >
+                <span class="material-symbols-outlined">mail</span>
+                <span class="flex-1 text-left font-semibold">Apply via Email</span>
+              </button>
+            </div>
           </nav>
           <div class="px-5 pt-4 mt-2 border-t border-white/10 space-y-2 sm:hidden">
             <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Language</label>
@@ -2708,6 +2744,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         </div>
       </div>
     </div>
+    <ApplyEmailModal v-model="showApplyModal" :resume-data="resumeData" />
   </div>
 </template>
 

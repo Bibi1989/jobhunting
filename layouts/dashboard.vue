@@ -15,6 +15,7 @@ function goBack() {
 const topNav = [
   { label: 'My Projects', to: '/builder' },
   { label: 'Templates', to: '/builder/templates' },
+  { label: 'Apply via Email', to: '/builder/apply-email' },
   { label: 'Portfolio', to: '/dashboard/portfolio' },
   { label: 'Analytics', to: '/dashboard/analytics' },
 ]
@@ -22,6 +23,7 @@ const topNav = [
 const sideNav = [
   { label: 'All Projects', to: '/builder', icon: 'folder' },
   { label: 'Templates', to: '/builder/templates', icon: 'grid_view' },
+  { label: 'Apply via Email', to: '/builder/apply-email', icon: 'mail' },
   { label: 'AI Portfolio', to: '/dashboard/portfolio', icon: 'stars' },
   { label: 'Analytics', to: '/dashboard/analytics', icon: 'monitoring' },
 ]

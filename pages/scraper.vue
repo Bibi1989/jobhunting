@@ -346,6 +346,7 @@ function hideHistoryDropdown() {
               <NuxtLink to="/pricing" class="mobile-nav-link" @click="mobileMenuOpen = false">Pricing</NuxtLink>
               <NuxtLink to="/apply" class="mobile-nav-link" @click="mobileMenuOpen = false">Docs Gen</NuxtLink>
               <NuxtLink to="/builder" class="mobile-nav-link" @click="mobileMenuOpen = false">Resume Builder</NuxtLink>
+              <NuxtLink to="/builder/apply-email" class="mobile-nav-link" @click="mobileMenuOpen = false">Apply via Email</NuxtLink>
               <button type="button" class="mobile-nav-link text-left cursor-pointer" @click="showFavorites = !showFavorites; mobileMenuOpen = false">
                 {{ showFavorites ? 'Show all jobs' : 'View favorites' }}
               </button>
@@ -498,18 +499,18 @@ function hideHistoryDropdown() {
           
           <!-- Left Column (Sidebar + API Status) -->
           <div
-            class="md:col-span-1 flex-col gap-4 md:min-h-0"
+            class="md:col-span-1 flex-col gap-4 md:min-h-0 min-w-0"
             :class="mobileToolsOpen ? 'flex' : 'hidden md:flex'"
           >
             <!-- Sidebar Panel (Filters & Docs) -->
-            <div class="md:flex-grow glass-panel rounded-3xl p-5 md:p-6 flex flex-col gap-6 overflow-y-auto relative md:min-h-0 max-h-[70vh] md:max-h-none">
+            <div class="md:flex-grow glass-panel rounded-3xl p-5 md:p-6 flex flex-col gap-6 overflow-y-auto overflow-x-hidden relative md:min-h-0 max-h-[70vh] md:max-h-none">
               <FilterBar
                 v-model:search-query="searchQuery"
                 v-model:location-filter="locationFilter"
                 v-model:min-salary-filter="minSalaryFilter"
                 @clear="clearFilters"
               />
-              <div class="border-t border-slate-850 pt-6">
+              <div class="border-t border-slate-850 pt-6 min-w-0 shrink-0">
                 <DocumentsPanel
                   :resume="resumeDoc"
                   :cover-letter="coverLetterDoc"

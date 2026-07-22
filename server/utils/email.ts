@@ -6,12 +6,18 @@
  * callers can still persist the message and degrade gracefully.
  */
 
+export interface SendEmailAttachment {
+  content: string // Base64 string
+  filename: string
+}
+
 export interface SendEmailInput {
   to: string
   subject: string
   text: string
   /** Reply-To so the recipient can respond directly to the sender. */
   replyTo?: string
+  attachments?: SendEmailAttachment[]
 }
 
 export interface SendEmailResult {
@@ -42,6 +48,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         subject: input.subject,
         text: input.text,
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+        ...(input.attachments ? { attachments: input.attachments } : {}),
       }),
     })
 
