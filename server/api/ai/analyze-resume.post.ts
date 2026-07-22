@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
 
@@ -24,7 +24,7 @@ export default withCredits(async (event) => {
   }
 
   const ai = createGeminiClient()
-  const models = [resolveGeminiModel()]
+  const models = [resolveGeminiParsekitModel()]
 
   const systemInstruction = `You are an expert Applicant Tracking System (ATS) parser and recruiter.
 Your goal is to analyze the provided resume data and evaluate its compatibility with standard ATS software.

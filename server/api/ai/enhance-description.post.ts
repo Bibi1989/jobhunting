@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 
@@ -14,7 +14,7 @@ export default withCredits(async (event) => {
   }
 
   const ai = createGeminiClient()
-  const model = resolveGeminiModel()
+  const model = resolveGeminiParsekitModel()
 
   let task = ''
   if (type === 'summary') {

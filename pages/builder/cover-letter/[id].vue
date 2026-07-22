@@ -406,7 +406,7 @@ async function translateCoverLetter(targetLang: keyof typeof LANG_LABELS) {
         }
       }
       resumeData.value.language = targetLang
-      notifyAiSuccess(`Translated to ${LANG_LABELS[targetLang]}.`)
+      notifyAiSuccess(`Translated to ${LANG_LABELS[targetLang]}. 1 credit used.`)
       await refreshCredits()
     }
   } catch (e) {
@@ -453,7 +453,7 @@ async function enhanceCoverLetter() {
         coverLetter.value.content = previous
       })
       coverLetter.value.content = response.content
-      notifyAiSuccess(hasJd && hasResume ? 'Cover letter drafted.' : 'Cover letter drafted from available details.')
+      notifyAiSuccess(hasJd && hasResume ? 'Cover letter drafted. 1 credit used.' : 'Cover letter drafted from available details. 1 credit used.')
       activeTab.value = 'content'
       mobilePane.value = 'edit'
       await refreshCredits()
@@ -931,7 +931,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   <span class="material-symbols-outlined text-[12px]" :class="{ 'animate-spin': enhancing }">
                     {{ enhancing ? 'refresh' : 'auto_awesome' }}
                   </span>
-                  {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance' }}
+                  {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance (1 Cr)' }}
                 </button>
               </div>
             </div>

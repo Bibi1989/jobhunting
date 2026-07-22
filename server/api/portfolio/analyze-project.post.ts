@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { requireUser } from '~/server/utils/auth'
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const ai = createGeminiClient()
-  const model = resolveGeminiModel()
+  const model = resolveGeminiParsekitModel()
 
   const prompt = withCareerExpertPrompt(`You are an elite portfolio reviewer and case study design strategist. Analyze this project for "case study completeness" to assess how well it demonstrates engineering excellence to hiring managers.
 

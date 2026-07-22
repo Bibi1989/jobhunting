@@ -165,8 +165,8 @@ async function handleScrape() {
         useCoverLetterForScrape.value ||
         Boolean(targetTitle)
       toastMessage.value = targeted
-        ? `Found ${jobs.value.length} jobs related to ${targetTitle ? `“${targetTitle}”` : 'your profile'} (${enriched} with full detail pages).`
-        : `Saved ${jobs.value.length} jobs (${enriched} with full detail pages).`
+        ? `Found ${jobs.value.length} jobs related to ${targetTitle ? `“${targetTitle}”` : 'your profile'} (${enriched} with full detail pages). 1 credit used.`
+        : `Saved ${jobs.value.length} jobs (${enriched} with full detail pages). 1 credit used.`
       setTimeout(() => {
         toastMessage.value = null
       }, 4500)
@@ -419,7 +419,7 @@ function hideHistoryDropdown() {
                 >
                   <Loader2 v-if="loading" class="animate-spin" :size="18" />
                   <Sparkles v-else :size="18" />
-                  Execute Scrape
+                  Execute Scrape (1 Cr)
                 </button>
               </div>
 

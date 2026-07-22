@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
@@ -11,10 +11,23 @@ export default withCredits(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Resume text is required' })
   }
 
+  const today = new Date()
+  const todayIso = today.toISOString().slice(0, 10)
+  const todayLabel = today.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   const ai = createGeminiClient()
-  const model = resolveGeminiModel()
+  const model = resolveGeminiParsekitModel()
   const prompt = withCareerExpertPrompt(`I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
 Your task is to parse this text and structure it into a valid JSON object representing the resume data.
+
+Today's date is ${todayIso} (${todayLabel}). Use this as "now" when interpreting dates:
+- If a role says Present / Current / ongoing, set isCurrent=true and leave endDate empty (or "Present").
+- Prefer ISO-like month dates when possible (YYYY-MM). Do not invent future dates beyond today.
+- Do not treat the calendar year as older than ${today.getFullYear()}.
 
 Rules:
 - Return ONLY a valid JSON object matching the requested schema.
@@ -88,7 +101,7 @@ The output JSON MUST follow this exact schema structure:
         location: '',
         email: '',
         phone: '',
-        summary: ''
+        summary: '',
       }
     }
 

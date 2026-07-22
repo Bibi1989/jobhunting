@@ -45,9 +45,11 @@ export default defineNuxtConfig({
      * Do not bake API keys or production models into this file.
      *   GEMINI_API_KEY or NUXT_GEMINI_API_KEY
      *   GEMINI_MODEL or NUXT_GEMINI_MODEL  (e.g. gemini-3.1-pro-preview)
+     *   GEMINI_MODEL_PARSEKIT or NUXT_GEMINI_MODEL_PARSEKIT  (parse / ATS; e.g. gemini-2.5-flash)
      */
     geminiApiKey: '',
     geminiModel: '',
+    geminiModelParsekit: '',
     // Empty default — set DATABASE_URL or NUXT_DATABASE_URL at runtime (Netlify).
     // Do not bake a localhost URL here or prod will silently ignore DATABASE_URL.
     databaseUrl: '',

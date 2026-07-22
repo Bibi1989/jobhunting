@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import { builderResumeToMarkdown } from '~/utils/builderToMarkdown'
@@ -66,19 +66,34 @@ export default withCredits(async (event) => {
     })
   }
 
-  const roleHint = typeof targetRole === 'string' && targetRole.trim()
-    ? targetRole.trim()
-    : resumeData?.personalInfo?.jobTitle || 'general professional role'
+  const roleHint =
+    typeof targetRole === 'string' && targetRole.trim()
+      ? targetRole.trim()
+      : resumeData?.personalInfo?.jobTitle || 'general professional role'
 
   const jdBlock =
     typeof jobDescription === 'string' && jobDescription.trim()
       ? `\n\nTarget job description:\n"""\n${jobDescription.trim().slice(0, 6000)}\n"""`
       : ''
 
+  const today = new Date()
+  const todayIso = today.toISOString().slice(0, 10)
+  const todayLabel = today.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   const ai = createGeminiClient()
-  const model = resolveGeminiModel()
+  const model = resolveGeminiParsekitModel()
 
   const prompt = withCareerExpertPrompt(`Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".
+
+Important temporal context — today is ${todayIso} (${todayLabel}). Treat this as "now":
+- Evaluate employment dates, recency, and gaps relative to today (${today.getFullYear()}).
+- Roles marked Present / isCurrent are ongoing through today; do not score them as ended in a past year.
+- Do not assume the current year is earlier than ${today.getFullYear()}.
+- Prefer feedback that reflects an up-to-date ${today.getFullYear()} job market for this role.
 
 Resume (markdown):
 """
@@ -159,9 +174,17 @@ Return ONLY valid JSON matching this schema (no markdown fences):
       keywordsAnalysis: Array.isArray(parsed.keywordsAnalysis)
         ? parsed.keywordsAnalysis.map((k) => ({
             keyword: String(k.keyword || ''),
-            status: (['missing', 'found'].includes(k.status) ? k.status : 'missing') as 'missing' | 'found',
+            status: (['missing', 'found'].includes(k.status) ? k.status : 'missing') as
+              | 'missing'
+              | 'found',
             count: Number(k.count) || 0,
-            foundInSection: (['experience', 'projects', 'skills', 'summary', 'none'].includes(k.foundInSection)
+            foundInSection: ([
+              'experience',
+              'projects',
+              'skills',
+              'summary',
+              'none',
+            ].includes(k.foundInSection)
               ? k.foundInSection
               : 'none') as 'experience' | 'projects' | 'skills' | 'summary' | 'none',
           }))

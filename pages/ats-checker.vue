@@ -84,7 +84,7 @@ async function runAnalysis() {
             Pro ATS Resume Checker
           </h1>
           <p class="text-slate-400 max-w-xl mx-auto mb-10">
-            Upload your resume and let our AI analyze its structure, keywords, and readability against standard Applicant Tracking Systems.
+            Upload your resume and let our AI analyze its structure, keywords, and readability against standard Applicant Tracking Systems. Uses 1 credit.
           </p>
 
           <div v-if="!loggedIn" class="w-full max-w-md bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 mb-8 text-left">
@@ -119,7 +119,7 @@ async function runAnalysis() {
             >
               <Loader2 v-if="loading" class="animate-spin" :size="20" />
               <UploadCloud v-else :size="20" />
-              {{ loading ? 'Analyzing...' : 'Run ATS Analysis' }}
+              {{ loading ? 'Analyzing...' : 'Run ATS Analysis (1 Cr)' }}
             </button>
           </div>
 

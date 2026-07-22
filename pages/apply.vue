@@ -264,7 +264,7 @@ async function generate() {
             {{ loading ? 'Opening Resume Builder…' : 'Generate Tailored Materials' }}
           </button>
           <p class="text-[11px] text-slate-500 text-center">
-            Opens the Resume Builder with your job description and uploaded resume prefilled.
+            Opens the Resume Builder with your job description and uploaded resume prefilled. Uses 1 credit.
           </p>
         </section>
 

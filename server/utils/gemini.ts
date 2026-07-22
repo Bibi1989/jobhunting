@@ -128,6 +128,25 @@ export function resolveGeminiModel(): string {
 }
 
 /**
+ * Faster/cheaper model for parse-to-JSON and ATS scoring.
+ * Set GEMINI_MODEL_PARSEKIT (or NUXT_GEMINI_MODEL_PARSEKIT); falls back to primary GEMINI_MODEL.
+ */
+export function resolveGeminiParsekitModel(): string {
+  const fromEnv =
+    process.env.GEMINI_MODEL_PARSEKIT?.trim() ||
+    process.env.NUXT_GEMINI_MODEL_PARSEKIT?.trim() ||
+    ''
+  if (fromEnv) return fromEnv
+  try {
+    const fromConfig = String(useRuntimeConfig().geminiModelParsekit || '').trim()
+    if (fromConfig) return fromConfig
+  } catch {
+    /* no runtime config */
+  }
+  return resolveGeminiModel()
+}
+
+/**
  * Model try order: env primary first, then configured fallbacks, then flash.
  * (Previously some routes tried flash first, so prod often produced weaker drafts
  * while local fell through to the stronger GEMINI_MODEL after flash failures.)

@@ -94,8 +94,12 @@ let refreshTimeout: any = null
 function triggerRefresh() {
   if (refreshTimeout) clearTimeout(refreshTimeout)
   const active = typeof document !== 'undefined' ? document.activeElement : null
-  const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')
-  const delay = isTyping ? 2500 : 450
+  const isTyping = active && (
+    active.tagName === 'INPUT' || 
+    active.tagName === 'TEXTAREA' || 
+    (active as HTMLElement).isContentEditable
+  )
+  const delay = isTyping ? 1500 : 800
   refreshTimeout = setTimeout(() => {
     void refreshPreview()
   }, delay)

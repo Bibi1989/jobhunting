@@ -618,7 +618,7 @@ async function runAtsCheck() {
     })
     atsResult.value = result
     await refreshCredits()
-    toast.success(`ATS score: ${result.score}/100`)
+    toast.success(`ATS score: ${result.score}/100. 2 credits used.`)
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
     toast.error(e.data?.statusMessage || e.statusMessage || 'ATS check failed.')
@@ -658,7 +658,7 @@ async function fixAtsIssues() {
       atsResult.value = null
       await refreshCredits()
       await saveDraftWithLabel('ATS Fix')
-      notifyAiSuccess('ATS fixes applied and saved. Re-run the check to confirm your new score.')
+      notifyAiSuccess('ATS fixes applied and saved. 3 credits used. Re-run the check to confirm your new score.')
     }
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
@@ -785,7 +785,7 @@ async function handleImportResume(e: Event) {
       })
       resumeData.value = next
       atsResult.value = null
-      toast.success('Resume imported successfully!')
+      toast.success('Resume imported successfully. 2 credits used.')
       await refreshCredits()
     }
   } catch (err: unknown) {
@@ -1180,7 +1180,7 @@ async function enhanceDescription(item: { id: string, title?: string, descriptio
       }
     }
     await nextTick()
-    notifyAiSuccess('Description enhanced.')
+    notifyAiSuccess('Description enhanced. 1 credit used.')
     await refreshCredits()
   } catch (e) {
     console.error('Enhance failed:', e)
@@ -1610,7 +1610,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     </button>
                     <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary, targetRole: resumeData.personalInfo.targetRole, commandPrompt: resumeData.personalInfo.commandPrompt }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                       <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has('summary')}">{{ enhancingIds.has('summary') ? 'refresh' : 'auto_awesome' }}</span>
-                      {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance' }}
+                      {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
                     </button>
                   </div>
                 </div>
@@ -1869,7 +1869,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                         </button>
                         <button @click="enhanceDescription(exp, 'experience')" :disabled="enhancingIds.has(exp.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                           <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(exp.id)}">{{ enhancingIds.has(exp.id) ? 'refresh' : 'auto_awesome' }}</span>
-                          {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance' }}
+                          {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
                         </button>
                       </div>
                     </div>
@@ -1991,7 +1991,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                         </button>
                         <button @click="enhanceDescription(proj, 'project')" :disabled="enhancingIds.has(proj.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                           <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(proj.id)}">{{ enhancingIds.has(proj.id) ? 'refresh' : 'auto_awesome' }}</span>
-                          {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance' }}
+                          {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
                         </button>
                       </div>
                     </div>

@@ -38,10 +38,20 @@ const formatDate = (dateString: string) => {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+const activeFilter = ref<'all' | 'resume' | 'cover_letter'>('all')
+
 const visibleDocuments = computed(() => {
-  const list = documents.value || []
-  if (!showFavoritesOnly.value) return list
-  return list.filter((d) => d.isFavorite)
+  let list = documents.value || []
+  if (showFavoritesOnly.value) {
+    list = list.filter((d) => d.isFavorite)
+  }
+  if (activeFilter.value === 'resume') {
+    return list.filter((d) => d.type === 'resume')
+  }
+  if (activeFilter.value === 'cover_letter') {
+    return list.filter((d) => d.type === 'cover_letter')
+  }
+  return list
 })
 
 async function toggleFavorite(doc: BuilderDocCard) {
@@ -131,11 +141,27 @@ async function deleteDocument(doc: BuilderDocCard) {
           </div>
         </section>
 
-        <div class="flex items-center justify-between mb-6 gap-3 flex-wrap">
-          <h2 class="font-semibold uppercase tracking-widest text-blue-200/60 text-sm">Recent Projects</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4 pb-4 border-b border-white/5">
+          <div class="flex flex-wrap items-center gap-6">
+            <h2 class="font-semibold uppercase tracking-widest text-blue-200/60 text-sm">Recent Projects</h2>
+            <div class="flex bg-slate-900/60 p-1 rounded-xl border border-white/10">
+              <button
+                v-for="tab in ([{ id: 'all', label: 'All' }, { id: 'resume', label: 'Resumes' }, { id: 'cover_letter', label: 'Cover Letters' }] as const)"
+                :key="tab.id"
+                type="button"
+                class="px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer"
+                :class="activeFilter === tab.id
+                  ? 'bg-indigo-650 text-white shadow-md shadow-indigo-650/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'"
+                @click="activeFilter = tab.id"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+          </div>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition"
+            class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition self-end sm:self-auto"
             :class="showFavoritesOnly
               ? 'border-amber-400/50 bg-amber-500/15 text-amber-200'
               : 'border-white/15 text-blue-200/70 hover:bg-white/5'"

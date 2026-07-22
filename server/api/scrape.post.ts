@@ -7,6 +7,7 @@ import {
   filterJobsByTarget,
   hasScrapeTarget,
   resolveGeminiModel,
+  resolveGeminiParsekitModel,
   searchJobsForUrl,
   type JobScrapeTarget,
 } from '../utils/gemini'
@@ -106,7 +107,12 @@ export default withCredits(
       jobs = await filterJobsByTarget(ai, models, jobs, target)
     }
 
-    jobs = await enrichJobsWithFullDescriptions(ai, models, jobs, finalUrl)
+    jobs = await enrichJobsWithFullDescriptions(
+      ai,
+      getGeminiModels(resolveGeminiParsekitModel()),
+      jobs,
+      finalUrl,
+    )
 
     const user = event.context.user
     if (!user?.id) {

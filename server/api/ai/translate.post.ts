@@ -1,4 +1,4 @@
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 
@@ -23,7 +23,7 @@ export default withCredits(async (event) => {
   const langName = LANGUAGE_NAMES[targetLanguage] || targetLanguage
 
   const ai = createGeminiClient()
-  const model = resolveGeminiModel()
+  const model = resolveGeminiParsekitModel()
   const payload = mode === 'cover_letter' ? coverLetter : resumeData
 
   const prompt = `You are an expert translator specializing in career documents (resumes, cover letters, and interview materials). I will provide you with a JSON object representing a ${

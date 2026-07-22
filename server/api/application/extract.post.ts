@@ -4,7 +4,7 @@ import {
   extractApplicationForm,
 } from '../../utils/applicationForm'
 import { getLatestDocuments } from '../../utils/documents'
-import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
+import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { getGeminiModels } from '../../utils/jobs'
 import { getJobById } from '../../utils/jobRepository'
 import { withCredits } from '../../utils/withCredits'
@@ -36,7 +36,7 @@ export default withCredits(
     }
 
     const ai = createGeminiClient()
-    const models = getGeminiModels(resolveGeminiModel())
+    const models = getGeminiModels(resolveGeminiParsekitModel())
 
     const form = await extractApplicationForm(ai, models, job)
 
