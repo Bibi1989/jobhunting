@@ -116,6 +116,14 @@ export interface BuilderResumeData {
   themeColor?: string
   language?: 'en' | 'de' | 'fr' | 'es'
   spacingPreset?: 'ats-stable' | 'compact' | 'balanced'
+  /** Body font size in points (overrides spacing preset). */
+  fontSize?: number
+  /** Body line height multiplier (overrides spacing preset). */
+  lineHeight?: number
+  /** Left/right page margin in points. */
+  marginHorizontal?: number
+  /** Top/bottom page margin in points. */
+  marginVertical?: number
   /** Optional JD used for AI draft / ATS (JD and/or resume is enough to draft). */
   targetJobDescription?: string
   /** Extra instructions for AI resume draft (e.g. emphasize leadership). */

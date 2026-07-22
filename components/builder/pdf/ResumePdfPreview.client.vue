@@ -38,6 +38,10 @@ function getResumeCacheKey() {
     achievements: layout.achievements,
     customSections: layout.customSections,
     spacingPreset: layout.spacingPreset,
+    fontSize: layout.fontSize,
+    lineHeight: layout.lineHeight,
+    marginHorizontal: layout.marginHorizontal,
+    marginVertical: layout.marginVertical,
     templateSlug,
     sectionsOrder,
   })

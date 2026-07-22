@@ -27,6 +27,7 @@ const jobContext = ref<{ jobId: string; title: string; company: string; descript
 
 const generating = ref(false)
 const saving = ref(false)
+const creatingBlank = ref(false)
 const favoritingId = ref<string | null>(null)
 const showFavoritesOnly = ref(false)
 const result = ref<PortfolioProfileData | null>(null)
@@ -38,6 +39,17 @@ const previewData = computed<PortfolioProfileData>(() => result.value ?? SAMPLE_
 const { data: saved, refresh: refreshSaved } = await useFetch<{ portfolios: Portfolio[] }>(
   '/api/portfolio',
   { default: () => ({ portfolios: [] }) },
+)
+
+const portfolioCount = computed(() => saved.value?.portfolios?.length ?? 0)
+const canCreateAnotherPortfolio = computed(() => unlocked.value || portfolioCount.value < 1)
+
+watch(
+  unlocked,
+  (pro) => {
+    if (!pro) selectedTemplate.value = DEFAULT_TEMPLATE_SLUG
+  },
+  { immediate: true },
 )
 
 const visiblePortfolios = computed(() => {
@@ -71,11 +83,11 @@ watch(
   () => [route.query.template, route.query.jobId, saved.value?.portfolios?.length ?? 0, unlocked.value] as const,
   async ([slug, jobId, count]) => {
     if (typeof slug === 'string' && PORTFOLIO_TEMPLATES.some((t) => t.slug === slug)) {
-      selectedTemplate.value = slug
+      selectedTemplate.value = unlocked.value ? slug : DEFAULT_TEMPLATE_SLUG
       activeTab.value = 'create'
     } else if (typeof jobId === 'string' && jobId.trim()) {
       activeTab.value = 'create'
-    } else if (count === 0 && unlocked.value) {
+    } else if (count === 0 && canCreateAnotherPortfolio.value) {
       activeTab.value = 'create'
     }
 
@@ -164,11 +176,18 @@ async function generate() {
 
 async function save() {
   if (!result.value) return
+  if (!canCreateAnotherPortfolio.value) {
+    toast.error('Free plan allows 1 portfolio. Upgrade to Pro for unlimited portfolios.')
+    return
+  }
   saving.value = true
   try {
     await $fetch<{ portfolio: Portfolio }>('/api/portfolio/save', {
       method: 'POST',
-      body: { templateSlug: selectedTemplate.value, profileData: result.value },
+      body: {
+        templateSlug: unlocked.value ? selectedTemplate.value : DEFAULT_TEMPLATE_SLUG,
+        profileData: result.value,
+      },
     })
     toast.success('Portfolio saved and published.')
     await refreshSaved()
@@ -180,6 +199,46 @@ async function save() {
   } finally {
     saving.value = false
   }
+}
+
+async function createBlankPortfolio() {
+  if (!canCreateAnotherPortfolio.value) {
+    toast.error('Free plan allows 1 portfolio. Upgrade to Pro for unlimited portfolios.')
+    return
+  }
+  creatingBlank.value = true
+  try {
+    const blank: PortfolioProfileData = {
+      full_name: 'Your Name',
+      professional_bio: '',
+      formatted_projects: [],
+      formatted_experience: [],
+      core_skills: [],
+    }
+    const { portfolio } = await $fetch<{ portfolio: Portfolio }>('/api/portfolio/save', {
+      method: 'POST',
+      body: {
+        templateSlug: unlocked.value ? selectedTemplate.value : DEFAULT_TEMPLATE_SLUG,
+        profileData: blank,
+      },
+    })
+    toast.success('Portfolio created. Edit your content next.')
+    await refreshSaved()
+    await navigateTo(`/dashboard/portfolio/${portfolio.id}`)
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(e.data?.statusMessage || e.statusMessage || 'Could not create portfolio')
+  } finally {
+    creatingBlank.value = false
+  }
+}
+
+function selectTemplate(slug: string) {
+  if (!unlocked.value && slug !== DEFAULT_TEMPLATE_SLUG) {
+    toast.info('Upgrade to Pro to unlock all portfolio templates.')
+    return
+  }
+  selectedTemplate.value = slug
 }
 
 async function copyLink(id: string) {
@@ -250,20 +309,38 @@ function primaryContactHref(data: PortfolioProfileData) {
           type="button"
           class="rounded-lg px-3 py-2 text-sm font-semibold transition"
           :class="activeTab === 'create' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
+          :disabled="!canCreateAnotherPortfolio"
+          :title="!canCreateAnotherPortfolio ? 'Free plan allows 1 portfolio. Upgrade to Pro.' : undefined"
           @click="activeTab = 'create'"
         >
           Create new
         </button>
+        <NuxtLink
+          v-if="!canCreateAnotherPortfolio"
+          to="/pricing"
+          class="text-xs font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2"
+        >
+          Upgrade for unlimited
+        </NuxtLink>
       </div>
       <div class="w-full h-px bg-white/10 mt-6"></div>
     </header>
 
     <!-- Create flow first when on Create new -->
     <div v-show="activeTab === 'create'" class="relative mb-12">
-      <div
-        :class="['space-y-12 transition', unlocked ? '' : 'pointer-events-none select-none blur-sm opacity-60']"
-        :aria-hidden="!unlocked"
-      >
+      <div v-if="!canCreateAnotherPortfolio" class="rounded-2xl border border-amber-500/30 bg-amber-950/40 px-6 py-8 text-center mb-6">
+        <h3 class="text-lg font-bold text-white">Portfolio limit reached</h3>
+        <p class="mt-2 text-sm text-blue-200/70">
+          Free plan allows 1 portfolio. Edit your existing one, or upgrade to Pro for unlimited portfolios and all templates.
+        </p>
+        <NuxtLink
+          to="/pricing"
+          class="mt-4 inline-block rounded-xl bg-blue-500 hover:bg-blue-400 px-6 py-3 font-semibold text-white transition"
+        >
+          Upgrade to Pro
+        </NuxtLink>
+      </div>
+      <div v-else class="space-y-12">
         <section>
           <div
             v-if="jobContext"
@@ -281,48 +358,26 @@ function primaryContactHref(data: PortfolioProfileData) {
             </p>
           </div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-3">
-            1 · Upload your document
+            1 · Choose a template
           </h2>
-          <div
-            class="rounded-2xl border-2 border-dashed p-10 text-center transition"
-            :class="dragging ? 'border-blue-400 bg-blue-500/10' : 'border-white/15 hover:border-white/30'"
-            role="button"
-            tabindex="0"
-            @click="pickFile"
-            @keydown.enter="pickFile"
-            @dragover.prevent="dragging = true"
-            @dragleave.prevent="dragging = false"
-            @drop.prevent="onDrop"
-          >
-            <input ref="fileInput" type="file" accept=".pdf,.docx,.txt,.md" class="hidden" @change="onFileChange" />
-            <span class="material-symbols-outlined text-4xl text-blue-300">upload_file</span>
-            <p v-if="selectedFile" class="text-white font-medium mt-2">{{ selectedFile.name }}</p>
-            <template v-else>
-              <p class="text-white font-medium mt-2">Drop your CV or cover letter here</p>
-              <p class="text-blue-200/50 text-sm mt-1">or click to browse — PDF, DOCX, or TXT</p>
-            </template>
-          </div>
-        </section>
-
-        <section>
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60">
-              2 · Choose a template
-            </h2>
-            <span class="text-xs text-blue-200/50">{{ PORTFOLIO_TEMPLATES.length }} designs · click to select or open full preview</span>
-          </div>
+          <p v-if="!unlocked" class="text-xs text-blue-200/50 mb-3">
+            Free includes the Visionary template. Upgrade to Pro for all designs and AI generation.
+          </p>
           <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <div
               v-for="template in PORTFOLIO_TEMPLATES"
               :key="template.slug"
-              class="group rounded-2xl border overflow-hidden bg-white/[0.02] transition text-left cursor-pointer"
-              :class="selectedTemplate === template.slug
-                ? 'border-blue-400 ring-2 ring-blue-400/40'
-                : 'border-white/10 hover:border-white/25'"
+              class="group rounded-2xl border overflow-hidden bg-white/[0.02] transition text-left"
+              :class="[
+                selectedTemplate === template.slug
+                  ? 'border-blue-400 ring-2 ring-blue-400/40'
+                  : 'border-white/10 hover:border-white/25',
+                !unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG ? 'opacity-60' : 'cursor-pointer',
+              ]"
               role="button"
               tabindex="0"
-              @click="selectedTemplate = template.slug"
-              @keydown.enter="selectedTemplate = template.slug"
+              @click="selectTemplate(template.slug)"
+              @keydown.enter="selectTemplate(template.slug)"
             >
               <div class="relative h-40 overflow-hidden border-b border-white/10 bg-slate-900">
                 <div
@@ -340,7 +395,11 @@ function primaryContactHref(data: PortfolioProfileData) {
                     Full preview
                   </button>
                   <span
-                    v-if="selectedTemplate === template.slug"
+                    v-if="!unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG"
+                    class="text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5 bg-amber-500/90 text-slate-950"
+                  >Pro</span>
+                  <span
+                    v-else-if="selectedTemplate === template.slug"
                     class="material-symbols-outlined text-blue-400 text-xl"
                   >check_circle</span>
                 </div>
@@ -359,62 +418,95 @@ function primaryContactHref(data: PortfolioProfileData) {
         <section class="flex flex-wrap items-center gap-4">
           <button
             type="button"
-            class="rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 font-semibold text-white transition shadow-[0_0_20px_rgba(59,130,246,0.4)]"
-            :disabled="generating || !selectedFile"
-            @click="generate"
+            class="rounded-xl border border-white/20 hover:bg-white/5 px-6 py-3 font-semibold text-white transition disabled:opacity-50"
+            :disabled="creatingBlank"
+            @click="createBlankPortfolio"
           >
-            {{ generating ? 'Generating…' : 'Generate Portfolio (Costs 20 Credits)' }}
+            {{ creatingBlank ? 'Creating…' : 'Start blank portfolio' }}
           </button>
-          <p class="text-sm text-blue-200/60">You have {{ creditsRemaining }} credits.</p>
+          <p class="text-sm text-blue-200/60">Edit content yourself — no AI credits required.</p>
         </section>
 
-        <section v-if="result" id="preview" class="scroll-mt-24">
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60">
-              3 · Preview &amp; publish — {{ templateName(selectedTemplate) }}
+        <section class="relative rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+          <div :class="unlocked ? '' : 'pointer-events-none select-none blur-sm opacity-50'" :aria-hidden="!unlocked">
+            <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-3">
+              Or generate with AI (Pro)
             </h2>
-            <div class="flex flex-wrap items-center gap-2">
-              <a
-                :href="primaryContactHref(result)"
-                class="rounded-xl border border-white/15 hover:bg-white/5 px-4 py-2.5 text-sm font-semibold text-blue-100 transition"
-                :target="primaryContactHref(result).startsWith('http') ? '_blank' : undefined"
-                rel="noopener"
-              >
-                Test contact CTA
-              </a>
+            <div
+              class="rounded-2xl border-2 border-dashed p-10 text-center transition mb-4"
+              :class="dragging ? 'border-blue-400 bg-blue-500/10' : 'border-white/15 hover:border-white/30'"
+              role="button"
+              tabindex="0"
+              @click="pickFile"
+              @keydown.enter="pickFile"
+              @dragover.prevent="dragging = true"
+              @dragleave.prevent="dragging = false"
+              @drop.prevent="onDrop"
+            >
+              <input ref="fileInput" type="file" accept=".pdf,.docx,.txt,.md" class="hidden" @change="onFileChange" />
+              <span class="material-symbols-outlined text-4xl text-blue-300">upload_file</span>
+              <p v-if="selectedFile" class="text-white font-medium mt-2">{{ selectedFile.name }}</p>
+              <template v-else>
+                <p class="text-white font-medium mt-2">Drop your CV or cover letter here</p>
+                <p class="text-blue-200/50 text-sm mt-1">or click to browse — PDF, DOCX, or TXT (max 3 pages)</p>
+              </template>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
               <button
                 type="button"
-                class="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 font-semibold text-white transition disabled:opacity-50"
-                :disabled="saving"
-                @click="save"
+                class="rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 font-semibold text-white transition shadow-[0_0_20px_rgba(59,130,246,0.4)]"
+                :disabled="generating || !selectedFile"
+                @click="generate"
               >
-                {{ saving ? 'Publishing…' : 'Save & Publish' }}
+                {{ generating ? 'Generating…' : 'Generate Portfolio (Costs 20 Credits)' }}
               </button>
+              <p class="text-sm text-blue-200/60">You have {{ creditsRemaining }} credits.</p>
+            </div>
+            <section v-if="result" id="preview" class="scroll-mt-24 mt-8">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60">
+                  Preview &amp; publish — {{ templateName(selectedTemplate) }}
+                </h2>
+                <div class="flex flex-wrap items-center gap-2">
+                  <a
+                    :href="primaryContactHref(result)"
+                    class="rounded-xl border border-white/15 hover:bg-white/5 px-4 py-2.5 text-sm font-semibold text-blue-100 transition"
+                    :target="primaryContactHref(result).startsWith('http') ? '_blank' : undefined"
+                    rel="noopener"
+                  >
+                    Test contact CTA
+                  </a>
+                  <button
+                    type="button"
+                    class="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 font-semibold text-white transition disabled:opacity-50"
+                    :disabled="saving"
+                    @click="save"
+                  >
+                    {{ saving ? 'Publishing…' : 'Save & Publish' }}
+                  </button>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-white/10 overflow-hidden bg-white h-[640px] overflow-y-auto">
+                <PortfolioRenderer :slug="selectedTemplate" :data="result" />
+              </div>
+            </section>
+          </div>
+          <div v-if="!unlocked" class="absolute inset-0 flex items-center justify-center p-6">
+            <div class="text-center rounded-2xl border border-white/10 bg-slate-950/90 backdrop-blur px-6 py-8 max-w-md">
+              <span class="material-symbols-outlined text-4xl text-blue-300 mb-3">stars</span>
+              <h3 class="text-lg font-bold text-white">AI portfolio generation is Pro</h3>
+              <p class="mt-2 text-sm text-blue-200/60">
+                {{ aiBlockedMessage() || 'Start a blank portfolio above, or upgrade for AI fill from your CV.' }}
+              </p>
+              <NuxtLink
+                to="/pricing"
+                class="mt-4 inline-block rounded-xl bg-blue-500 hover:bg-blue-400 px-6 py-3 font-semibold text-white transition"
+              >
+                Upgrade to Pro
+              </NuxtLink>
             </div>
           </div>
-          <div class="rounded-2xl border border-white/10 overflow-hidden bg-white h-[640px] overflow-y-auto">
-            <PortfolioRenderer :slug="selectedTemplate" :data="result" />
-          </div>
         </section>
-      </div>
-
-      <div v-if="!unlocked" class="absolute inset-0 flex items-start justify-center pt-16">
-        <div class="text-center rounded-2xl border border-white/10 bg-slate-950/85 backdrop-blur px-8 py-10 max-w-md">
-          <span class="material-symbols-outlined text-4xl text-blue-300 mb-3">stars</span>
-          <h3 class="text-xl font-bold text-white">Upgrade to Pro to create AI Portfolios</h3>
-          <p class="mt-2 text-sm text-blue-200/60">
-            {{ aiBlockedMessage() || 'Pro members can generate template-ready portfolios from any CV.' }}
-          </p>
-          <p class="mt-3 text-xs text-blue-200/50">
-            You can still open any portfolios you already published below.
-          </p>
-          <NuxtLink
-            to="/pricing"
-            class="mt-5 inline-block rounded-xl bg-blue-500 hover:bg-blue-400 px-6 py-3 font-semibold text-white transition"
-          >
-            Upgrade to Pro
-          </NuxtLink>
-        </div>
       </div>
     </div>
 

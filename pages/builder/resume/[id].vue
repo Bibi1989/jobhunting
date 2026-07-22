@@ -91,6 +91,29 @@ function selectTemplate(templateId: string) {
   resumeData.value.templateSlug = id
 }
 
+const SPACING_PRESET_VALUES = {
+  'ats-stable': { fontSize: 10, lineHeight: 1.4, marginHorizontal: 36, marginVertical: 36 },
+  balanced: { fontSize: 9.5, lineHeight: 1.35, marginHorizontal: 32, marginVertical: 32 },
+  compact: { fontSize: 8.5, lineHeight: 1.25, marginHorizontal: 24, marginVertical: 24 },
+} as const
+
+function applySpacingPreset(preset: 'ats-stable' | 'balanced' | 'compact') {
+  const values = SPACING_PRESET_VALUES[preset]
+  resumeData.value.spacingPreset = preset
+  resumeData.value.fontSize = values.fontSize
+  resumeData.value.lineHeight = values.lineHeight
+  resumeData.value.marginHorizontal = values.marginHorizontal
+  resumeData.value.marginVertical = values.marginVertical
+}
+
+function layoutSliderValue(
+  key: 'fontSize' | 'lineHeight' | 'marginHorizontal' | 'marginVertical',
+  fallback: number,
+) {
+  const n = Number(resumeData.value[key])
+  return Number.isFinite(n) ? n : fallback
+}
+
 const activeTab = ref<string>('targetRole')
 const expandedHeatmap = ref(false)
 const selectedHeatmapKeyword = ref<string | null>(null)
@@ -281,10 +304,15 @@ function goBack() {
 
 const resumeData = ref<BuilderResumeData>({
   name: 'My New Resume',
-  templateId: 'the-distinguished',
-  templateSlug: 'the-distinguished',
+  templateId: 'the-corporate',
+  templateSlug: 'the-corporate',
   sectionsOrder: [...DEFAULT_SECTIONS_ORDER],
   themeColor: '#3b82f6',
+  spacingPreset: 'balanced',
+  fontSize: 9.5,
+  lineHeight: 1.35,
+  marginHorizontal: 32,
+  marginVertical: 32,
   personalInfo: {
     fullName: 'Jonathan R. Sterling',
     jobTitle: 'Product Designer',
@@ -1067,6 +1095,8 @@ async function saveDraftWithLabel(label: string) {
     void fetchVersions()
   } catch (e) {
     console.error(e)
+    const err = e as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(err.data?.statusMessage || err.statusMessage || 'Failed to save draft.')
   } finally {
     saving.value = false
   }
@@ -1093,7 +1123,8 @@ async function saveDraft() {
     void fetchVersions()
   } catch (e) {
     console.error(e)
-    toast.error('Failed to save draft.')
+    const err = e as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(err.data?.statusMessage || err.statusMessage || 'Failed to save draft.')
   } finally {
     saving.value = false
   }
@@ -1510,44 +1541,98 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <div class="mt-8 pt-6 border-t border-white/10 space-y-4 text-left">
               <div>
                 <h3 class="font-bold text-lg text-white mb-0.5">Spacing & Typography</h3>
-                <p class="text-blue-200/60 text-xs">Configure spacing and font scale rules optimized for ATS parsing or space constraints.</p>
+                <p class="text-blue-200/60 text-xs">Presets set a baseline; fine-tune with the sliders below.</p>
               </div>
 
               <div class="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  @click="resumeData.spacingPreset = 'ats-stable'"
+                  @click="applySpacingPreset('ats-stable')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'ats-stable' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
                   ATS Stable
                 </button>
                 <button
                   type="button"
-                  @click="resumeData.spacingPreset = 'balanced'"
+                  @click="applySpacingPreset('balanced')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'balanced' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
                   Balanced
                 </button>
                 <button
                   type="button"
-                  @click="resumeData.spacingPreset = 'compact'"
+                  @click="applySpacingPreset('compact')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'compact' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
                   Compact
                 </button>
               </div>
 
-              <p class="text-[11px] text-slate-400 leading-relaxed">
-                <span v-if="(resumeData.spacingPreset || 'balanced') === 'ats-stable'">
-                  <strong>ATS Stable Preset:</strong> Generous margins (36pt), larger font size (10pt), and taller line height (1.4) to maximize reliability across parser engines.
-                </span>
-                <span v-if="(resumeData.spacingPreset || 'balanced') === 'balanced'">
-                  <strong>Balanced Preset:</strong> standard margins (32pt), standard font size (9.5pt), and line height (1.35) for a polished executive print.
-                </span>
-                <span v-if="(resumeData.spacingPreset || 'balanced') === 'compact'">
-                  <strong>Compact Preset:</strong> Tight margins (24pt) and smaller font size (8.5pt) to fit maximum content on a single page without breaking layout structure.
-                </span>
-              </p>
+              <div class="space-y-4 pt-2">
+                <label class="block space-y-1.5">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">Font size</span>
+                    <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('fontSize', 9.5).toFixed(1) }} pt</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="8"
+                    max="12"
+                    step="0.5"
+                    :value="layoutSliderValue('fontSize', 9.5)"
+                    class="w-full accent-blue-500 cursor-pointer"
+                    @input="resumeData.fontSize = Number(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+
+                <label class="block space-y-1.5">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">Line height</span>
+                    <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('lineHeight', 1.35).toFixed(2) }}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.15"
+                    max="1.7"
+                    step="0.05"
+                    :value="layoutSliderValue('lineHeight', 1.35)"
+                    class="w-full accent-blue-500 cursor-pointer"
+                    @input="resumeData.lineHeight = Number(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+
+                <label class="block space-y-1.5">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">Margin horizontal</span>
+                    <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('marginHorizontal', 32) }} pt</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="16"
+                    max="56"
+                    step="2"
+                    :value="layoutSliderValue('marginHorizontal', 32)"
+                    class="w-full accent-blue-500 cursor-pointer"
+                    @input="resumeData.marginHorizontal = Number(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+
+                <label class="block space-y-1.5">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">Margin vertical</span>
+                    <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('marginVertical', 32) }} pt</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="16"
+                    max="56"
+                    step="2"
+                    :value="layoutSliderValue('marginVertical', 32)"
+                    class="w-full accent-blue-500 cursor-pointer"
+                    @input="resumeData.marginVertical = Number(($event.target as HTMLInputElement).value)"
+                  />
+                </label>
+              </div>
             </div>
           </div>
 
@@ -1683,7 +1768,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <div class="mb-8">
               <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
               <p class="text-blue-200/60 text-sm">
-                Upload a resume and/or paste a job description — either is enough to draft; both is best.
+                Upload a resume and/or paste a job description — either is enough to draft; both is best. Uploads are limited to 3 pages.
               </p>
             </div>
             <div class="space-y-5">
@@ -1696,7 +1781,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                         uploadedResumeName ||
                         (hasResumeSignal()
                           ? 'Using contact & experience from this project'
-                          : 'Optional — upload PDF, DOCX, or TXT')
+                          : 'Optional — upload PDF, DOCX, or TXT (max 3 pages)')
                       }}
                     </p>
                   </div>

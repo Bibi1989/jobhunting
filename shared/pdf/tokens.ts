@@ -133,7 +133,7 @@ export const styles = {
   },
   chip: {
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: '#0f172a',
     borderRadius: 3,
     paddingHorizontal: 6,
     paddingVertical: 3,

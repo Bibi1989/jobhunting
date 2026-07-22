@@ -1,5 +1,5 @@
 import { requireUser } from '~/server/utils/auth'
-import { saveUserDocument, type DocumentType } from '../../utils/documents'
+import { assertTextPageLimit, saveUserDocument, type DocumentType } from '../../utils/documents'
 import { replaceEmDashes } from '../../../shared/samples/professionalDocuments'
 
 export default defineEventHandler(async (event) => {
@@ -25,6 +25,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'contentText must be at least 20 characters',
     })
   }
+
+  assertTextPageLimit(contentText)
 
   const originalName =
     body.originalName?.trim() ||

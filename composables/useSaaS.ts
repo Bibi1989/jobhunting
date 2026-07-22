@@ -155,7 +155,9 @@ export function useSaaS() {
   const isPro = computed(() => planTier.value === 'pro')
   const isAdmin = computed(() => role.value === 'admin')
   const canAccessScraper = computed(
-    () => isAdmin.value || (isAuthenticated.value && creditsRemaining.value > 0),
+    () =>
+      isAdmin.value ||
+      (isAuthenticated.value && isPro.value && creditsRemaining.value > 0),
   )
   const canAccessAI = computed(
     () =>
@@ -165,9 +167,10 @@ export function useSaaS() {
 
   function scraperBlockedMessage() {
     if (isAdmin.value) return ''
-    if (!isAuthenticated.value) return 'Sign in to run the scraper. Free accounts get starter credits.'
+    if (!isAuthenticated.value) return 'Sign in and upgrade to Pro to run the scraper.'
+    if (!isPro.value) return 'A Pro subscription is required to scrape jobs.'
     if (creditsRemaining.value <= 0) {
-      return 'Out of credits. Upgrade to Pro or wait for your next billing cycle to scrape again.'
+      return 'Out of credits. Upgrade or wait for your next billing cycle to scrape again.'
     }
     return ''
   }

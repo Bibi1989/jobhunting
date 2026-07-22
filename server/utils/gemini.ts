@@ -16,7 +16,7 @@ import {
 } from '../../shared/samples/candidateProfile'
 import { isGeminiQuotaOrUnavailableError, ollamaJsonPrompt } from './aiFallback'
 import { resolveCandidateProfileSync } from './candidateProfile'
-import { formatGeminiError, getGeminiModels, normalizeJobs } from './jobs'
+import { formatGeminiError, normalizeJobs } from './jobs'
 
 export type JobScrapeTarget = {
   jobTitle?: string
@@ -128,8 +128,9 @@ export function resolveGeminiModel(): string {
 }
 
 /**
- * Faster/cheaper model for parse-to-JSON and ATS scoring.
- * Set GEMINI_MODEL_PARSEKIT (or NUXT_GEMINI_MODEL_PARSEKIT); falls back to primary GEMINI_MODEL.
+ * Faster/cheaper model for parse, ATS check, email, enhance, analyze.
+ * Set GEMINI_MODEL_PARSEKIT (or NUXT_GEMINI_MODEL_PARSEKIT).
+ * Defaults to flash — never silently upgrades to Pro (that burns tokens).
  */
 export function resolveGeminiParsekitModel(): string {
   const fromEnv =
@@ -143,23 +144,24 @@ export function resolveGeminiParsekitModel(): string {
   } catch {
     /* no runtime config */
   }
-  return resolveGeminiModel()
+  return 'gemini-2.5-flash'
 }
 
 /**
- * Model try order: env primary first, then configured fallbacks, then flash.
- * (Previously some routes tried flash first, so prod often produced weaker drafts
- * while local fell through to the stronger GEMINI_MODEL after flash failures.)
+ * Short Pro→Flash chain for expensive drafts (resume / cover letter / portfolio / ATS fix).
+ * Avoids long fallback lists that can bill multiple full completions.
  */
 export function resolveGeminiModelChain(extraFallbacks: string[] = []): string[] {
   const primary = resolveGeminiModel()
-  const chain = [
-    primary,
-    ...extraFallbacks,
-    ...getGeminiModels(primary),
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-  ]
+  const flash = resolveGeminiParsekitModel()
+  const chain = [primary, ...extraFallbacks, flash]
+  return [...new Set(chain.map((m) => String(m || '').trim()).filter(Boolean))]
+}
+
+/** Flash-only try order for cheap structured / short-text tasks. */
+export function resolveGeminiParsekitModelChain(extraFallbacks: string[] = []): string[] {
+  const primary = resolveGeminiParsekitModel()
+  const chain = [primary, ...extraFallbacks, 'gemini-2.5-flash', 'gemini-2.0-flash']
   return [...new Set(chain.map((m) => String(m || '').trim()).filter(Boolean))]
 }
 
@@ -481,7 +483,6 @@ ${
           responseMimeType: 'application/json',
           responseSchema: TAILORED_SCHEMA,
           temperature: 0.4,
-          maxOutputTokens: 12288,
         },
       }),
     )

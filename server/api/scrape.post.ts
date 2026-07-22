@@ -143,5 +143,5 @@ export default withCredits(
       },
     }
   },
-  { reason: 'job_scrape' },
+  { reason: 'job_scrape', requirePro: true, cost: 1 },
 )

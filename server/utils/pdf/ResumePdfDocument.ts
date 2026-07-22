@@ -13,7 +13,13 @@ import {
   type ResumeSectionId,
   withLayoutState,
 } from '~/shared/pdf/schema'
-import { getPdfTemplateProfile, type PdfTemplateProfile, type PdfTemplateTheme } from '~/shared/pdf/templates'
+import {
+  getPdfTemplateProfile,
+  type PdfHeaderChrome,
+  type PdfSkillsStyle,
+  type PdfTemplateProfile,
+  type PdfTemplateTheme,
+} from '~/shared/pdf/templates'
 import { styles as tokenStyles } from '~/shared/pdf/tokens'
 import { cleanDescriptionHtml, formatDateRange, htmlToBlocks, htmlToInlineRuns, stripHtmlToPlain } from '~/shared/pdf/text'
 import { buildContactEntries, type ContactEntry } from '~/shared/pdf/contact'
@@ -24,34 +30,75 @@ function sx(...parts: Array<object | false | null | undefined>): any {
 
 const S = StyleSheet.create(tokenStyles as any)
 
-function themed(theme: PdfTemplateTheme, spacingPreset?: 'ats-stable' | 'compact' | 'balanced') {
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
+function resolveLayoutMetrics(data: Pick<
+  BuilderResumeData,
+  'spacingPreset' | 'fontSize' | 'lineHeight' | 'marginHorizontal' | 'marginVertical'
+>) {
   let baseFontSize = 9.5
   let baseLineHeight = 1.35
   let atomMargin = 10
   let sectionMargin = 14
-  let pagePaddingValue = 32
+  let pagePadX = 32
+  let pagePadY = 32
 
-  if (spacingPreset === 'compact') {
+  if (data.spacingPreset === 'compact') {
     baseFontSize = 8.5
     baseLineHeight = 1.25
     atomMargin = 6
     sectionMargin = 10
-    pagePaddingValue = 24
-  } else if (spacingPreset === 'ats-stable') {
+    pagePadX = 24
+    pagePadY = 24
+  } else if (data.spacingPreset === 'ats-stable') {
     baseFontSize = 10
     baseLineHeight = 1.4
     atomMargin = 12
     sectionMargin = 16
-    pagePaddingValue = 36
+    pagePadX = 36
+    pagePadY = 36
   }
+
+  const fontSize = clamp(Number(data.fontSize ?? baseFontSize) || baseFontSize, 8, 12)
+  const lineHeight = clamp(Number(data.lineHeight ?? baseLineHeight) || baseLineHeight, 1.15, 1.7)
+  const marginHorizontal = clamp(Number(data.marginHorizontal ?? pagePadX) || pagePadX, 16, 56)
+  const marginVertical = clamp(Number(data.marginVertical ?? pagePadY) || pagePadY, 16, 56)
+
+  return {
+    baseFontSize: fontSize,
+    baseLineHeight: lineHeight,
+    atomMargin,
+    sectionMargin,
+    pagePadX: marginHorizontal,
+    pagePadY: marginVertical,
+  }
+}
+
+function themed(
+  theme: PdfTemplateTheme,
+  data: Pick<
+    BuilderResumeData,
+    'spacingPreset' | 'fontSize' | 'lineHeight' | 'marginHorizontal' | 'marginVertical'
+  >,
+) {
+  const {
+    baseFontSize,
+    baseLineHeight,
+    atomMargin,
+    sectionMargin,
+    pagePadX,
+    pagePadY,
+  } = resolveLayoutMetrics(data)
 
   const dynamicStyles = StyleSheet.create({
     page: {
       ...tokenStyles.page,
-      paddingTop: pagePaddingValue,
-      paddingBottom: pagePaddingValue,
-      paddingLeft: pagePaddingValue,
-      paddingRight: pagePaddingValue,
+      paddingTop: pagePadY,
+      paddingBottom: pagePadY,
+      paddingLeft: pagePadX,
+      paddingRight: pagePadX,
       color: theme.ink,
       backgroundColor: theme.paper
     },
@@ -59,7 +106,7 @@ function themed(theme: PdfTemplateTheme, spacingPreset?: 'ats-stable' | 'compact
     h2: {
       ...tokenStyles.h2,
       color: theme.brand,
-      borderBottomColor: `${theme.accent}33`,
+      borderBottomColor: '#000000',
       marginTop: sectionMargin,
       marginBottom: atomMargin / 2
     },
@@ -69,7 +116,7 @@ function themed(theme: PdfTemplateTheme, spacingPreset?: 'ats-stable' | 'compact
     itemTitle: { ...tokenStyles.itemTitle, color: theme.ink, fontSize: baseFontSize + 1 },
     itemMeta: { ...tokenStyles.itemMeta, color: theme.brand },
     contactLine: { ...tokenStyles.contactLine, color: theme.muted },
-    techPage: { ...tokenStyles.techPage, color: theme.ink, backgroundColor: theme.paper, paddingTop: pagePaddingValue, paddingBottom: pagePaddingValue },
+    techPage: { ...tokenStyles.techPage, color: theme.ink, backgroundColor: theme.paper, paddingTop: pagePadY, paddingBottom: pagePadY },
     techSidebar: { ...tokenStyles.techSidebar, backgroundColor: theme.sidebar, color: theme.sidebarText },
     techMain: { ...tokenStyles.techMain, backgroundColor: theme.paper },
     techName: { ...tokenStyles.techName, color: theme.sidebarText },
@@ -80,7 +127,7 @@ function themed(theme: PdfTemplateTheme, spacingPreset?: 'ats-stable' | 'compact
       borderBottomColor: `${theme.sidebarMuted}55`,
     },
     techText: { ...tokenStyles.techText, color: theme.sidebarText },
-    modernRight: { ...tokenStyles.modernRight, borderLeftColor: `${theme.accent}44` },
+    modernRight: { ...tokenStyles.modernRight, borderLeftColor: '#cbd5e1' },
     // Dynamic layout/atom properties
     atom: { ...tokenStyles.atom, marginBottom: atomMargin },
     section: { ...tokenStyles.section },
@@ -301,8 +348,21 @@ function AchievementsList({ data, theme, t }: { data: BuilderResumeData; theme: 
   )
 }
 
-function SkillsChips({ data, theme, t, tech = false }: { data: BuilderResumeData; theme: PdfTemplateTheme; t: T; tech?: boolean }) {
+function SkillsBlock({
+  data,
+  theme,
+  t,
+  style = 'chips',
+  tech = false,
+}: {
+  data: BuilderResumeData
+  theme: PdfTemplateTheme
+  t: T
+  style?: PdfSkillsStyle
+  tech?: boolean
+}) {
   if (!data.skills?.length) return null
+
   if (tech) {
     return React.createElement(
       View,
@@ -324,6 +384,30 @@ function SkillsChips({ data, theme, t, tech = false }: { data: BuilderResumeData
       ),
     )
   }
+
+  if (style === 'inline') {
+    return React.createElement(
+      Text,
+      { style: sx(t.body, { lineHeight: 1.45 }) },
+      data.skills.map((s) => s.name).filter(Boolean).join('  ·  '),
+    )
+  }
+
+  if (style === 'list') {
+    return React.createElement(
+      View,
+      null,
+      ...data.skills.map((skill) =>
+        React.createElement(
+          Text,
+          { key: skill.id, style: sx(t.body, { marginBottom: 3 }), wrap: false },
+          `• ${skill.name}`,
+        ),
+      ),
+    )
+  }
+
+  // chips — solid black border (avoid 8-digit hex alphas that render as red in react-pdf)
   return React.createElement(
     View,
     { style: t.chipRow },
@@ -333,7 +417,13 @@ function SkillsChips({ data, theme, t, tech = false }: { data: BuilderResumeData
         {
           key: skill.id,
           wrap: false,
-          style: { ...t.chip, color: theme.ink, borderColor: `${theme.accent}55` },
+          style: {
+            ...t.chip,
+            color: theme.ink,
+            borderColor: '#0f172a',
+            borderWidth: 1,
+            backgroundColor: '#f8fafc',
+          },
         },
         skill.name,
       ),
@@ -368,7 +458,11 @@ function renderOrderedSection(
   id: ResumeSectionId,
   theme: PdfTemplateTheme,
   t: T,
-  options: { heading?: string; techLight?: boolean; listSkills?: boolean } = {},
+  options: {
+    heading?: string
+    techLight?: boolean
+    skillsStyle?: PdfSkillsStyle
+  } = {},
 ): React.ReactElement | null {
   if (!hasSectionContent(data, id)) return null
 
@@ -406,19 +500,13 @@ function renderOrderedSection(
         View,
         { key: id, wrap: false, style: t.section },
         React.createElement(Text, { style: options.techLight ? t.techHeading : t.h2 }, options.heading || 'Skills'),
-        options.listSkills
-          ? React.createElement(
-              View,
-              null,
-              ...data.skills.map((skill) =>
-                React.createElement(
-                  Text,
-                  { key: skill.id, style: sx(t.body, { marginBottom: 3 }), wrap: false },
-                  `• ${skill.name}`,
-                ),
-              ),
-            )
-          : React.createElement(SkillsChips, { data, theme, t, tech: options.techLight }),
+        React.createElement(SkillsBlock, {
+          data,
+          theme,
+          t,
+          tech: options.techLight,
+          style: options.skillsStyle || 'chips',
+        }),
       )
     case 'achievements':
       return React.createElement(
@@ -477,22 +565,25 @@ function ContactRow({
   centered = false,
   separator = '·',
   linkColor,
+  textColor,
 }: {
   entries: ContactEntry[]
   t: T
   centered?: boolean
   separator?: string
   linkColor?: string
+  textColor?: string
 }) {
   if (!entries.length) return null
 
   const lineStyle = sx(t.contactLine, {
     textAlign: centered ? 'center' : 'left',
     marginBottom: 0,
+    ...(textColor ? { color: textColor } : {}),
   })
   const sepStyle = sx(lineStyle, {
     marginHorizontal: 5,
-    color: t.muted?.color || t.contactLine?.color,
+    color: textColor || t.muted?.color || t.contactLine?.color,
   })
 
   return React.createElement(
@@ -529,55 +620,142 @@ function ContactRow({
 function HeaderBlock({
   data,
   t,
-  centered = false,
+  theme,
+  chrome = 'plain',
+  displayName = false,
 }: {
   data: BuilderResumeData
   t: T
-  centered?: boolean
+  theme: PdfTemplateTheme
+  chrome?: PdfHeaderChrome
+  displayName?: boolean
 }) {
   const p = data.personalInfo
   const entries = buildContactEntries(p)
   const linkColor = t.subtitle?.color || t.h2?.color
+  const name = p.fullName || data.name || 'Resume'
+  const centered = chrome === 'centered' || chrome === 'rules' || chrome === 'banner'
 
-  if (centered) {
-    return React.createElement(
-      View,
-      {
-        wrap: false,
-        style: { marginBottom: 10, alignItems: 'center' },
-      },
-      React.createElement(Text, { style: sx(t.h1, { textAlign: 'center' }) }, p.fullName || data.name || 'Resume'),
-      p.jobTitle
-        ? React.createElement(Text, { style: sx(t.subtitle, { textAlign: 'center', marginBottom: 6 }) }, p.jobTitle)
-        : null,
-      React.createElement(ContactRow, {
-        entries,
-        t,
-        centered: true,
-        separator: '|',
-        linkColor,
-      }),
-    )
-  }
-
-  return React.createElement(
+  const nameBlock = React.createElement(
     View,
     {
       wrap: false,
-      style: { marginBottom: 10 },
+      style: {
+        marginBottom: chrome === 'band' ? 0 : 10,
+        alignItems: centered ? 'center' : 'flex-start',
+      },
     },
-    React.createElement(Text, { style: t.h1 }, p.fullName || data.name || 'Resume'),
+    React.createElement(
+      Text,
+      {
+        style: sx(t.h1, {
+          textAlign: centered ? 'center' : 'left',
+          fontSize: displayName ? 26 : t.h1.fontSize,
+          letterSpacing: displayName ? -0.4 : t.h1.letterSpacing,
+          color: chrome === 'band' ? '#ffffff' : theme.ink,
+        }),
+      },
+      name,
+    ),
     p.jobTitle
-      ? React.createElement(Text, { style: sx(t.subtitle, { marginBottom: 6 }) }, p.jobTitle)
+      ? React.createElement(
+          Text,
+          {
+            style: sx(t.subtitle, {
+              textAlign: centered ? 'center' : 'left',
+              marginBottom: 6,
+              color: chrome === 'band' ? '#cbd5e1' : theme.brand,
+            }),
+          },
+          p.jobTitle,
+        )
       : null,
     React.createElement(ContactRow, {
       entries,
       t,
-      centered: false,
-      separator: '·',
-      linkColor,
+      centered,
+      separator: centered ? '|' : '·',
+      linkColor: chrome === 'band' ? '#e2e8f0' : linkColor,
+      textColor: chrome === 'band' ? '#e2e8f0' : undefined,
     }),
   )
+
+  if (chrome === 'band') {
+    const padX = (t.page.paddingLeft as number) || 36
+    const padY = (t.page.paddingTop as number) || 28
+    return React.createElement(
+      View,
+      {
+        wrap: false,
+        style: {
+          marginBottom: 14,
+          // Pull into page padding so the band is flush on page 1 only;
+          // later pages keep normal top padding (header is not repeated).
+          marginTop: -padY,
+          marginHorizontal: -padX,
+          paddingHorizontal: padX,
+          paddingTop: padY,
+          paddingBottom: 18,
+          backgroundColor: theme.ink,
+        },
+      },
+      nameBlock,
+    )
+  }
+
+  if (chrome === 'rules') {
+    return React.createElement(
+      View,
+      { wrap: false, style: { marginBottom: 12 } },
+      React.createElement(View, {
+        style: { height: 2, backgroundColor: '#0f172a', marginBottom: 10 },
+      }),
+      nameBlock,
+      React.createElement(View, {
+        style: { height: 2, backgroundColor: '#0f172a', marginTop: 2 },
+      }),
+    )
+  }
+
+  if (chrome === 'banner') {
+    const padX = (t.page.paddingLeft as number) || 36
+    const padY = (t.page.paddingTop as number) || 28
+    return React.createElement(
+      View,
+      { wrap: false, style: { marginBottom: 12 } },
+      React.createElement(View, {
+        style: {
+          height: 18 + padY,
+          backgroundColor: theme.ink,
+          marginTop: -padY,
+          marginHorizontal: -padX,
+          marginBottom: 12,
+        },
+      }),
+      nameBlock,
+    )
+  }
+
+  if (chrome === 'accent-bar') {
+    const padX = (t.page.paddingLeft as number) || 36
+    const padY = (t.page.paddingTop as number) || 28
+    return React.createElement(
+      View,
+      { wrap: false, style: { marginBottom: 12 } },
+      React.createElement(View, {
+        style: {
+          height: 4 + padY,
+          backgroundColor: theme.brand,
+          marginTop: -padY,
+          marginHorizontal: -padX,
+          marginBottom: 12,
+        },
+      }),
+      nameBlock,
+    )
+  }
+
+  return nameBlock
 }
 
 function MinimalResume({
@@ -585,17 +763,31 @@ function MinimalResume({
   order,
   theme,
   t,
+  headerChrome = 'plain',
+  skillsStyle = 'chips',
+  displayName = false,
 }: {
   data: BuilderResumeData
   order: ResumeSectionId[]
   theme: PdfTemplateTheme
   t: T
+  headerChrome?: PdfHeaderChrome
+  skillsStyle?: PdfSkillsStyle
+  displayName?: boolean
 }) {
+  const pageStyle = t.page
+
   return React.createElement(
     Page,
-    { size: 'A4', style: t.page, wrap: true },
-    React.createElement(HeaderBlock, { data, t }),
-    ...order.map((id) => renderOrderedSection(data, id, theme, t)).filter(Boolean),
+    { size: 'A4', style: pageStyle, wrap: true },
+    React.createElement(HeaderBlock, { data, t, theme, chrome: headerChrome, displayName }),
+    ...order
+      .map((id) =>
+        renderOrderedSection(data, id, theme, t, {
+          skillsStyle: id === 'skills' ? skillsStyle : undefined,
+        }),
+      )
+      .filter(Boolean),
   )
 }
 
@@ -604,49 +796,60 @@ function ModernResume({
   order,
   theme,
   t,
+  headerChrome = 'centered',
+  skillsStyle = 'list',
+  displayName = false,
 }: {
   data: BuilderResumeData
   order: ResumeSectionId[]
   theme: PdfTemplateTheme
   t: T
+  headerChrome?: PdfHeaderChrome
+  skillsStyle?: PdfSkillsStyle
+  displayName?: boolean
 }) {
   const leftIds = order.filter((id) => id === 'education' || id === 'skills')
   const rightIds = order.filter((id) => id !== 'education' && id !== 'skills')
+  const pageStyle = t.page
 
   return React.createElement(
     Page,
-    { size: 'A4', style: t.page, wrap: true },
-    React.createElement(HeaderBlock, { data, t, centered: true }),
+    { size: 'A4', style: pageStyle, wrap: true },
+    React.createElement(HeaderBlock, { data, t, theme, chrome: headerChrome, displayName }),
     React.createElement(
       View,
       { style: { position: 'relative' } },
       React.createElement(
         View,
-        { 
+        {
           style: [
-            t.modernLeft, 
-            { 
-              position: 'absolute', 
-              top: 0, 
+            t.modernLeft,
+            {
+              position: 'absolute',
+              top: 0,
               left: 0,
               paddingRight: 18,
-            }
-          ] 
+            },
+          ],
         },
         ...leftIds
-          .map((id) => renderOrderedSection(data, id, theme, t, { listSkills: id === 'skills' }))
+          .map((id) =>
+            renderOrderedSection(data, id, theme, t, {
+              skillsStyle: id === 'skills' ? skillsStyle : undefined,
+            }),
+          )
           .filter(Boolean),
       ),
       React.createElement(
         View,
-        { 
+        {
           style: [
-            t.modernRight, 
-            { 
-              marginLeft: '34%', 
-              minHeight: 100, // Ensure the right column takes up space even if empty on page 1
-            }
-          ] 
+            t.modernRight,
+            {
+              marginLeft: '34%',
+              minHeight: 100,
+            },
+          ],
         },
         ...rightIds
           .map((id) =>
@@ -655,8 +858,8 @@ function ModernResume({
             }),
           )
           .filter(Boolean),
-      )
-    )
+      ),
+    ),
   )
 }
 
@@ -787,7 +990,7 @@ export function createResumePdfDocument(raw: BuilderResumeData) {
   const templateSlug = resolveTemplateSlug(data)
   const profile: PdfTemplateProfile = getPdfTemplateProfile(templateSlug)
   const order = normalizeSectionsOrder(data.sectionsOrder, data.customSections || [])
-  const t = themed(profile.theme, data.spacingPreset)
+  const t = themed(profile.theme, data)
   const theme = profile.theme
 
   let page: React.ReactElement
@@ -800,9 +1003,25 @@ export function createResumePdfDocument(raw: BuilderResumeData) {
       sidebarSide: profile.sidebarSide || 'left',
     })
   } else if (profile.variety === 'modern') {
-    page = React.createElement(ModernResume, { data, order, theme, t })
+    page = React.createElement(ModernResume, {
+      data,
+      order,
+      theme,
+      t,
+      headerChrome: profile.headerChrome || 'centered',
+      skillsStyle: profile.skillsStyle || 'list',
+      displayName: profile.displayName,
+    })
   } else {
-    page = React.createElement(MinimalResume, { data, order, theme, t })
+    page = React.createElement(MinimalResume, {
+      data,
+      order,
+      theme,
+      t,
+      headerChrome: profile.headerChrome || 'plain',
+      skillsStyle: profile.skillsStyle || 'chips',
+      displayName: profile.displayName,
+    })
   }
 
   return React.createElement(

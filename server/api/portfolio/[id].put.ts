@@ -1,6 +1,7 @@
 import { requireUser } from '~/server/utils/auth'
 import { sanitizeProfileData, updatePortfolioForUser } from '~/server/utils/portfolios'
 import { isPortfolioTemplateSlug } from '~/shared/types/portfolio'
+import { resolvePortfolioTemplateForPlan } from '~/server/utils/planLimits'
 
 /**
  * PUT /api/portfolio/:id — owner-scoped update of a saved portfolio's design
@@ -27,8 +28,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Full name cannot be empty' })
   }
 
+  const templateSlug = resolvePortfolioTemplateForPlan(user, body.templateSlug!)
+
   const portfolio = await updatePortfolioForUser(id, user.id, {
-    templateSlug: body.templateSlug!,
+    templateSlug,
     profileData,
   })
   if (!portfolio) {

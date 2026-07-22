@@ -2,6 +2,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import mammoth from 'mammoth'
 import { query } from './db'
+import {
+  MAX_UPLOAD_PAGES,
+  estimatePagesFromText,
+} from '~/shared/uploadLimits'
 
 export type DocumentType = 'resume' | 'cover_letter'
 
@@ -26,27 +30,51 @@ const ALLOWED_MIME = new Set([
 
 const MAX_CONTENT_CHARS = 200_000
 
-/** Netlify / Lambda: only /tmp is writable; app dirs under /var/task are read-only. */
-function isServerlessReadonlyFs(): boolean {
-  return Boolean(
-    process.env.NETLIFY ||
-      process.env.AWS_LAMBDA_FUNCTION_NAME ||
-      process.env.LAMBDA_TASK_ROOT ||
-      process.cwd().startsWith('/var/task'),
-  )
+export { MAX_UPLOAD_PAGES }
+
+function assertPageLimit(pageCount: number) {
+  if (pageCount > MAX_UPLOAD_PAGES) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `Document is too long (${pageCount} pages). Please upload a file of ${MAX_UPLOAD_PAGES} pages or fewer.`,
+    })
+  }
 }
 
-function localDataDir(): string | null {
-  if (isServerlessReadonlyFs()) return null
-  return path.join(process.cwd(), '.data')
+/** Reject pasted / extracted text that estimates over MAX_UPLOAD_PAGES. */
+export function assertTextPageLimit(contentText: string) {
+  assertPageLimit(estimatePagesFromText(contentText))
 }
 
-function docsMetaPath(): string | null {
-  const dir = localDataDir()
-  return dir ? path.join(dir, 'documents.json') : null
+/**
+ * Reject PDFs (and estimated DOCX/TXT length) over MAX_UPLOAD_PAGES.
+ * Call before AI / storage for any resume-like upload.
+ */
+export async function assertUploadPageLimit(
+  buffer: Buffer,
+  mimeType: string,
+  filename: string,
+): Promise<void> {
+  const lower = filename.toLowerCase()
+
+  if (mimeType === 'application/pdf' || lower.endsWith('.pdf')) {
+    const pdfParse = await loadPdfParse()
+    const parsed = await pdfParse(buffer)
+    const pages =
+      typeof parsed.numpages === 'number' && parsed.numpages > 0
+        ? parsed.numpages
+        : estimatePagesFromText(parsed.text || '')
+    assertPageLimit(pages)
+    return
+  }
+
+  // DOCX / TXT — no reliable page metadata; estimate from extracted text length
+  const text = await extractTextFromUploadUnchecked(buffer, mimeType, filename)
+  assertPageLimit(estimatePagesFromText(text))
 }
 
-export async function extractTextFromUpload(
+/** Extract text without page-limit check (internal). */
+async function extractTextFromUploadUnchecked(
   buffer: Buffer,
   mimeType: string,
   filename: string,
@@ -79,6 +107,49 @@ export async function extractTextFromUpload(
     statusCode: 400,
     statusMessage: 'Unsupported file type. Upload PDF, DOCX, or TXT.',
   })
+}
+
+export async function extractTextFromUpload(
+  buffer: Buffer,
+  mimeType: string,
+  filename: string,
+): Promise<string> {
+  const lower = filename.toLowerCase()
+
+  if (mimeType === 'application/pdf' || lower.endsWith('.pdf')) {
+    const pdfParse = await loadPdfParse()
+    const parsed = await pdfParse(buffer)
+    const pages =
+      typeof parsed.numpages === 'number' && parsed.numpages > 0
+        ? parsed.numpages
+        : estimatePagesFromText(parsed.text || '')
+    assertPageLimit(pages)
+    return cleanExtractedText(parsed.text || '')
+  }
+
+  const text = await extractTextFromUploadUnchecked(buffer, mimeType, filename)
+  assertPageLimit(estimatePagesFromText(text))
+  return text
+}
+
+/** Netlify / Lambda: only /tmp is writable; app dirs under /var/task are read-only. */
+function isServerlessReadonlyFs(): boolean {
+  return Boolean(
+    process.env.NETLIFY ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.cwd().startsWith('/var/task'),
+  )
+}
+
+function localDataDir(): string | null {
+  if (isServerlessReadonlyFs()) return null
+  return path.join(process.cwd(), '.data')
+}
+
+function docsMetaPath(): string | null {
+  const dir = localDataDir()
+  return dir ? path.join(dir, 'documents.json') : null
 }
 
 export function assertAllowedUpload(mimeType: string, filename: string) {
@@ -309,8 +380,10 @@ async function loadLocalDocuments(): Promise<{
 
 async function loadPdfParse() {
   const mod = await import('pdf-parse')
-  const pdfParse = (mod as { default?: (buf: Buffer) => Promise<{ text: string }> }).default || mod
-  return pdfParse as (buf: Buffer) => Promise<{ text: string }>
+  const pdfParse =
+    (mod as { default?: (buf: Buffer) => Promise<{ text: string; numpages?: number }> }).default ||
+    mod
+  return pdfParse as (buf: Buffer) => Promise<{ text: string; numpages?: number }>
 }
 
 function mapDocument(row: {

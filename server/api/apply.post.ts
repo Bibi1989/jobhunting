@@ -4,6 +4,7 @@ import {
   generateFromPdfResume,
 } from '../utils/documentEngine'
 import { resolveGeminiModel } from '../utils/gemini'
+import { assertUploadPageLimit } from '../utils/documents'
 import { withCredits } from '../utils/withCredits'
 
 function partText(part?: { data?: Buffer | Uint8Array }): string {
@@ -79,6 +80,19 @@ export default withCredits(async (event) => {
           statusCode: 400,
           statusMessage: 'PDF is too large (max ~45MB for inline Gemini upload)',
         })
+      }
+
+      await assertUploadPageLimit(
+        resumeBuffer,
+        resumePart?.type || 'application/pdf',
+        resumePart?.filename || 'resume.pdf',
+      )
+      if (coverBuffer && isPdfPart(coverLetterPart, coverBuffer)) {
+        await assertUploadPageLimit(
+          coverBuffer,
+          coverLetterPart?.type || 'application/pdf',
+          coverLetterPart?.filename || 'cover-letter.pdf',
+        )
       }
 
       const docs = await generateFromPdfResume({

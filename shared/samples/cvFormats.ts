@@ -111,8 +111,8 @@ export const CV_FORMATS: CvFormat[] = [
   {
     id: 'the-partner',
     name: 'The Partner',
-    description: 'Centered header with dual horizontal line accents and a traditional elegant serif layout.',
-    bestFor: 'Legal, consulting partners, and advisory roles',
+    description: 'Centered header with dual horizontal line accents and a traditional elegant layout.',
+    bestFor: 'Legal, consulting partners, brand, and advisory roles',
   },
   {
     id: 'the-innovator',
@@ -129,25 +129,19 @@ export const CV_FORMATS: CvFormat[] = [
   {
     id: 'the-social-media-pro',
     name: 'The Social Media Pro',
-    description: 'Vibrant geometric gradient top banner, rounded profile picture overlap, and modern social accents.',
+    description: 'Top banner strip with a two-column modern layout.',
     bestFor: 'Social media, digital marketing, content creators, and PR pros',
-  },
-  {
-    id: 'the-brand-architect',
-    name: 'The Brand Architect',
-    description: 'Architectural monogram background layout with asymmetric layout details.',
-    bestFor: 'Brand strategists, art directors, and luxury market designers',
   },
   {
     id: 'the-typographer',
     name: 'The Typographer',
-    description: 'Typography-first editorial layout with bold black lines and large tight headings.',
+    description: 'Typography-first editorial layout with a large name and inline skills.',
     bestFor: 'Editorial designers, copywriters, and print journalists',
   },
   {
     id: 'the-researcher',
     name: 'The Researcher',
-    description: 'Traditional academic CV prioritizing academic appointments, publication lists, and methods.',
+    description: 'Traditional academic CV prioritizing appointments, publications, and methods.',
     bestFor: 'Postdocs, researchers, professors, and academic fellows',
   },
   {
@@ -159,19 +153,18 @@ export const CV_FORMATS: CvFormat[] = [
   {
     id: 'the-distinguished',
     name: 'The Distinguished',
-    description: 'Traditional serif design with top color line accent and custom bibliography notes.',
+    description: 'Top accent bar with a two-column split for skills and experience.',
     bestFor: 'Distinguished specialists, executives, and senior advisors',
-  },
-  {
-    id: 'the-researcher-updated',
-    name: 'The Researcher (Updated)',
-    description: 'Cleaned-up version of the traditional academic CV layout with improved grid spacing.',
-    bestFor: 'Medical researchers, scientists, and senior academic staff',
   },
 ]
 
 export function getCvFormat(id?: string): CvFormat {
-  return CV_FORMATS.find((f) => f.id === id) || CV_FORMATS[0]
+  const aliases: Record<string, string> = {
+    'the-brand-architect': 'the-partner',
+    'the-researcher-updated': 'the-researcher',
+  }
+  const resolved = aliases[id || ''] || id
+  return CV_FORMATS.find((f) => f.id === resolved) || CV_FORMATS[0]
 }
 
 /** Stable sample used for format picker previews. */

@@ -197,7 +197,6 @@ ${JSON.stringify(
             responseMimeType: 'application/json',
             responseSchema: ANSWERS_SCHEMA,
             temperature: 0.35,
-            maxOutputTokens: 12288,
           },
         }),
       async () => {

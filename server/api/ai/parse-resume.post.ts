@@ -1,5 +1,6 @@
 import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { parseModelJson } from '../../utils/jsonParse'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
 
@@ -21,7 +22,7 @@ export default withCredits(async (event) => {
 
   const ai = createGeminiClient()
   const model = resolveGeminiParsekitModel()
-  const prompt = withCareerExpertPrompt(`I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
+  const prompt = `I will provide you with the raw text extracted from a user's uploaded resume (PDF/Word/txt).
 Your task is to parse this text and structure it into a valid JSON object representing the resume data.
 
 Today's date is ${todayIso} (${todayLabel}). Use this as "now" when interpreting dates:
@@ -38,12 +39,14 @@ Rules:
 - Extract projects and achievements if present.
 - Generate a unique string UUID for the 'id' field of every experience, education, skill, project, achievement, or custom item.
 - For all long-form text fields like summaries or job descriptions, format the content as semantic HTML (e.g., using <p>, <ul>, <li>, <strong>) instead of markdown.
+- Keep HTML descriptions concise (aim for 3–5 short bullets per role) so the JSON stays complete.
 - Do NOT make up any fake work experience or education. Only use what is provided in the text.
 - If the text is messy, do your best to clean it up and enhance the bullet points slightly for professional tone without changing the facts.
+- Return COMPLETE valid JSON only — never truncate mid-string.
 
 Raw Resume Text:
 """
-${rawText.slice(0, 15000)}
+${rawText.slice(0, 12000)}
 """
 
 The output JSON MUST follow this exact schema structure:
@@ -72,7 +75,7 @@ The output JSON MUST follow this exact schema structure:
   "achievements": [],
   "customSections": []
 }
-`)
+`
 
   try {
     const response = await ai.models.generateContent({
@@ -85,7 +88,7 @@ The output JSON MUST follow this exact schema structure:
     })
 
     const raw = (response.text || '').trim()
-    const parsed = JSON.parse(raw) as Partial<BuilderResumeData>
+    const parsed = parseModelJson<Partial<BuilderResumeData>>(raw)
 
     // Ensure required arrays exist
     if (!Array.isArray(parsed.experience)) parsed.experience = []

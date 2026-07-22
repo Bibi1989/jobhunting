@@ -28,10 +28,17 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const toast = useAppToast()
 const { confirm } = useAppConfirm()
+const { isPro, isAdmin } = useSaaS()
 const { data: documents, pending, refresh } = useFetch<BuilderDocCard[]>('/api/builder/documents')
 const deletingKey = ref<string | null>(null)
 const favoritingKey = ref<string | null>(null)
 const showFavoritesOnly = ref(false)
+
+const unlimitedProjects = computed(() => isPro.value || isAdmin.value)
+const hasResume = computed(() => (documents.value || []).some((d) => d.type === 'resume'))
+const hasCoverLetter = computed(() => (documents.value || []).some((d) => d.type === 'cover_letter'))
+const canCreateResume = computed(() => unlimitedProjects.value || !hasResume.value)
+const canCreateCoverLetter = computed(() => unlimitedProjects.value || !hasCoverLetter.value)
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -112,21 +119,55 @@ async function deleteDocument(doc: BuilderDocCard) {
         </header>
 
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <NuxtLink to="/builder/resume/new" class="group relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/20 rounded-xl hover:border-blue-400 hover:bg-white/10 transition-all cursor-pointer">
+          <NuxtLink
+            v-if="canCreateResume"
+            to="/builder/resume/new"
+            class="group relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/20 rounded-xl hover:border-blue-400 hover:bg-white/10 transition-all cursor-pointer"
+          >
             <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(59,130,246,0.5)]">
               <span class="material-symbols-outlined">add</span>
             </div>
             <span class="font-semibold text-white">New Resume</span>
             <span class="text-sm text-blue-200/60 mt-1">Start from professional templates</span>
           </NuxtLink>
+          <div
+            v-else
+            class="relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/10 rounded-xl opacity-80"
+          >
+            <div class="w-12 h-12 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center mb-4">
+              <span class="material-symbols-outlined">lock</span>
+            </div>
+            <span class="font-semibold text-white">Resume limit reached</span>
+            <span class="text-sm text-blue-200/60 mt-1 text-center px-6">Free plan allows 1 resume. Edit yours below, or upgrade for unlimited.</span>
+            <NuxtLink to="/pricing" class="mt-3 text-sm font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2">
+              Upgrade to Pro
+            </NuxtLink>
+          </div>
 
-          <NuxtLink to="/builder/cover-letter/new" class="group relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/20 rounded-xl hover:border-indigo-400 hover:bg-white/10 transition-all cursor-pointer">
+          <NuxtLink
+            v-if="canCreateCoverLetter"
+            to="/builder/cover-letter/new"
+            class="group relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/20 rounded-xl hover:border-indigo-400 hover:bg-white/10 transition-all cursor-pointer"
+          >
             <div class="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(99,102,241,0.5)]">
               <span class="material-symbols-outlined">description</span>
             </div>
             <span class="font-semibold text-white">New Cover Letter</span>
             <span class="text-sm text-blue-200/60 mt-1">AI-powered writing assistant</span>
           </NuxtLink>
+          <div
+            v-else
+            class="relative flex flex-col items-center justify-center h-64 bg-white/5 backdrop-blur-md border-2 border-dashed border-white/10 rounded-xl opacity-80"
+          >
+            <div class="w-12 h-12 rounded-full bg-slate-700 text-slate-300 flex items-center justify-center mb-4">
+              <span class="material-symbols-outlined">lock</span>
+            </div>
+            <span class="font-semibold text-white">Cover letter limit reached</span>
+            <span class="text-sm text-blue-200/60 mt-1 text-center px-6">Free plan allows 1 cover letter. Edit yours below, or upgrade for unlimited.</span>
+            <NuxtLink to="/pricing" class="mt-3 text-sm font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2">
+              Upgrade to Pro
+            </NuxtLink>
+          </div>
 
           <div class="h-64 bg-blue-600/20 backdrop-blur-md border border-blue-500/30 text-white p-6 rounded-xl flex flex-col justify-between overflow-hidden relative shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
             <div class="z-10">

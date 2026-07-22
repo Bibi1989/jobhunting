@@ -1,5 +1,5 @@
 import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 
 export default withCredits(async (event) => {
@@ -107,7 +107,7 @@ Instructions:
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: withCareerExpertPrompt(task),
+      contents: task,
       config: careerExpertGenerateConfig({
         temperature: 0.7,
       }),

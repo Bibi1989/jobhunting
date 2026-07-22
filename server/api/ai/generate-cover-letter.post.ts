@@ -1,5 +1,8 @@
 import { createGeminiClient, resolveGeminiModelChain } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import {
+  careerExpertGenerateConfig,
+  resumeGroundingBlock,
+} from '../../utils/careerExpertPrompt'
 import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
 
@@ -69,7 +72,7 @@ MODE: AI ENHANCEMENT (not a blank rewrite from scratch).
 Improve and tighten the applicant's existing draft below while preserving their voice and intent.
 Keep structure unless clarity clearly benefits from light reorganization.
 Existing draft HTML:
-${currentContent}
+${String(currentContent).slice(0, 4000)}
 `
     : `
 MODE: Create a strong first draft from the available resume and/or job details.
@@ -85,10 +88,30 @@ ${extraInstructions}
   const salutationName = (hiringManager || 'Hiring Manager').toString().trim() || 'Hiring Manager'
   const companyLabel = company || 'the hiring organization'
 
-  const rawResumeBlock =
-    typeof rawResumeText === 'string' && rawResumeText.trim().length > 40
-      ? `\nRaw resume text (use as additional grounding; do not invent facts):\n${rawResumeText.trim().slice(0, 12000)}\n`
-      : ''
+  // Prefer compact structured fields; only fall back to raw text when thin
+  const structuredEnough =
+    String(personalInfo.fullName || '').trim().length > 1 &&
+    (experiences.length > 0 || String(personalInfo.summary || '').replace(/<[^>]+>/g, '').trim().length > 20)
+
+  const resumeContext = structuredEnough
+    ? `Applicant Information (from their Resume):
+Name: ${personalInfo.fullName || 'Applicant'}
+Job Title: ${personalInfo.jobTitle || ''}
+Email: ${personalInfo.email || ''}
+Phone: ${personalInfo.phone || ''}
+Location: ${personalInfo.location || ''}
+Summary: ${String(personalInfo.summary || '').slice(0, 2000)}
+
+Experiences:
+${JSON.stringify(experiences.slice(0, 6), null, 2).slice(0, 8000)}
+
+Education:
+${JSON.stringify(education.slice(0, 4), null, 2).slice(0, 2000)}
+
+Skills:
+${JSON.stringify(skills.slice(0, 24), null, 2).slice(0, 1500)}
+`
+    : resumeGroundingBlock(resumeData, rawResumeText, { jsonMax: 10000, rawMax: 8000 })
 
   const sourceNote = [
     resumeOk ? 'resume/profile details are available' : 'no detailed resume — write a strong generic-but-professional letter',
@@ -110,32 +133,16 @@ ${extraInstructions}
 - PERSONALITY PRESET: Tech Expert. Deepen technical descriptions. Highlight specific libraries, databases, frameworks, system reliability, or complex architecture decisions.`
   }
 
-  const prompt = withCareerExpertPrompt(`Your task is to produce a highly persuasive, customized cover letter for a job applicant.
+  const prompt = `Your task is to produce a highly persuasive, customized cover letter for a job applicant.
 Context: ${sourceNote}.
 ${presetRules}
 
-Applicant Information (from their Resume):
-Name: ${personalInfo.fullName || 'Applicant'}
-Job Title: ${personalInfo.jobTitle || ''}
-Email: ${personalInfo.email || ''}
-Phone: ${personalInfo.phone || ''}
-Location: ${personalInfo.location || ''}
-Summary: ${personalInfo.summary || ''}
-
-Experiences:
-${JSON.stringify(experiences, null, 2)}
-
-Education:
-${JSON.stringify(education, null, 2)}
-
-Skills:
-${JSON.stringify(skills, null, 2)}
-${rawResumeBlock}
+${resumeContext}
 Target Job Details:
 Company Name: ${companyLabel}
 Hiring Manager: ${salutationName}
 Job Description:
-${jd || '(Not provided — draft a compelling letter from the resume/profile alone, suitable for a general application.)'}
+${(jd || '(Not provided — draft a compelling letter from the resume/profile alone, suitable for a general application.)').slice(0, 8000)}
 
 Tone requested: ${tone || 'professional'} (adjust your writing style to be strictly ${tone || 'professional'}).
 ${enhanceBlock}
@@ -156,7 +163,7 @@ CRITICAL INSTRUCTIONS:
 - Mirror exact technical keywords, tools, and terminology from the Job Description naturally.
 - Ensure the tone matches the requested tone exactly.
 - Keep the letter concise (about 250–350 words) so it fits on a single A4 page with a standard header.
-- Output ONLY the HTML string. Do not include any other conversational text.`)
+- Output ONLY the HTML string. Do not include any other conversational text.`
 
   let lastError: unknown = null
   for (const model of models) {

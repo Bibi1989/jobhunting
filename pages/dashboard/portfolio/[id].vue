@@ -2,6 +2,7 @@
 import {
   PORTFOLIO_TEMPLATES,
   PORTFOLIO_COLORS,
+  DEFAULT_TEMPLATE_SLUG,
   orderedBodySections,
   type Portfolio,
   type PortfolioCustomSection,
@@ -17,6 +18,8 @@ definePageMeta({ layout: 'dashboard' })
 const route = useRoute()
 const toast = useAppToast()
 const { confirm } = useAppConfirm()
+const { isPro, isAdmin } = useSaaS()
+const unlocked = computed(() => isPro.value || isAdmin.value)
 const {
   canUndo: canUndoAi,
   lastLabel: lastAiUndoLabel,
@@ -108,9 +111,21 @@ watchEffect(() => {
 
     // Materialize the full explicit section order (source of truth for reordering).
     form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
-    templateSlug.value = p.templateSlug
+    templateSlug.value = unlocked.value ? p.templateSlug : DEFAULT_TEMPLATE_SLUG
   }
 })
+
+watch(unlocked, (pro) => {
+  if (!pro) templateSlug.value = DEFAULT_TEMPLATE_SLUG
+})
+
+function selectTemplate(slug: string) {
+  if (!unlocked.value && slug !== DEFAULT_TEMPLATE_SLUG) {
+    toast.info('Upgrade to Pro to unlock all portfolio templates.')
+    return
+  }
+  templateSlug.value = slug
+}
 
 const requestUrl = useRequestURL()
 const origin = computed(() => requestUrl.origin)
@@ -483,17 +498,24 @@ const inputClass =
             <div
               v-for="template in PORTFOLIO_TEMPLATES"
               :key="template.slug"
-              class="group rounded-xl border overflow-hidden bg-white/[0.02] cursor-pointer transition"
-              :class="templateSlug === template.slug ? 'border-blue-400 ring-2 ring-blue-400/40' : 'border-white/10 hover:border-white/25'"
+              class="group rounded-xl border overflow-hidden bg-white/[0.02] transition"
+              :class="[
+                templateSlug === template.slug ? 'border-blue-400 ring-2 ring-blue-400/40' : 'border-white/10 hover:border-white/25',
+                !unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG ? 'opacity-60' : 'cursor-pointer',
+              ]"
               role="button"
               tabindex="0"
-              @click="templateSlug = template.slug"
-              @keydown.enter="templateSlug = template.slug"
+              @click="selectTemplate(template.slug)"
+              @keydown.enter="selectTemplate(template.slug)"
             >
               <div class="relative h-24 overflow-hidden border-b border-white/10 bg-slate-900">
                 <div class="absolute top-0 left-0 origin-top-left pointer-events-none" style="width: 500%; height: 500%; transform: scale(0.2);">
                   <PortfolioRenderer :slug="template.slug" :data="form" />
                 </div>
+                <span
+                  v-if="!unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG"
+                  class="absolute top-1 right-1 text-[9px] font-bold uppercase tracking-wider rounded px-1 py-0.5 bg-amber-500/90 text-slate-950"
+                >Pro</span>
                 <button
                   type="button"
                   class="absolute bottom-1 right-1 text-[10px] font-semibold rounded bg-white/90 text-slate-900 px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition"
@@ -509,6 +531,11 @@ const inputClass =
               </div>
             </div>
           </div>
+          <p v-if="!unlocked" class="mt-3 text-xs text-blue-200/50">
+            Free plan uses the Visionary template.
+            <NuxtLink to="/pricing" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Upgrade to Pro</NuxtLink>
+            for all designs.
+          </p>
         </section>
 
         <!-- Color Theme -->

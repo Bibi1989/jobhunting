@@ -1,7 +1,15 @@
 /**
  * Default system instruction for all resume / cover letter / interview AI.
  * Keep facts grounded; quality comes from this persona + GEMINI_MODEL from env.
+ *
+ * Cost rule: put the persona in `systemInstruction` via `careerExpertGenerateConfig`
+ * only. Do NOT also wrap the user task with `withCareerExpertPrompt` — that doubles
+ * input tokens on every call.
+ *
+ * Do not set maxOutputTokens on Gemini calls — upload length is capped at
+ * 3 pages instead (see shared/uploadLimits.ts).
  */
+
 export function getCareerExpertSystemInstruction(): string {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -33,13 +41,13 @@ Your defaults:
 
 export const CAREER_EXPERT_SYSTEM_INSTRUCTION = getCareerExpertSystemInstruction()
 
-/** Prepend the career-expert persona to a task-specific user prompt. */
+/**
+ * @deprecated Prefer passing the task as `contents` with `careerExpertGenerateConfig`
+ * so the persona is only sent once via systemInstruction.
+ * Kept for callers that do not use systemInstruction.
+ */
 export function withCareerExpertPrompt(taskPrompt: string): string {
-  return `${getCareerExpertSystemInstruction()}
-
----
-
-${taskPrompt}`
+  return taskPrompt
 }
 
 /** Gemini generateContent config fragment with the default system instruction. */
@@ -50,4 +58,40 @@ export function careerExpertGenerateConfig(
     systemInstruction: getCareerExpertSystemInstruction(),
     ...extra,
   }
+}
+
+/** Prefer structured resume JSON; only add raw text when structure is thin. */
+export function resumeGroundingBlock(
+  resumeJson: unknown,
+  rawResumeText: string | undefined,
+  opts?: { jsonMax?: number; rawMax?: number },
+): string {
+  const jsonMax = opts?.jsonMax ?? 14000
+  const rawMax = opts?.rawMax ?? 8000
+  const json =
+    resumeJson && typeof resumeJson === 'object'
+      ? JSON.stringify(resumeJson).slice(0, jsonMax)
+      : ''
+  const raw =
+    typeof rawResumeText === 'string' && rawResumeText.trim().length > 40
+      ? rawResumeText.trim()
+      : ''
+
+  const structuredEnough =
+    json.length > 400 ||
+    (resumeJson &&
+      typeof resumeJson === 'object' &&
+      (Array.isArray((resumeJson as { experience?: unknown }).experience) &&
+        ((resumeJson as { experience: unknown[] }).experience?.length || 0) > 0))
+
+  if (structuredEnough && json) {
+    return `Current resume JSON:\n"""\n${json}\n"""\n`
+  }
+  if (raw) {
+    return `Raw resume text (grounding — do not invent facts):\n"""\n${raw.slice(0, rawMax)}\n"""\n`
+  }
+  if (json) {
+    return `Current resume JSON:\n"""\n${json}\n"""\n`
+  }
+  return ''
 }

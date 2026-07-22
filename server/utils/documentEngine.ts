@@ -144,7 +144,6 @@ ${input.jobDescription.slice(0, 14000)}`
         responseMimeType: 'application/json',
         responseSchema: DOCUMENTS_SCHEMA,
         temperature: 0.3,
-        maxOutputTokens: 16384,
       },
     })
 
@@ -179,7 +178,6 @@ ${input.jobDescription.slice(0, 12000)}`,
         responseMimeType: 'application/json',
         responseSchema: JOB_SIGNALS_SCHEMA,
         temperature: 0.2,
-        maxOutputTokens: 2048,
       },
     })
 

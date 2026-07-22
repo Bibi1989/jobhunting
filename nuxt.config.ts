@@ -44,8 +44,8 @@ export default defineNuxtConfig({
      * Secrets and model MUST come from env at runtime (Netlify / web/.env).
      * Do not bake API keys or production models into this file.
      *   GEMINI_API_KEY or NUXT_GEMINI_API_KEY
-     *   GEMINI_MODEL or NUXT_GEMINI_MODEL  (e.g. gemini-3.1-pro-preview)
-     *   GEMINI_MODEL_PARSEKIT or NUXT_GEMINI_MODEL_PARSEKIT  (parse / ATS; e.g. gemini-2.5-flash)
+     *   GEMINI_MODEL or NUXT_GEMINI_MODEL  (Pro drafts: resume / cover / portfolio / ATS fix)
+     *   GEMINI_MODEL_PARSEKIT or NUXT_GEMINI_MODEL_PARSEKIT  (Flash: parse / ATS check / email / enhance; default gemini-2.5-flash)
      */
     geminiApiKey: '',
     geminiModel: '',

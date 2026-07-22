@@ -1,6 +1,10 @@
 import { requireUser } from '~/server/utils/auth'
 import { createPortfolio, sanitizeProfileData } from '~/server/utils/portfolios'
 import { isPortfolioTemplateSlug } from '~/shared/types/portfolio'
+import {
+  assertFreePortfolioQuota,
+  resolvePortfolioTemplateForPlan,
+} from '~/server/utils/planLimits'
 
 /**
  * POST /api/portfolio/save
@@ -20,9 +24,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'profileData is missing or malformed' })
   }
 
+  await assertFreePortfolioQuota(user)
+
+  const templateSlug = resolvePortfolioTemplateForPlan(user, body.templateSlug!)
+
   const portfolio = await createPortfolio({
     userId: user.id,
-    templateSlug: body.templateSlug!,
+    templateSlug,
     profileData: sanitizeProfileData(body.profileData),
   })
 

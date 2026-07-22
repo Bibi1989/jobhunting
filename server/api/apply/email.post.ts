@@ -4,6 +4,7 @@ import { renderPdfToBuffer } from '../../utils/pdf/renderPdf'
 import { withLayoutState } from '~/shared/pdf/schema'
 import { sendEmail } from '../../utils/email'
 import { withCredits } from '../../utils/withCredits'
+import { assertUploadPageLimit } from '../../utils/documents'
 
 type UploadedAttachment = {
   filename?: string
@@ -18,7 +19,7 @@ function safeFilename(name: string, fallback: string): string {
     .replace(/^-+|-+$/g, '') || fallback
 }
 
-function pushUploadedAttachment(
+async function pushUploadedAttachment(
   attachments: Array<{ content: string; filename: string }>,
   file: UploadedAttachment | undefined,
   fallbackName: string,
@@ -31,6 +32,15 @@ function pushUploadedAttachment(
       statusMessage: `Uploaded file "${fallbackName}" is missing or empty.`,
     })
   }
+  const buffer = Buffer.from(content, 'base64')
+  const mime =
+    String(file?.mimeType || '').trim() ||
+    (filename.endsWith('.pdf')
+      ? 'application/pdf'
+      : filename.endsWith('.docx')
+        ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/octet-stream')
+  await assertUploadPageLimit(buffer, mime, filename)
   attachments.push({ content, filename })
 }
 
@@ -67,7 +77,7 @@ export default withCredits(async (event) => {
 
   if (body?.attachResume) {
     if (body.resumeSource === 'upload') {
-      pushUploadedAttachment(attachments, body.uploadedResume, 'resume.pdf')
+      await pushUploadedAttachment(attachments, body.uploadedResume, 'resume.pdf')
     } else {
       if (!body.resume || typeof body.resume !== 'object') {
         throw createError({ statusCode: 400, statusMessage: 'Resume data is required to attach resume.' })
@@ -91,7 +101,7 @@ export default withCredits(async (event) => {
 
   if (body?.attachCoverLetter) {
     if (body.coverLetterSource === 'upload') {
-      pushUploadedAttachment(attachments, body.uploadedCoverLetter, 'cover-letter.pdf')
+      await pushUploadedAttachment(attachments, body.uploadedCoverLetter, 'cover-letter.pdf')
     } else {
       if (!body.resume || typeof body.resume !== 'object') {
         throw createError({ statusCode: 400, statusMessage: 'Resume context is required to attach cover letter.' })

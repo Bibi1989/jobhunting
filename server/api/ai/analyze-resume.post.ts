@@ -1,6 +1,7 @@
 import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
 import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
+import { isGeminiQuotaOrUnavailableError } from '../../utils/aiFallback'
 
 function hasUsableResume(resumeData: Record<string, unknown> | null | undefined, rawResumeText?: string) {
   if (typeof rawResumeText === 'string' && rawResumeText.trim().length > 40) return true
@@ -38,16 +39,16 @@ Base your score on:
 Provide 2-3 specific strengths and 2-4 specific areas for improvement based on the text.
 `
 
+  // Prefer structured JSON; only use raw when structure is thin
   let contentToAnalyze = ''
-  if (resumeData) {
-    contentToAnalyze += `Structured Resume Data:\n${JSON.stringify(resumeData, null, 2)}\n\n`
-  }
-  if (rawResumeText) {
-    contentToAnalyze += `Raw Extracted Text:\n${rawResumeText}`
+  if (resumeData && typeof resumeData === 'object') {
+    contentToAnalyze = `Structured Resume Data:\n${JSON.stringify(resumeData).slice(0, 12000)}`
+  } else if (typeof rawResumeText === 'string') {
+    contentToAnalyze = `Raw Extracted Text:\n${rawResumeText.slice(0, 10000)}`
   }
 
-  let result;
-  let lastError: any;
+  let result
+  let lastError: unknown
   for (const model of models) {
     try {
       result = await ai.models.generateContent({
@@ -62,26 +63,26 @@ Provide 2-3 specific strengths and 2-4 specific areas for improvement based on t
             properties: {
               score: { type: 'number', description: 'Score between 0 and 100' },
               strengths: { type: 'array', items: { type: 'string' }, description: 'Specific strengths found' },
-              improvements: { type: 'array', items: { type: 'string' }, description: 'Areas for improvement' }
+              improvements: { type: 'array', items: { type: 'string' }, description: 'Areas for improvement' },
             },
-            required: ['score', 'strengths', 'improvements']
-          }
-        }
-      });
-      break; // Success
+            required: ['score', 'strengths', 'improvements'],
+          },
+        },
+      })
+      break
     } catch (err) {
-      lastError = err;
+      lastError = err
       if (!isGeminiQuotaOrUnavailableError(err)) {
-        break; // Don't retry if it's a structural error (like bad request)
+        break
       }
     }
   }
 
   if (!result) {
-    throw formatGeminiError(lastError || new Error('All AI models failed or were unavailable.'));
+    throw formatGeminiError(lastError || new Error('All AI models failed or were unavailable.'))
   }
 
-  const text = result.text;
+  const text = result.text
   if (!text) {
     throw new Error('Empty response from AI')
   }
@@ -89,8 +90,8 @@ Provide 2-3 specific strengths and 2-4 specific areas for improvement based on t
   try {
     const parsed = JSON.parse(text)
     return { success: true, analysis: parsed }
-  } catch (parseErr) {
+  } catch {
     console.error('Failed to parse ATS response JSON:', text)
     throw new Error('AI returned invalid format.')
   }
-})
+}, { reason: 'ai_analyze_resume', requirePro: true, cost: 1 })

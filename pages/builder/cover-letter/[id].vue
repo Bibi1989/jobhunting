@@ -328,9 +328,10 @@ async function saveDraft() {
       })
     }
     toast.success('Cover letter saved.')
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e)
-    toast.error('Failed to save cover letter.')
+    const err = e as { data?: { statusMessage?: string }; statusMessage?: string }
+    toast.error(err.data?.statusMessage || err.statusMessage || 'Failed to save cover letter.')
   } finally {
     saving.value = false
   }
@@ -822,7 +823,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
             <div class="mb-8">
               <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
               <p class="text-blue-200/60 text-sm">
-                Upload a resume and/or paste a job description — either is enough to draft; both is best.
+                Upload a resume and/or paste a job description, either is enough to draft; both is best. Uploads are limited to 3 pages.
               </p>
             </div>
             <div class="space-y-5">
@@ -831,7 +832,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-white">Resume for drafting</p>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                      {{ uploadedResumeName || (hasResumeSignal() ? 'Using contact & experience from this project' : 'Optional — upload PDF, DOCX, or TXT') }}
+                      {{ uploadedResumeName || (hasResumeSignal() ? 'Using contact & experience from this project' : 'Optional — upload PDF, DOCX, or TXT (max 3 pages)') }}
                     </p>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">

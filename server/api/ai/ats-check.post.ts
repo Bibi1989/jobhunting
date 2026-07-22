@@ -1,5 +1,5 @@
 import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { withCredits } from '../../utils/withCredits'
 import { builderResumeToMarkdown } from '~/utils/builderToMarkdown'
 
@@ -87,7 +87,7 @@ export default withCredits(async (event) => {
   const ai = createGeminiClient()
   const model = resolveGeminiParsekitModel()
 
-  const prompt = withCareerExpertPrompt(`Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".
+  const prompt = `Analyze this resume for ATS parseability and hiring-manager fitness for the target role: "${roleHint}".
 
 Important temporal context — today is ${todayIso} (${todayLabel}). Treat this as "now":
 - Evaluate employment dates, recency, and gaps relative to today (${today.getFullYear()}).
@@ -97,7 +97,7 @@ Important temporal context — today is ${todayIso} (${todayLabel}). Treat this 
 
 Resume (markdown):
 """
-${markdown.slice(0, 12000)}
+${markdown.slice(0, 10000)}
 """${jdBlock}
 
 Score 0–100 for ATS readiness. Be practical and specific.
@@ -130,7 +130,7 @@ Return ONLY valid JSON matching this schema (no markdown fences):
       "explanation": string
     }]
   }]
-}`)
+}`
 
   try {
     const response = await ai.models.generateContent({

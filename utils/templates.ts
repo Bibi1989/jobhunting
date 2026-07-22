@@ -1,6 +1,7 @@
 /**
  * Builder template catalog — IDs match Stitch layouts in ResumeThemeRenderer.
- * Legacy gallery IDs (scholar, innovator, …) are remapped via resolveResumeTemplateId.
+ * Near-duplicates are remapped via resolveResumeTemplateId so the gallery only
+ * shows visually distinct PDF layouts.
  */
 
 export type BuilderTemplateMeta = {
@@ -13,39 +14,64 @@ export type BuilderTemplateMeta = {
   img?: string
 }
 
-/** Stitch resume themes that have unique layouts in ResumeThemeRenderer. */
+/** Distinct resume themes shown in the gallery / template picker. */
 export const resumeTemplates: BuilderTemplateMeta[] = [
-  {
-    id: 'the-distinguished',
-    name: 'The Distinguished',
-    category: 'Professional',
-    desc: 'Serif, sidebar expertise',
-    bg: 'bg-white',
-    text: 'text-slate-900',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBbSs7xYTrMpMsX7NUiDSxi-ZQdCCMQfCA6vGLDUam3vuACYwSIJxXdzJujO14vL2TmMQK_hSdccqqjF4osDtYNMlh4kF7KE1FX1kfBnNEdEc5J1Jq3joP9Jj_Do0j7AQV7WzTKH_SnxGxvpqJ2_SArHHTRCoNBRLJgWuP7bqJG7YhZ3ecz4NJQtpwbn7QSXxA4I8Zs_YD7sfjWYZAanWgEcJ-drWuLPzHshgIW9r9iaZFacQSZBjl9Aw',
-  },
   {
     id: 'the-corporate',
     name: 'The Corporate',
     category: 'Professional',
-    desc: 'Color header, structured',
+    desc: 'Dark header band, structured single column',
     bg: 'bg-white',
     text: 'text-slate-900',
     img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtYP9H4isUc7tV9_qK-s67Te2c5bmQEGCcMLe6QQlw2aNFzbtILYqF9GOyKa1pUB8VL7tQPTqFP8jGZ3mXg-tRGFkpfxKwFRmiu2ErC1PdqQAbFcxUxfQmUJWjfHx_Zw_gVa0HDafPcQDuzus-1y9yNPOKNX0TLaH0Mwr0Yp47ZMy-ZIFoj7dWsK4mTAWIfeFTWJY1k_0CknY3LhQ0xIT-JgMRq8Ai3CoSQESF0ZbCq-hBtL5a8TjPEw',
   },
   {
-    id: 'the-executive',
-    name: 'The Executive',
+    id: 'the-partner',
+    name: 'The Partner',
     category: 'Professional',
-    desc: 'Centered, two-column',
+    desc: 'Dual rules, elegant single column',
     bg: 'bg-white',
     text: 'text-slate-900',
   },
   {
-    id: 'the-partner',
-    name: 'The Partner',
+    id: 'the-distinguished',
+    name: 'The Distinguished',
     category: 'Professional',
-    desc: 'Elegant dual rules',
+    desc: 'Accent bar, two-column split',
+    bg: 'bg-white',
+    text: 'text-slate-900',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBbSs7xYTrMpMsX7NUiDSxi-ZQdCCMQfCA6vGLDUam3vuACYwSIJxXdzJujO14vL2TmMQK_hSdccqqjF4osDtYNMlh4kF7KE1FX1kfBnNEdEc5J1Jq3joP9Jj_Do0j7AQV7WzTKH_SnxGxvpqJ2_SArHHTRCoNBRLJgWuP7bqJG7YhZ3ecz4NJQtpwbn7QSXxA4I8Zs_YD7sfjWYZAanWgEcJ-drWuLPzHshgIW9r9iaZFacQSZBjl9Aw',
+  },
+  {
+    id: 'the-executive',
+    name: 'The Executive',
+    category: 'Professional',
+    desc: 'Centered header, two-column',
+    bg: 'bg-white',
+    text: 'text-slate-900',
+  },
+  {
+    id: 'the-social-media-pro',
+    name: 'The Social Media Pro',
+    category: 'Creative',
+    desc: 'Top banner strip, two-column',
+    bg: 'bg-white',
+    text: 'text-slate-900',
+  },
+  {
+    id: 'the-typographer',
+    name: 'The Typographer',
+    category: 'Minimalist',
+    desc: 'Large editorial name, inline skills',
+    bg: 'bg-white',
+    text: 'text-slate-900',
+    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDeOT4dcxhBI6UNg4ysM6sOWdYlsyarXg0fNC8YTpL8yDshBHofCpRkFWKrk2WW_3AD_E7nveuOcCfnrfDOIHLWU9R0h_EgC-ocQ-Pj4EMUK_f91rwdK82J0brfviukm_1PcQCQFjZ01UGby_RmFuCKgo6OVzcYu3vIDpmw1kk1XF2ThSkn6gfseuWFjg8HD4lzXKpP8CcVnXM6DFnshOTPoOeX9wEk1-61iF_qBCzxKHa03Pcajg_a8Q',
+  },
+  {
+    id: 'the-researcher',
+    name: 'The Researcher',
+    category: 'Technical',
+    desc: 'Academic single column, inline skills',
     bg: 'bg-white',
     text: 'text-slate-900',
   },
@@ -67,14 +93,6 @@ export const resumeTemplates: BuilderTemplateMeta[] = [
     text: 'text-slate-900',
   },
   {
-    id: 'the-social-media-pro',
-    name: 'The Social Media Pro',
-    category: 'Creative',
-    desc: 'Gradient banner, modern',
-    bg: 'bg-white',
-    text: 'text-slate-900',
-  },
-  {
     id: 'the-creative-director',
     name: 'The Creative Director',
     category: 'Creative',
@@ -82,23 +100,6 @@ export const resumeTemplates: BuilderTemplateMeta[] = [
     bg: 'bg-white',
     text: 'text-slate-900',
     img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7BD4IWVRWQilqUtPsb8RcRcpM9mhsIwURhO37OU0djfkZbBfnPMnZqqxruthEkwu05dHJMpYvaVWZxKrXqiDBpfrQD1-ELMRRm8LWmcSJ0i_Y7NmnCedHcI8mlp-moQktTZUUucJPEeE1bWgwiFf3UlG4SXuskgkrZ80XayHgRHFehQmFK86nrShOn45mj8bk2nw7JWuJYVy_OfGcXXAVkG3xheGMi6NzjsxCvc7VIyW0j4UYIlb7Sw',
-  },
-  {
-    id: 'the-brand-architect',
-    name: 'The Brand Architect',
-    category: 'Creative',
-    desc: 'Monogram, asymmetric',
-    bg: 'bg-white',
-    text: 'text-slate-900',
-  },
-  {
-    id: 'the-typographer',
-    name: 'The Typographer',
-    category: 'Minimalist',
-    desc: 'Editorial typography',
-    bg: 'bg-white',
-    text: 'text-slate-900',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDeOT4dcxhBI6UNg4ysM6sOWdYlsyarXg0fNC8YTpL8yDshBHofCpRkFWKrk2WW_3AD_E7nveuOcCfnrfDOIHLWU9R0h_EgC-ocQ-Pj4EMUK_f91rwdK82J0brfviukm_1PcQCQFjZ01UGby_RmFuCKgo6OVzcYu3vIDpmw1kk1XF2ThSkn6gfseuWFjg8HD4lzXKpP8CcVnXM6DFnshOTPoOeX9wEk1-61iF_qBCzxKHa03Pcajg_a8Q',
   },
   {
     id: 'the-strategist',
@@ -116,22 +117,6 @@ export const resumeTemplates: BuilderTemplateMeta[] = [
     bg: 'bg-white',
     text: 'text-slate-900',
     img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAXqSv3_04KMB6m_ar3_4EyE9OA5FZ8c9l486zLIZeKMjVjg24QNNugH4YPZC65r-2JAKCFXIES-woeqPjg371YxElFqxLLVawP6BXjN_BWnw2Ku7UvyIK21lTnIKhtWdKpP1iaQa2YzPdhRlpiuY08mymzT3-yspqofd7l198J2TRZgnyB9Qch1tKUYubIJmVcI_FCrQi0orWKlsYdHymzq8YY40SHULp6FVfi6FW4JsgivGxauHlNrw',
-  },
-  {
-    id: 'the-researcher',
-    name: 'The Researcher',
-    category: 'Technical',
-    desc: 'Academic appointments',
-    bg: 'bg-white',
-    text: 'text-slate-900',
-  },
-  {
-    id: 'the-researcher-updated',
-    name: 'The Researcher+',
-    category: 'Technical',
-    desc: 'Refined academic grid',
-    bg: 'bg-white',
-    text: 'text-slate-900',
   },
 ]
 
@@ -162,7 +147,7 @@ export const coverLetterTemplates = [
   },
 ] as const
 
-/** Map old builder gallery IDs → Stitch ResumeThemeRenderer format IDs. */
+/** Map old gallery / stitch IDs → canonical distinct templates. */
 const LEGACY_RESUME_TEMPLATE_MAP: Record<string, string> = {
   scholar: 'the-distinguished',
   standard: 'the-corporate',
@@ -174,18 +159,22 @@ const LEGACY_RESUME_TEMPLATE_MAP: Record<string, string> = {
   zen: 'the-typographer',
   graduate: 'the-strategist',
   vanguard: 'the-creative-director',
-  designer: 'the-brand-architect',
+  designer: 'the-partner',
   architect: 'the-engineer',
   analyst: 'the-researcher',
-  specialist: 'the-researcher-updated',
+  specialist: 'the-researcher',
+  // Near-duplicates folded into keepers
+  'the-brand-architect': 'the-partner',
+  'the-researcher-updated': 'the-researcher',
 }
 
 const STITCH_RESUME_IDS = new Set(resumeTemplates.map((t) => t.id))
 
 export function resolveResumeTemplateId(id?: string | null): string {
   if (!id) return resumeTemplates[0].id
+  if (LEGACY_RESUME_TEMPLATE_MAP[id]) return LEGACY_RESUME_TEMPLATE_MAP[id]
   if (STITCH_RESUME_IDS.has(id)) return id
-  return LEGACY_RESUME_TEMPLATE_MAP[id] || resumeTemplates[0].id
+  return resumeTemplates[0].id
 }
 
 export function getResumeTemplate(id?: string | null): BuilderTemplateMeta {

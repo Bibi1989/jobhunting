@@ -1,5 +1,4 @@
 import { createGeminiClient, generateWithModels, resolveGeminiModelChain } from './gemini'
-import { careerExpertGenerateConfig } from './careerExpertPrompt'
 import type { PortfolioExperience, PortfolioProfileData, PortfolioProject } from '~/shared/types/portfolio'
 
 /**
@@ -55,17 +54,15 @@ function buildPrompt(documentText: string, jobDescription?: string): string {
 
 Optional target job description — emphasize skills, experience, and projects that align with this role (still do not invent facts):
 """
-${jd.slice(0, 8000)}
+${jd.slice(0, 5000)}
 """
 `
     : ''
 
-  return `${SYSTEM_PROMPT}
+  return `Build the portfolio JSON from the following document text:
 ${jdBlock}
-Build the portfolio JSON from the following document text:
-
 """
-${documentText.slice(0, 24000)}
+${documentText.slice(0, 16000)}
 """`
 }
 
@@ -165,10 +162,11 @@ export async function generatePortfolioFromText(
     ai.models.generateContent({
       model,
       contents: buildPrompt(documentText, jobDescription),
-      config: careerExpertGenerateConfig({
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
         temperature: 0.4,
         responseMimeType: 'application/json',
-      }),
+      },
     }),
   )
 

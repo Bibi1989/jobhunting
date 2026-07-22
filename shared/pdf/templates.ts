@@ -5,6 +5,9 @@
 
 import type { PdfLayoutVariety } from './schema'
 
+export type PdfHeaderChrome = 'plain' | 'centered' | 'band' | 'rules' | 'banner' | 'accent-bar'
+export type PdfSkillsStyle = 'chips' | 'list' | 'inline'
+
 export type PdfTemplateTheme = {
   brand: string
   ink: string
@@ -22,6 +25,10 @@ export type PdfTemplateProfile = {
   variety: PdfLayoutVariety
   /** tech: left | right sidebar; modern: classic split */
   sidebarSide?: 'left' | 'right'
+  headerChrome?: PdfHeaderChrome
+  skillsStyle?: PdfSkillsStyle
+  /** Larger editorial name (Typographer). */
+  displayName?: boolean
   theme: PdfTemplateTheme
 }
 
@@ -38,30 +45,66 @@ const DEFAULT_THEME: PdfTemplateTheme = {
 
 /** Exact slug → layout profile (aligned with ResumeThemeRenderer). */
 const PROFILES: Record<string, PdfTemplateProfile> = {
-  'the-distinguished': {
-    slug: 'the-distinguished',
-    variety: 'modern',
-    theme: { ...DEFAULT_THEME, brand: '#1e3a5f', accent: '#1e3a5f' },
-  },
+  // —— Professional single-column family (differentiated chrome) ——
   'the-corporate': {
     slug: 'the-corporate',
     variety: 'minimal',
-    theme: { ...DEFAULT_THEME, brand: '#0f172a', accent: '#1e293b', ink: '#0f172a' },
-  },
-  'the-executive': {
-    slug: 'the-executive',
-    variety: 'modern',
-    theme: { ...DEFAULT_THEME, brand: '#0f172a', accent: '#334155' },
+    headerChrome: 'band',
+    skillsStyle: 'chips',
+    theme: { ...DEFAULT_THEME, brand: '#0f172a', accent: '#0f172a', ink: '#0f172a' },
   },
   'the-partner': {
     slug: 'the-partner',
     variety: 'minimal',
-    theme: { ...DEFAULT_THEME, brand: '#1c1917', accent: '#44403c' },
+    headerChrome: 'rules',
+    skillsStyle: 'chips',
+    theme: { ...DEFAULT_THEME, brand: '#1c1917', accent: '#1c1917', ink: '#1c1917' },
   },
+  'the-researcher': {
+    slug: 'the-researcher',
+    variety: 'minimal',
+    headerChrome: 'plain',
+    skillsStyle: 'inline',
+    theme: { ...DEFAULT_THEME, brand: '#1e3a5f', accent: '#1e3a5f' },
+  },
+
+  // —— Split / editorial family (differentiated chrome) ——
+  'the-distinguished': {
+    slug: 'the-distinguished',
+    variety: 'modern',
+    headerChrome: 'accent-bar',
+    skillsStyle: 'list',
+    theme: { ...DEFAULT_THEME, brand: '#1e3a5f', accent: '#1e3a5f' },
+  },
+  'the-executive': {
+    slug: 'the-executive',
+    variety: 'modern',
+    headerChrome: 'centered',
+    skillsStyle: 'list',
+    theme: { ...DEFAULT_THEME, brand: '#0f172a', accent: '#0f172a' },
+  },
+  'the-social-media-pro': {
+    slug: 'the-social-media-pro',
+    variety: 'modern',
+    headerChrome: 'banner',
+    skillsStyle: 'chips',
+    theme: { ...DEFAULT_THEME, brand: '#0f172a', accent: '#0f172a' },
+  },
+  'the-typographer': {
+    slug: 'the-typographer',
+    variety: 'minimal',
+    headerChrome: 'plain',
+    skillsStyle: 'inline',
+    displayName: true,
+    theme: { ...DEFAULT_THEME, brand: '#111827', accent: '#111827', ink: '#111827' },
+  },
+
+  // —— Tech / creative sidebars (already distinct) ——
   'the-innovator': {
     slug: 'the-innovator',
     variety: 'tech',
     sidebarSide: 'right',
+    skillsStyle: 'chips',
     theme: {
       ...DEFAULT_THEME,
       dark: true,
@@ -79,6 +122,7 @@ const PROFILES: Record<string, PdfTemplateProfile> = {
     slug: 'the-digital-nomad',
     variety: 'tech',
     sidebarSide: 'left',
+    skillsStyle: 'chips',
     theme: {
       ...DEFAULT_THEME,
       brand: '#0f172a',
@@ -88,15 +132,11 @@ const PROFILES: Record<string, PdfTemplateProfile> = {
       accent: '#38bdf8',
     },
   },
-  'the-social-media-pro': {
-    slug: 'the-social-media-pro',
-    variety: 'modern',
-    theme: { ...DEFAULT_THEME, brand: '#7c3aed', accent: '#a855f7' },
-  },
   'the-creative-director': {
     slug: 'the-creative-director',
     variety: 'tech',
     sidebarSide: 'left',
+    skillsStyle: 'chips',
     theme: {
       ...DEFAULT_THEME,
       brand: '#0f766e',
@@ -106,20 +146,11 @@ const PROFILES: Record<string, PdfTemplateProfile> = {
       accent: '#14b8a6',
     },
   },
-  'the-brand-architect': {
-    slug: 'the-brand-architect',
-    variety: 'minimal',
-    theme: { ...DEFAULT_THEME, brand: '#18181b', accent: '#27272a' },
-  },
-  'the-typographer': {
-    slug: 'the-typographer',
-    variety: 'modern',
-    theme: { ...DEFAULT_THEME, brand: '#111827', accent: '#111827' },
-  },
   'the-strategist': {
     slug: 'the-strategist',
     variety: 'tech',
     sidebarSide: 'left',
+    skillsStyle: 'chips',
     theme: {
       ...DEFAULT_THEME,
       brand: '#334155',
@@ -133,6 +164,7 @@ const PROFILES: Record<string, PdfTemplateProfile> = {
     slug: 'the-engineer',
     variety: 'tech',
     sidebarSide: 'right',
+    skillsStyle: 'chips',
     theme: {
       ...DEFAULT_THEME,
       brand: '#0369a1',
@@ -142,21 +174,18 @@ const PROFILES: Record<string, PdfTemplateProfile> = {
       accent: '#0284c7',
     },
   },
-  'the-researcher': {
-    slug: 'the-researcher',
-    variety: 'minimal',
-    theme: { ...DEFAULT_THEME, brand: '#1e3a5f', accent: '#1e3a5f' },
-  },
-  'the-researcher-updated': {
-    slug: 'the-researcher-updated',
-    variety: 'minimal',
-    theme: { ...DEFAULT_THEME, brand: '#1e3a5f', accent: '#1e3a5f' },
-  },
+}
+
+/** Near-duplicates folded into a canonical profile (legacy IDs still resolve). */
+const ALIASES: Record<string, string> = {
+  'the-brand-architect': 'the-partner',
+  'the-researcher-updated': 'the-researcher',
 }
 
 export function getPdfTemplateProfile(templateSlug?: string | null): PdfTemplateProfile {
-  const slug = String(templateSlug || 'the-distinguished').trim() || 'the-distinguished'
-  if (PROFILES[slug]) return PROFILES[slug]!
+  const raw = String(templateSlug || 'the-distinguished').trim() || 'the-distinguished'
+  const slug = ALIASES[raw] || raw
+  if (PROFILES[slug]) return { ...PROFILES[slug]!, slug }
 
   // Legacy / fuzzy fallback keyed like ResumeThemeRenderer
   const id = slug.toLowerCase()
@@ -165,9 +194,11 @@ export function getPdfTemplateProfile(templateSlug?: string | null): PdfTemplate
   if (id.includes('strategist')) return { ...PROFILES['the-strategist']!, slug }
   if (id.includes('innovator')) return { ...PROFILES['the-innovator']!, slug }
   if (id.includes('engineer')) return { ...PROFILES['the-engineer']!, slug }
-  if (id.includes('executive') || id.includes('typographer') || id.includes('social-media')) {
-    return { ...PROFILES['the-executive']!, slug }
-  }
+  if (id.includes('social-media')) return { ...PROFILES['the-social-media-pro']!, slug }
+  if (id.includes('typographer')) return { ...PROFILES['the-typographer']!, slug }
+  if (id.includes('executive')) return { ...PROFILES['the-executive']!, slug }
+  if (id.includes('partner') || id.includes('brand')) return { ...PROFILES['the-partner']!, slug }
+  if (id.includes('researcher')) return { ...PROFILES['the-researcher']!, slug }
   if (id.includes('corporate')) return { ...PROFILES['the-corporate']!, slug }
   if (id.includes('distinguished')) return { ...PROFILES['the-distinguished']!, slug }
   return { ...PROFILES['the-distinguished']!, slug }

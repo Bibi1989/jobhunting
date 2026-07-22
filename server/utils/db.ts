@@ -19,7 +19,7 @@ export interface AppUser {
   updatedAt: string
 }
 
-export const FREE_CREDITS = 10
+export const FREE_CREDITS = 0
 export const PRO_CREDITS = 150
 
 let pool: pg.Pool | null = null

@@ -423,6 +423,15 @@ function hideHistoryDropdown() {
                   Execute Scrape (1 Cr)
                 </button>
               </div>
+              <p
+                v-if="loggedIn && !canAccessScraper && !pending"
+                class="text-xs text-amber-200/90"
+              >
+                {{ scraperBlockedMessage() }}
+                <NuxtLink to="/pricing" class="font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2 ml-1">
+                  Upgrade to Pro
+                </NuxtLink>
+              </p>
 
               <div
                 class="flex flex-col gap-2 rounded-2xl border border-slate-800/80 bg-slate-950/25 px-3 py-2.5"

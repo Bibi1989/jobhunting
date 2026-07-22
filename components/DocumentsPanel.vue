@@ -80,7 +80,7 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
     busy,
     label: busy
       ? (removing.value === type ? 'Removing…' : 'Uploading…')
-      : doc?.originalName || 'Upload PDF, DOCX or TXT',
+      : doc?.originalName || 'Upload PDF, DOCX or TXT (max 3 pages)',
     hasDoc: !!doc,
   }
 }
@@ -94,6 +94,7 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
       </h3>
       <p class="mt-2 text-[11px] text-slate-500 leading-relaxed select-none">
         Upload a CV and cover letter (PDF, DOCX, or TXT) to auto-fill details and customize materials.
+        Max 3 pages per file.
       </p>
     </div>
 

@@ -1,5 +1,5 @@
 import { createGeminiClient, resolveGeminiParsekitModel } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
 import { requireUser } from '~/server/utils/auth'
 
 export type CaseStudyAnalysis = {
@@ -30,14 +30,14 @@ export default defineEventHandler(async (event) => {
   const ai = createGeminiClient()
   const model = resolveGeminiParsekitModel()
 
-  const prompt = withCareerExpertPrompt(`You are an elite portfolio reviewer and case study design strategist. Analyze this project for "case study completeness" to assess how well it demonstrates engineering excellence to hiring managers.
+  const prompt = `You are an elite portfolio reviewer and case study design strategist. Analyze this project for "case study completeness" to assess how well it demonstrates engineering excellence to hiring managers.
 
 Project Details:
 - Title: ${title}
 - Tech Stack: ${tech_stack.join(', ') || 'None specified'}
 - Current Description:
 """
-${description}
+${String(description).slice(0, 4000)}
 """
 
 Evaluate the case study description based on these 5 dimensions (each scored 0-100):
@@ -62,7 +62,7 @@ Return ONLY valid JSON matching this schema (no markdown fences):
   },
   "improvements": string[],
   "suggestedRewrite": string
-}`)
+}`
 
   try {
     const response = await ai.models.generateContent({

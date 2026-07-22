@@ -517,8 +517,9 @@ defineExpose({
             >
               <Loader2 v-if="uploading === 'resume'" class="animate-spin" :size="12" />
               <Upload v-else :size="12" />
-              Upload CV
-            </button>
+                    Upload CV
+                  </button>
+                  <span class="text-[10px] text-slate-500">Max 3 pages</span>
             <span v-if="resumeAttachmentLabel" class="text-[10px] text-slate-400 truncate max-w-[200px] inline-flex items-center gap-1">
               <FileText :size="12" class="text-emerald-400 shrink-0" />
               {{ resumeAttachmentLabel }}
@@ -560,8 +561,9 @@ defineExpose({
             >
               <Loader2 v-if="uploading === 'cover_letter'" class="animate-spin" :size="12" />
               <Upload v-else :size="12" />
-              Upload cover letter
-            </button>
+                    Upload cover letter
+                  </button>
+                  <span class="text-[10px] text-slate-500">Max 3 pages</span>
             <span v-if="coverAttachmentLabel" class="text-[10px] text-slate-400 truncate max-w-[200px] inline-flex items-center gap-1">
               <FileText :size="12" class="text-emerald-400 shrink-0" />
               {{ coverAttachmentLabel }}

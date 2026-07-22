@@ -1121,7 +1121,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
     class="theme-social-media-pro w-full bg-white relative flex flex-col text-slate-800 text-left select-text p-0"
   >
     <!-- Top banner with colorful gradient -->
-    <div class="h-28 bg-gradient-to-r from-[#091426] via-[#006a61] to-[#ff4e69] relative shrink-0"></div>
+    <div class="h-28 bg-gradient-to-r from-[#091426] via-[#334155] to-[#0f172a] relative shrink-0"></div>
 
     <div class="px-7 relative flex-grow flex flex-col pb-8">
       <!-- Info overlap block -->
@@ -1155,7 +1155,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
               <div v-for="(job, idx) in parsed.experience" :key="idx">
                 <div class="flex justify-between items-baseline mb-0.5">
                   <h4 class="text-[10.5px] font-bold text-slate-800">{{ job.title }}</h4>
-                  <span class="text-[7.5px] text-[#ff4e69] font-bold uppercase">{{ job.dates }}</span>
+                  <span class="text-[7.5px] text-slate-800 font-bold uppercase">{{ job.dates }}</span>
                 </div>
                 <p class="text-[9.5px] text-[#006a61] font-bold mb-1">{{ job.company }} <span v-if="job.location" class="text-slate-400 font-normal">| {{ job.location }}</span></p>
                 <ul class="space-y-0.5 list-disc text-[9.5px] text-slate-600">
@@ -1208,7 +1208,7 @@ const plainHtml = computed(() => (props.markdown ? marked(props.markdown) : ''))
         </aside>
       </div>
     </div>
-    <div class="h-1 bg-gradient-to-r from-[#091426] via-[#006a61] to-[#ff4e69] shrink-0"></div>
+    <div class="h-1 bg-[#0f172a] shrink-0"></div>
 
       <section v-for="extra in parsed.extras" :key="extra.title" class="preview-extra-section">
         <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2">{{ extra.title }}</h2>

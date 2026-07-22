@@ -39,7 +39,7 @@ CRITICAL INSTRUCTIONS:
 - Return the JSON directly, without markdown blocks.
 
 Here is the JSON:
-${JSON.stringify(payload, null, 2)}
+${JSON.stringify(payload).slice(0, 16000)}
 `
 
   try {
@@ -48,6 +48,7 @@ ${JSON.stringify(payload, null, 2)}
       contents: prompt,
       config: careerExpertGenerateConfig({
         temperature: 0.2,
+        responseMimeType: 'application/json',
       }),
     })
 

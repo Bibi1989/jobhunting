@@ -11,40 +11,35 @@ defineProps<{
 
 <template>
   <div class="w-full h-full bg-white text-slate-800 overflow-hidden relative select-none pointer-events-none">
-    <!-- The Distinguished — serif + dark sidebar -->
-    <div v-if="templateId === 'the-distinguished'" class="flex h-full">
-      <div class="w-[32%] bg-slate-900 p-2 space-y-1.5">
-        <div class="h-2 w-3/4 bg-white/80 rounded-sm" />
-        <div class="h-1 w-1/2 bg-white/40 rounded-sm" />
-        <div class="mt-3 space-y-1">
-          <div class="h-1 w-full bg-white/25 rounded-sm" />
-          <div class="h-1 w-5/6 bg-white/20 rounded-sm" />
-          <div class="h-1 w-full bg-white/20 rounded-sm" />
+    <!-- The Distinguished — top accent bar + two-column -->
+    <div v-if="templateId === 'the-distinguished'" class="flex flex-col h-full">
+      <div class="h-1.5 bg-slate-800 shrink-0" />
+      <div class="flex flex-1 min-h-0">
+        <div class="w-[34%] p-2 space-y-1.5 border-r border-slate-200">
+          <div class="h-1 w-1/2 bg-slate-700 rounded-sm" />
+          <div class="h-1 w-full bg-slate-200 rounded-sm" />
+          <div class="h-1 w-5/6 bg-slate-200 rounded-sm" />
+          <div class="mt-2 h-1 w-1/3 bg-slate-700 rounded-sm" />
+          <div class="h-1 w-full bg-slate-200 rounded-sm" />
         </div>
-        <div class="mt-3 space-y-1">
-          <div class="h-1 w-2/3 bg-amber-400/50 rounded-sm" />
-          <div class="h-1 w-full bg-white/15 rounded-sm" />
+        <div class="flex-1 p-2 space-y-1.5">
+          <div class="h-1.5 w-2/3 mx-auto bg-slate-800 rounded-sm" />
+          <div class="h-1 w-1/2 mx-auto bg-slate-400 rounded-sm" />
+          <div class="mt-2 h-1 w-1/3 bg-slate-700 rounded-sm" />
+          <div class="h-1 w-full bg-slate-200 rounded-sm" />
+          <div class="h-1 w-11/12 bg-slate-200 rounded-sm" />
         </div>
-      </div>
-      <div class="flex-1 p-2 space-y-1.5">
-        <div class="h-1.5 w-1/3 bg-slate-800 rounded-sm" />
-        <div class="h-1 w-full bg-slate-200 rounded-sm" />
-        <div class="h-1 w-5/6 bg-slate-200 rounded-sm" />
-        <div class="mt-2 h-1 w-1/4 bg-slate-700 rounded-sm" />
-        <div class="h-1 w-full bg-slate-200 rounded-sm" />
-        <div class="h-1 w-11/12 bg-slate-200 rounded-sm" />
-        <div class="h-1 w-full bg-slate-200 rounded-sm" />
       </div>
     </div>
 
-    <!-- The Corporate — color header bar -->
+    <!-- The Corporate — dark header band -->
     <div v-else-if="templateId === 'the-corporate'" class="flex flex-col h-full">
-      <div class="bg-blue-800 px-2 py-2 space-y-1">
+      <div class="bg-slate-900 px-2 py-2 space-y-1">
         <div class="h-2 w-1/2 bg-white rounded-sm" />
-        <div class="h-1 w-1/3 bg-blue-200/70 rounded-sm" />
+        <div class="h-1 w-1/3 bg-white/50 rounded-sm" />
       </div>
       <div class="flex-1 p-2 space-y-1.5">
-        <div class="h-1 w-1/4 bg-blue-800 rounded-sm" />
+        <div class="h-1 w-1/4 bg-slate-800 rounded-sm" />
         <div class="h-1 w-full bg-slate-200 rounded-sm" />
         <div class="h-1 w-5/6 bg-slate-200 rounded-sm" />
         <div class="mt-2 flex justify-between">
@@ -134,18 +129,18 @@ defineProps<{
 
     <!-- The Social Media Pro — gradient banner -->
     <div v-else-if="templateId === 'the-social-media-pro'" class="flex flex-col h-full">
-      <div class="h-8 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-2 py-1.5">
+      <div class="h-8 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 px-2 py-1.5">
         <div class="h-2 w-1/2 bg-white rounded-sm" />
         <div class="h-1 w-1/3 bg-white/70 rounded-sm mt-1" />
       </div>
       <div class="flex-1 p-2 space-y-1.5">
-        <div class="h-1 w-1/4 bg-violet-600 rounded-sm" />
+        <div class="h-1 w-1/4 bg-slate-800 rounded-sm" />
         <div class="h-1 w-full bg-slate-200 rounded-sm" />
         <div class="h-1 w-5/6 bg-slate-200 rounded-sm" />
         <div class="mt-2 grid grid-cols-3 gap-1">
-          <div class="h-4 bg-violet-100 rounded-sm" />
-          <div class="h-4 bg-fuchsia-100 rounded-sm" />
-          <div class="h-4 bg-orange-100 rounded-sm" />
+          <div class="h-4 bg-slate-100 rounded-sm" />
+          <div class="h-4 bg-slate-100 rounded-sm" />
+          <div class="h-4 bg-slate-100 rounded-sm" />
         </div>
       </div>
     </div>

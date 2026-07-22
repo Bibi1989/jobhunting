@@ -1,5 +1,9 @@
 import { createGeminiClient, resolveGeminiModelChain } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import {
+  careerExpertGenerateConfig,
+  resumeGroundingBlock,
+} from '../../utils/careerExpertPrompt'
+import { parseModelJson } from '../../utils/jsonParse'
 import { formatGeminiError } from '../../utils/jobs'
 import { withCredits } from '../../utils/withCredits'
 import type { BuilderResumeData } from '~/shared/types/builder'
@@ -12,13 +16,6 @@ function hasUsableResume(resumeData: Record<string, unknown> | null | undefined,
   if (String(info.summary || '').replace(/<[^>]+>/g, '').trim().length > 20) return true
   if (Array.isArray(resumeData.experience) && resumeData.experience.length > 0) return true
   return false
-}
-
-function extractJsonObject(text: string): string {
-  const trimmed = text.trim()
-  if (trimmed.startsWith('{')) return trimmed
-  const match = trimmed.match(/\{[\s\S]*\}/)
-  return match ? match[0] : trimmed
 }
 
 export default withCredits(async (event) => {
@@ -50,10 +47,7 @@ export default withCredits(async (event) => {
     current.personalInfo?.jobTitle ||
     ''
 
-  const rawResumeBlock =
-    typeof rawResumeText === 'string' && rawResumeText.trim().length > 40
-      ? `\nRaw resume text (use as additional grounding; do not invent facts):\n"""\n${rawResumeText.trim().slice(0, 12000)}\n"""\n`
-      : ''
+  const grounding = resumeGroundingBlock(current, rawResumeText, { jsonMax: 14000, rawMax: 8000 })
 
   const sourceNote = [
     resumeOk
@@ -89,18 +83,14 @@ ${extraInstructions}
   const ai = createGeminiClient()
   const models = resolveGeminiModelChain()
 
-  const prompt = withCareerExpertPrompt(`Your task is to produce an updated resume JSON for the applicant.
+  const prompt = `Your task is to produce an updated resume JSON for the applicant.
 Context: ${sourceNote}.
 Target role hint: "${roleHint || 'professional role'}".
 
-Current resume JSON:
-"""
-${JSON.stringify(current).slice(0, 16000)}
-"""
-${rawResumeBlock}
+${grounding}
 Target job description:
 """
-${jd || '(Not provided — polish and structure the resume from available profile/resume text alone.)'}
+${(jd || '(Not provided — polish and structure the resume from available profile/resume text alone.)').slice(0, 8000)}
 """
 ${userTasksBlock}
 ${presetRules}
@@ -117,7 +107,8 @@ Rules:
 - When a job description is present, emphasize relevant skills and achievements and weave in missing keywords naturally.
 - When only a resume is present, improve wording, bullet impact, and structure without changing facts.
 - Ensure personalInfo.jobTitle aligns with the target role when a JD or role hint is provided.
-- Do not add commentary outside the JSON object.`)
+- Keep experience/project HTML descriptions concise (typically 3–5 bullets) so the JSON completes fully.
+- Do not add commentary outside the JSON object.`
 
   let lastError: unknown = null
   for (const model of models) {
@@ -131,8 +122,7 @@ Rules:
         }),
       })
 
-      const raw = extractJsonObject(response.text || '')
-      const fixed = JSON.parse(raw) as BuilderResumeData
+      const fixed = parseModelJson<BuilderResumeData>(response.text || '')
 
       fixed.templateId = current.templateId || fixed.templateId
       fixed.templateSlug = current.templateSlug || fixed.templateSlug

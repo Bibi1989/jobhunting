@@ -1,7 +1,7 @@
 import { createGeminiClient, resolveGeminiModel } from '../../utils/gemini'
-import { withCareerExpertPrompt, careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { careerExpertGenerateConfig } from '../../utils/careerExpertPrompt'
+import { parseModelJson } from '../../utils/jsonParse'
 import { withCredits } from '../../utils/withCredits'
-import { builderResumeToMarkdown } from '~/utils/builderToMarkdown'
 import type { BuilderResumeData } from '~/shared/types/builder'
 
 type AtsIssue = {
@@ -38,7 +38,6 @@ export default withCredits(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Run ATS Check first, then fix.' })
   }
 
-  const markdown = builderResumeToMarkdown(resumeData)
   const issues = Array.isArray(atsResult.issues) ? atsResult.issues : []
   const gaps = Array.isArray(atsResult.keywordGaps) ? atsResult.keywordGaps : []
   const wins = Array.isArray(atsResult.quickWins) ? atsResult.quickWins : []
@@ -55,7 +54,8 @@ Honor requests about what to change and what to leave unchanged (e.g. keep dates
 
   const ai = createGeminiClient()
   const model = resolveGeminiModel()
-  const prompt = withCareerExpertPrompt(`Apply the audit findings to improve this resume JSON. Keep the same JSON schema/shape.
+  // JSON alone is enough — skip duplicate markdown to cut input tokens
+  const prompt = `Apply the audit findings to improve this resume JSON. Keep the same JSON schema/shape.
 
 Target role: "${resumeData.personalInfo?.jobTitle || 'professional'}"
 ${jobDescription.trim() ? `Job description excerpt:\n"""\n${jobDescription.trim().slice(0, 4000)}\n"""\n` : ''}
@@ -66,11 +66,6 @@ Issues:
 ${issues.map((i) => `- [${i.severity}] ${i.category}: ${i.message} → ${i.suggestion}`).join('\n') || '(none)'}
 Keyword gaps: ${gaps.join(', ') || '(none)'}
 Quick wins: ${wins.join('; ') || '(none)'}
-
-Current resume markdown (reference):
-"""
-${markdown.slice(0, 10000)}
-"""
 
 Current resume JSON:
 """
@@ -84,7 +79,7 @@ Rules:
 - Improve summary, bullets, skills, and section wording for ATS + the target role, unless the user instructions say otherwise.
 - Descriptions that are HTML must stay valid HTML using <p>/<ul>/<li>/<strong> only (no markdown).
 - Do not invent fake employers or degrees; strengthen existing content and weave in missing keywords naturally.
-- Do not add commentary outside the JSON object.`)
+- Do not add commentary outside the JSON object.`
 
   try {
     const response = await ai.models.generateContent({
@@ -97,7 +92,7 @@ Rules:
     })
 
     const raw = (response.text || '').trim()
-    const fixed = JSON.parse(raw) as BuilderResumeData
+    const fixed = parseModelJson<BuilderResumeData>(raw)
 
     // Preserve identity fields the model must not rewrite away
     fixed.templateId = resumeData.templateId

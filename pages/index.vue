@@ -4,7 +4,7 @@ import { Sparkles, FileText, Briefcase, Search, UploadCloud, CheckCircle2, Arrow
 const features = [
   {
     title: 'ATS Resume Builder',
-    description: 'Create beautiful, ATS-optimized resumes tailored to your dream role with AI-powered keyword matching.',
+    description: 'Build and export polished resumes on Free. Pro unlocks AI tailoring and keyword-matched drafts for each role.',
     icon: FileText,
     href: '/builder',
     color: 'text-indigo-400',
@@ -12,7 +12,7 @@ const features = [
   },
   {
     title: 'Smart Cover Letters',
-    description: 'Instantly generate highly personalized cover letters that align your experience directly with the job description.',
+    description: 'Write and save a cover letter on Free. Pro generates personalized letters aligned to the job description.',
     icon: Sparkles,
     href: '/apply',
     color: 'text-purple-400',
@@ -20,7 +20,7 @@ const features = [
   },
   {
     title: 'ATS Checker',
-    description: 'Upload your existing resume and let our AI analyze it against standard Applicant Tracking Systems to find gaps.',
+    description: 'Free local keyword coverage against any job description. Pro adds deep AI ATS analysis and fixes.',
     icon: CheckCircle2,
     href: '/ats-checker',
     color: 'text-emerald-400',
@@ -28,7 +28,7 @@ const features = [
   },
   {
     title: 'Job Scraper',
-    description: 'Automatically extract requirements from job boards and match them against your profile in one click.',
+    description: 'Pro: extract requirements from job boards and match them against your profile in one click.',
     icon: Search,
     href: '/scraper',
     color: 'text-blue-400',
@@ -71,7 +71,7 @@ const { loggedIn, logout } = useSaaS()
       <div class="flex flex-col items-center text-center max-w-4xl mx-auto mb-20">
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-8">
           <Sparkles :size="14" />
-          The Ultimate AI Career Toolkit
+          Free builder · Pro AI & scrape
         </div>
         <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
           Land your dream job <br class="hidden md:block" />
@@ -80,7 +80,7 @@ const { loggedIn, logout } = useSaaS()
           </span>
         </h1>
         <p class="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed">
-          Upload your resume, scrape job descriptions, and let our AI instantly tailor your resume and cover letter to beat the ATS.
+          Start free with one resume, cover letter, portfolio, and local keyword ATS. Upgrade to Pro for job scrape, Gemini AI, and unlimited projects.
         </p>
         <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
           <NuxtLink to="/builder" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all hover:scale-[1.02]">
@@ -113,8 +113,15 @@ const { loggedIn, logout } = useSaaS()
     <!-- Footer -->
     <footer class="border-t border-slate-900/80 py-12 relative z-10">
       <div class="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-500 text-sm font-medium">
-        <p>© 2026 AI Job Scraper. All rights reserved.</p>
-        <div class="flex items-center gap-6">
+        <p>© 2026 JobFlow. All rights reserved.</p>
+        <div class="flex items-center gap-6 flex-wrap justify-center">
+          <a
+            href="/docs/BUSINESS_PLAN.pdf"
+            download="JobFlow-Business-Plan.pdf"
+            class="hover:text-slate-300 transition-colors"
+          >
+            Business Plan (PDF)
+          </a>
           <a href="#" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
           <a href="#" class="hover:text-slate-300 transition-colors">Terms of Service</a>
           <a href="#" class="hover:text-slate-300 transition-colors">Contact</a>

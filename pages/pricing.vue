@@ -75,6 +75,15 @@ async function openPortal() {
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-white mb-3">Simple pricing</h1>
         <p class="text-slate-400">Credit-based AI scraping and document tools. Upgrade anytime.</p>
+        <p class="mt-3">
+          <a
+            href="/docs/BUSINESS_PLAN.pdf"
+            download="JobFlow-Business-Plan.pdf"
+            class="text-sm font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-4"
+          >
+            Download business plan (PDF)
+          </a>
+        </p>
         <p v-if="loggedIn" class="mt-3 text-sm text-indigo-300">
           Current plan: <span class="font-semibold uppercase">{{ planTier }}</span>
           · {{ creditsRemaining }} credits remaining
@@ -87,11 +96,11 @@ async function openPortal() {
         <div class="rounded-2xl border border-white/10 bg-white/5 p-8 flex flex-col">
           <h2 class="text-xl font-bold text-white">Free</h2>
           <p class="text-3xl font-extrabold text-white mt-4">€0</p>
-          <p class="text-sm text-slate-400 mt-1">10 starter credits</p>
+          <p class="text-sm text-slate-400 mt-1">Manual builder — no AI credits</p>
           <ul class="mt-6 space-y-2 text-sm text-slate-300 flex-1">
-            <li>Job scraping with starter credits</li>
-            <li>Resume & cover letter builder (manual edit)</li>
-            <li>No AI features (Pro required)</li>
+            <li>1 resume, 1 cover letter, 1 portfolio (Visionary template)</li>
+            <li>PDF export &amp; local keyword ATS checker</li>
+            <li>No job scrape or Gemini AI (Pro required)</li>
           </ul>
           <NuxtLink
             v-if="!loggedIn"
@@ -115,9 +124,9 @@ async function openPortal() {
           </p>
           <p class="text-sm text-indigo-200 mt-1">150 credits replenished each billing cycle</p>
           <ul class="mt-6 space-y-2 text-sm text-slate-200 flex-1">
-            <li>Everything in Free</li>
-            <li>AI tailor, translate, enhance, cover letters</li>
-            <li>Application form AI assistant</li>
+            <li>Unlimited resumes, cover letters &amp; portfolios</li>
+            <li>All portfolio templates + job scrape</li>
+            <li>AI tailor, translate, enhance, ATS fix, cover letters</li>
             <li>150 credits each billing cycle</li>
           </ul>
           <button

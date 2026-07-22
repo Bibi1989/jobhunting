@@ -1,11 +1,13 @@
 import { query } from '~/server/utils/db'
 import { requireUser } from '~/server/utils/auth'
+import { assertFreeBuilderQuota } from '~/server/utils/planLimits'
 import type { BuilderResumeData } from '~/shared/types/builder'
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
   const body = await readBody<BuilderResumeData & { documentKind?: 'resume' | 'cover_letter' }>(event)
   const documentKind = body.documentKind === 'cover_letter' ? 'cover_letter' : 'resume'
+  await assertFreeBuilderQuota(user, documentKind)
   const { documentKind: _omit, ...data } = body
   const content = JSON.stringify(data)
   const name =

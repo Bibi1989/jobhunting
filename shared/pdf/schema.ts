@@ -79,12 +79,12 @@ export function layoutVariety(templateSlug?: string): PdfLayoutVariety {
     'the-digital-nomad': 'tech',
     'the-social-media-pro': 'modern',
     'the-creative-director': 'tech',
-    'the-brand-architect': 'minimal',
-    'the-typographer': 'modern',
+    'the-brand-architect': 'minimal', // alias → partner
+    'the-typographer': 'minimal',
     'the-strategist': 'tech',
     'the-engineer': 'tech',
     'the-researcher': 'minimal',
-    'the-researcher-updated': 'minimal',
+    'the-researcher-updated': 'minimal', // alias → researcher
   }
   if (exact[id]) return exact[id]!
 
@@ -102,9 +102,14 @@ export function layoutVariety(templateSlug?: string): PdfLayoutVariety {
     id.includes('corporate') ||
     id.includes('social-media') ||
     id.includes('distinguished') ||
-    id.includes('typographer')
+    id.includes('typographer') ||
+    id.includes('partner') ||
+    id.includes('researcher')
   ) {
-    return id.includes('corporate') ? 'minimal' : 'modern'
+    if (id.includes('corporate') || id.includes('partner') || id.includes('typographer') || id.includes('researcher')) {
+      return 'minimal'
+    }
+    return 'modern'
   }
   return 'minimal'
 }
