@@ -3,6 +3,7 @@ import { PORTFOLIO_TEMPLATES, type Portfolio } from '~/shared/types/portfolio'
 
 definePageMeta({ layout: 'dashboard' })
 
+const { t } = useI18n()
 const { planTier, creditsRemaining, isPro } = useSaaS()
 
 const { data: portfolioData } = await useFetch<{ portfolios: Portfolio[] }>('/api/portfolio', {
@@ -22,10 +23,10 @@ const coverLetterCount = computed(
 )
 
 const stats = computed(() => [
-  { label: 'Published Portfolios', value: portfolios.value.length, icon: 'stars', accent: 'text-blue-300' },
-  { label: 'Documents', value: (documents.value ?? []).length, icon: 'description', accent: 'text-indigo-300' },
-  { label: 'Credits Remaining', value: creditsRemaining.value, icon: 'toll', accent: 'text-emerald-300' },
-  { label: 'Plan', value: planTier.value.toUpperCase(), icon: 'workspace_premium', accent: 'text-amber-300' },
+  { label: t('analytics.publishedPortfolios'), value: portfolios.value.length, icon: 'stars', accent: 'text-blue-300' },
+  { label: t('analytics.documents'), value: (documents.value ?? []).length, icon: 'description', accent: 'text-indigo-300' },
+  { label: t('analytics.creditsRemaining'), value: creditsRemaining.value, icon: 'toll', accent: 'text-emerald-300' },
+  { label: t('analytics.plan'), value: planTier.value.toUpperCase(), icon: 'workspace_premium', accent: 'text-amber-300' },
 ])
 
 // Portfolio count per template, for the usage breakdown chart.
@@ -35,12 +36,12 @@ const templateUsage = computed(() => {
     counts.set(p.templateSlug, (counts.get(p.templateSlug) ?? 0) + 1)
   }
   const max = Math.max(1, ...counts.values())
-  return PORTFOLIO_TEMPLATES.map((t) => ({
-    name: t.name,
-    slug: t.slug,
-    accent: t.accentClass,
-    count: counts.get(t.slug) ?? 0,
-    pct: Math.round(((counts.get(t.slug) ?? 0) / max) * 100),
+  return PORTFOLIO_TEMPLATES.map((tpl) => ({
+    name: tpl.name,
+    slug: tpl.slug,
+    accent: tpl.accentClass,
+    count: counts.get(tpl.slug) ?? 0,
+    pct: Math.round(((counts.get(tpl.slug) ?? 0) / max) * 100),
   }))
 })
 
@@ -50,8 +51,8 @@ const hasUsage = computed(() => portfolios.value.length > 0)
 <template>
   <div class="px-6 py-10 max-w-7xl mx-auto">
     <header class="mb-8">
-      <h1 class="font-serif text-4xl text-app-fg mb-2">Analytics</h1>
-      <p class="text-app-muted">A snapshot of your workspace, documents, and published portfolios.</p>
+      <h1 class="font-serif text-4xl text-app-fg mb-2">{{ t('analytics.title') }}</h1>
+      <p class="text-app-muted">{{ t('analytics.subtitle') }}</p>
       <div class="w-full h-px bg-white/10 mt-6"></div>
     </header>
 
@@ -71,11 +72,11 @@ const hasUsage = computed(() => portfolios.value.length > 0)
     <div class="grid gap-6 lg:grid-cols-2">
       <!-- Documents breakdown -->
       <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-        <h2 class="font-semibold text-white mb-4">Documents by type</h2>
+        <h2 class="font-semibold text-white mb-4">{{ t('analytics.documentsByType') }}</h2>
         <div class="space-y-4">
           <div>
             <div class="flex justify-between text-sm mb-1">
-              <span class="text-blue-100">Resumes</span>
+              <span class="text-blue-100">{{ t('analytics.resumes') }}</span>
               <span class="text-blue-200/60">{{ resumeCount }}</span>
             </div>
             <div class="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -85,7 +86,7 @@ const hasUsage = computed(() => portfolios.value.length > 0)
           </div>
           <div>
             <div class="flex justify-between text-sm mb-1">
-              <span class="text-blue-100">Cover Letters</span>
+              <span class="text-blue-100">{{ t('analytics.coverLetters') }}</span>
               <span class="text-blue-200/60">{{ coverLetterCount }}</span>
             </div>
             <div class="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -98,19 +99,19 @@ const hasUsage = computed(() => portfolios.value.length > 0)
 
       <!-- Template usage -->
       <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-        <h2 class="font-semibold text-white mb-4">Portfolio template usage</h2>
+        <h2 class="font-semibold text-white mb-4">{{ t('analytics.portfolioTemplateUsage') }}</h2>
         <p v-if="!hasUsage" class="text-blue-200/50 italic text-sm">
-          No portfolios published yet.
-          <NuxtLink to="/dashboard/portfolio" class="text-blue-300 hover:underline">Build one →</NuxtLink>
+          {{ t('analytics.noPortfoliosYet') }}
+          <NuxtLink to="/dashboard/portfolio" class="text-blue-300 hover:underline">{{ t('analytics.buildOne') }}</NuxtLink>
         </p>
         <div v-else class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-          <div v-for="t in templateUsage" :key="t.slug" class="flex items-center gap-3">
-            <span class="w-2 h-2 rounded-full shrink-0" :class="t.accent"></span>
-            <span class="text-sm text-blue-100 w-32 truncate">{{ t.name }}</span>
+          <div v-for="tpl in templateUsage" :key="tpl.slug" class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full shrink-0" :class="tpl.accent"></span>
+            <span class="text-sm text-blue-100 w-32 truncate">{{ tpl.name }}</span>
             <div class="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
-              <div class="h-full rounded-full transition-all" :class="t.accent" :style="{ width: `${t.pct}%` }"></div>
+              <div class="h-full rounded-full transition-all" :class="tpl.accent" :style="{ width: `${tpl.pct}%` }"></div>
             </div>
-            <span class="text-xs text-blue-200/60 w-6 text-right">{{ t.count }}</span>
+            <span class="text-xs text-blue-200/60 w-6 text-right">{{ tpl.count }}</span>
           </div>
         </div>
       </section>
@@ -119,14 +120,14 @@ const hasUsage = computed(() => portfolios.value.length > 0)
     <!-- Recent published portfolios -->
     <section class="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="font-semibold text-white">Published portfolios</h2>
+        <h2 class="font-semibold text-white">{{ t('analytics.publishedHeading') }}</h2>
         <NuxtLink to="/dashboard/portfolio" class="text-sm text-blue-300 hover:text-white transition">
-          Open Portfolio →
+          {{ t('analytics.openPortfolio') }}
         </NuxtLink>
       </div>
       <p v-if="!portfolios.length" class="text-blue-200/50 italic text-sm">
-        No live portfolios yet.
-        <NuxtLink to="/dashboard/portfolio" class="text-blue-300 hover:underline">Create one</NuxtLink>
+        {{ t('analytics.noLiveYet') }}
+        <NuxtLink to="/dashboard/portfolio" class="text-blue-300 hover:underline">{{ t('analytics.createOne') }}</NuxtLink>
       </p>
       <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <a
@@ -146,11 +147,11 @@ const hasUsage = computed(() => portfolios.value.length > 0)
     <!-- Upsell for free users -->
     <section v-if="!isPro" class="mt-8 rounded-2xl border border-blue-500/30 bg-blue-600/10 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="min-w-0">
-        <p class="font-semibold text-white">Unlock AI Portfolios and premium tools</p>
-        <p class="text-sm text-blue-200/70">Upgrade to Pro to generate portfolios and publish them to your domain.</p>
+        <p class="font-semibold text-white">{{ t('analytics.unlockTitle') }}</p>
+        <p class="text-sm text-blue-200/70">{{ t('analytics.unlockBody') }}</p>
       </div>
       <NuxtLink to="/pricing" class="shrink-0 inline-flex justify-center rounded-xl bg-blue-500 hover:bg-blue-400 px-5 py-2.5 font-semibold text-white transition">
-        Upgrade
+        {{ t('analytics.upgrade') }}
       </NuxtLink>
     </section>
   </div>

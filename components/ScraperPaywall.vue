@@ -1,7 +1,13 @@
 <script setup lang="ts">
-const { canAccessScraper, loggedIn, creditsRemaining, scraperBlockedMessage, pending } = useSaaS()
+const { canAccessScraper, loggedIn, creditsRemaining, planTier, scraperBlockedMessage, pending } = useSaaS()
 
 const message = computed(() => scraperBlockedMessage())
+const outOfCredits = computed(() => loggedIn.value && planTier.value === 'pro' && creditsRemaining.value <= 0)
+const creditsCta = computed(() => {
+  if (!loggedIn.value) return { to: '/pricing', label: 'View pricing' }
+  if (outOfCredits.value) return { to: '/account/billing', label: 'Top up credits' }
+  return { to: '/pricing', label: 'Get credits' }
+})
 </script>
 
 <template>
@@ -37,10 +43,10 @@ const message = computed(() => scraperBlockedMessage())
         Register
       </NuxtLink>
       <NuxtLink
-        to="/pricing"
+        :to="creditsCta.to"
         class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold cursor-pointer"
       >
-        {{ loggedIn ? 'Get credits' : 'View pricing' }}
+        {{ creditsCta.label }}
       </NuxtLink>
     </div>
   </div>

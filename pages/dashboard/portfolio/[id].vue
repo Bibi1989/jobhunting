@@ -15,6 +15,7 @@ import { useAiUndo } from '~/composables/useAiUndo'
 
 definePageMeta({ layout: 'dashboard' })
 
+const { t } = useI18n()
 const route = useRoute()
 const toast = useAppToast()
 const { confirm } = useAppConfirm()
@@ -33,10 +34,10 @@ function notifyAiSuccess(message: string) {
   toast.success(message, {
     action: canUndoAi.value
       ? {
-          label: 'Undo',
+          label: t('portfolioEditor.undo'),
           onClick: () => {
             const entry = undoAi()
-            if (entry) toast.info(`Reverted: ${entry.label}`)
+            if (entry) toast.info(t('portfolioEditor.reverted', { label: entry.label }))
           },
         }
       : undefined,
@@ -86,25 +87,25 @@ watchEffect(() => {
     
     // Migrate old string links to the new PortfolioLink object format, and initialize missing ones
     if (typeof form.value.website === 'string') {
-      form.value.website = { label: 'Website', url: form.value.website }
+      form.value.website = { label: t('portfolioEditor.defaultWebsite'), url: form.value.website }
     } else if (!form.value.website) {
       form.value.website = { label: '', url: '' }
     }
 
     if (typeof form.value.linkedin === 'string') {
-      form.value.linkedin = { label: 'LinkedIn', url: form.value.linkedin }
+      form.value.linkedin = { label: t('portfolioEditor.defaultLinkedin'), url: form.value.linkedin }
     } else if (!form.value.linkedin) {
       form.value.linkedin = { label: '', url: '' }
     }
 
     if (typeof form.value.github === 'string') {
-      form.value.github = { label: 'GitHub', url: form.value.github }
+      form.value.github = { label: t('portfolioEditor.defaultGithub'), url: form.value.github }
     } else if (!form.value.github) {
       form.value.github = { label: '', url: '' }
     }
 
     if (typeof form.value.resume === 'string') {
-      form.value.resume = { label: 'Resume', url: form.value.resume }
+      form.value.resume = { label: t('portfolioEditor.defaultResume'), url: form.value.resume }
     } else if (!form.value.resume) {
       form.value.resume = { label: '', url: '' }
     }
@@ -121,7 +122,7 @@ watch(unlocked, (pro) => {
 
 function selectTemplate(slug: string) {
   if (!unlocked.value && slug !== DEFAULT_TEMPLATE_SLUG) {
-    toast.info('Upgrade to Pro to unlock all portfolio templates.')
+    toast.info(t('portfolioEditor.upgradeProTemplates'))
     return
   }
   templateSlug.value = slug
@@ -189,7 +190,7 @@ async function analyzeExperience(index: number) {
   const title = [role.title, role.company].filter(Boolean).join(' at ')
   const description = descriptionPlainText(role.description)
   if (!title || !description) {
-    toast.info('Enter a job title, company, and description before analyzing.')
+    toast.info(t('portfolioEditor.enterRoleBeforeAnalyze'))
     return
   }
   analyzingExperienceIdx.value = index
@@ -203,10 +204,10 @@ async function analyzeExperience(index: number) {
       },
     })
     experienceAnalyses.value[index] = result
-    toast.success('Role case study analyzed successfully!')
+    toast.success(t('portfolioEditor.roleAnalyzed'))
   } catch (e) {
     console.error(e)
-    toast.error('Failed to analyze role description.')
+    toast.error(t('portfolioEditor.failedAnalyzeRole'))
   } finally {
     analyzingExperienceIdx.value = null
   }
@@ -217,13 +218,13 @@ function applyExperienceRewrite(index: number) {
   if (analysis && form.value?.formatted_experience?.[index]) {
     const previous = form.value.formatted_experience[index].description
     const scope = `experience:${index}`
-    pushAiUndo(scope, 'Undo role rewrite', () => {
+    pushAiUndo(scope, t('portfolioEditor.undoRoleRewrite'), () => {
       if (form.value?.formatted_experience?.[index]) {
         form.value.formatted_experience[index].description = previous
       }
     })
     form.value.formatted_experience[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
-    notifyAiSuccess('Suggested rewrite applied to role description.')
+    notifyAiSuccess(t('portfolioEditor.rewriteAppliedRole'))
   }
 }
 
@@ -260,7 +261,7 @@ const analyzingProjectIdx = ref<number | null>(null)
 async function analyzeProject(index: number) {
   const project = form.value?.formatted_projects[index]
   if (!project || !project.title || !descriptionPlainText(project.description)) {
-    toast.info('Enter a title and description before analyzing.')
+    toast.info(t('portfolioEditor.enterProjectBeforeAnalyze'))
     return
   }
   analyzingProjectIdx.value = index
@@ -274,10 +275,10 @@ async function analyzeProject(index: number) {
       },
     })
     projectAnalyses.value[index] = result
-    toast.success('Project case study analyzed successfully!')
+    toast.success(t('portfolioEditor.projectAnalyzed'))
   } catch (e) {
     console.error(e)
-    toast.error('Failed to analyze project description.')
+    toast.error(t('portfolioEditor.failedAnalyzeProject'))
   } finally {
     analyzingProjectIdx.value = null
   }
@@ -288,13 +289,13 @@ function applyProjectRewrite(index: number) {
   if (analysis && form.value?.formatted_projects[index]) {
     const previous = form.value.formatted_projects[index].description
     const scope = `project:${index}`
-    pushAiUndo(scope, 'Undo project rewrite', () => {
+    pushAiUndo(scope, t('portfolioEditor.undoProjectRewrite'), () => {
       if (form.value?.formatted_projects[index]) {
         form.value.formatted_projects[index].description = previous
       }
     })
     form.value.formatted_projects[index].description = normalizeBulletListHtml(analysis.suggestedRewrite)
-    notifyAiSuccess('Suggested rewrite applied to project description.')
+    notifyAiSuccess(t('portfolioEditor.rewriteAppliedProject'))
   }
 }
 
@@ -308,12 +309,12 @@ const sectionEntries = computed<SectionEntry[]>(() => {
     kind: s.kind,
     label:
       s.kind === 'projects'
-        ? 'Projects'
+        ? t('portfolioEditor.projects')
         : s.kind === 'experience'
-          ? 'Experience'
+          ? t('portfolioEditor.experience')
           : s.kind === 'skills'
-            ? 'Skills'
-            : s.custom?.title?.trim() || 'Custom section',
+            ? t('portfolioEditor.skills')
+            : s.custom?.title?.trim() || t('portfolioEditor.customSection'),
   }))
 })
 
@@ -351,7 +352,7 @@ function addCustomSection() {
   if (!form.value) return
   form.value.custom_sections ||= []
   const id = `custom-${Math.random().toString(36).slice(2, 8)}`
-  form.value.custom_sections.push({ id, title: 'New Section', content: '' })
+  form.value.custom_sections.push({ id, title: t('portfolioEditor.newSection'), content: '' })
   form.value.section_order = orderedBodySections(form.value).map((s) => s.key)
 }
 function removeCustomSection(key: string) {
@@ -374,7 +375,7 @@ function removeSkill(skill: string) {
 async function save() {
   if (!form.value) return
   if (!form.value.full_name.trim()) {
-    toast.error('Full name is required.')
+    toast.error(t('portfolioEditor.fullNameRequired'))
     return
   }
   saving.value = true
@@ -383,10 +384,10 @@ async function save() {
       method: 'PUT',
       body: { templateSlug: templateSlug.value, profileData: form.value },
     })
-    toast.success('Portfolio updated.')
+    toast.success(t('portfolioEditor.portfolioUpdated'))
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
-    toast.error(e.data?.statusMessage || e.statusMessage || 'Update failed')
+    toast.error(e.data?.statusMessage || e.statusMessage || t('portfolioEditor.updateFailed'))
   } finally {
     saving.value = false
   }
@@ -394,34 +395,34 @@ async function save() {
 
 async function remove() {
   const ok = await confirm({
-    title: 'Delete portfolio',
-    message: 'This permanently deletes the portfolio and its public link. Continue?',
-    confirmLabel: 'Delete',
+    title: t('portfolioEditor.deleteTitle'),
+    message: t('portfolioEditor.deleteMessage'),
+    confirmLabel: t('portfolioEditor.deleteConfirm'),
     danger: true,
   })
   if (!ok) return
   deleting.value = true
   try {
     await $fetch(`/api/portfolio/${id.value}`, { method: 'DELETE' })
-    toast.success('Portfolio deleted.')
+    toast.success(t('portfolioEditor.portfolioDeleted'))
     await navigateTo('/dashboard/portfolio')
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
-    toast.error(e.data?.statusMessage || e.statusMessage || 'Delete failed')
+    toast.error(e.data?.statusMessage || e.statusMessage || t('portfolioEditor.deleteFailed'))
   } finally {
     deleting.value = false
   }
 }
 
-const contactFields = [
-  { key: 'email', label: 'Email', placeholder: 'you@example.com', icon: 'mail' },
-  { key: 'phone', label: 'Phone', placeholder: '+1 555 123 4567', icon: 'call' },
-  { key: 'location', label: 'Location', placeholder: 'City, Country', icon: 'location_on' },
-  { key: 'website', label: 'Website', placeholder: 'yoursite.com', icon: 'language' },
-  { key: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/in/you', icon: 'link' },
-  { key: 'github', label: 'GitHub', placeholder: 'github.com/you', icon: 'code' },
-  { key: 'resume', label: 'Resume', placeholder: 'Link to PDF/Doc', icon: 'description' },
-] as const
+const contactFields = computed(() => [
+  { key: 'email', label: t('portfolioEditor.email'), placeholder: t('portfolioEditor.emailPlaceholder'), icon: 'mail' },
+  { key: 'phone', label: t('portfolioEditor.phone'), placeholder: t('portfolioEditor.phonePlaceholder'), icon: 'call' },
+  { key: 'location', label: t('portfolioEditor.location'), placeholder: t('portfolioEditor.locationPlaceholder'), icon: 'location_on' },
+  { key: 'website', label: t('portfolioEditor.website'), placeholder: t('portfolioEditor.websitePlaceholder'), icon: 'language' },
+  { key: 'linkedin', label: t('portfolioEditor.linkedin'), placeholder: t('portfolioEditor.linkedinPlaceholder'), icon: 'link' },
+  { key: 'github', label: t('portfolioEditor.github'), placeholder: t('portfolioEditor.githubPlaceholder'), icon: 'code' },
+  { key: 'resume', label: t('portfolioEditor.resume'), placeholder: t('portfolioEditor.resumePlaceholder'), icon: 'description' },
+] as const)
 
 const inputClass =
   'w-full rounded-lg bg-slate-900/60 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-blue-200/30 focus:outline-none focus:border-blue-400 transition'
@@ -434,7 +435,7 @@ const inputClass =
       <div class="flex items-center gap-3">
         <NuxtLink to="/dashboard/portfolio" class="material-symbols-outlined text-blue-200/70 hover:text-white">arrow_back</NuxtLink>
         <div>
-          <h1 class="font-serif text-2xl sm:text-3xl text-white">Edit portfolio</h1>
+          <h1 class="font-serif text-2xl sm:text-3xl text-white">{{ t('portfolioEditor.editPortfolio') }}</h1>
           <p class="text-xs text-blue-200/50" v-if="form">{{ templateName(templateSlug) }} · /p/{{ id }}</p>
         </div>
       </div>
@@ -445,17 +446,17 @@ const inputClass =
           rel="noopener"
           class="rounded-lg border border-white/15 hover:bg-white/5 px-4 py-2 text-sm font-semibold text-blue-100 transition"
         >
-          View live
+          {{ t('portfolioEditor.viewLive') }}
         </a>
         <button
           v-if="canUndoAi"
           type="button"
           class="rounded-lg border border-amber-500/40 text-amber-200 hover:bg-amber-500/15 px-4 py-2 text-sm font-semibold transition inline-flex items-center gap-1"
           :title="lastAiUndoLabel"
-          @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
+          @click="() => { const entry = undoAi(); if (entry) toast.info(t('portfolioEditor.reverted', { label: entry.label })) }"
         >
           <span class="material-symbols-outlined text-[16px]">undo</span>
-          Undo AI
+          {{ t('portfolioEditor.undoAi') }}
         </button>
         <button
           type="button"
@@ -463,7 +464,7 @@ const inputClass =
           :disabled="deleting"
           @click="remove"
         >
-          {{ deleting ? 'Deleting…' : 'Delete' }}
+          {{ deleting ? t('portfolioEditor.deleting') : t('portfolioEditor.delete') }}
         </button>
         <button
           type="button"
@@ -471,17 +472,17 @@ const inputClass =
           :disabled="saving"
           @click="save"
         >
-          {{ saving ? 'Saving…' : 'Save changes' }}
+          {{ saving ? t('portfolioEditor.saving') : t('portfolioEditor.saveChanges') }}
         </button>
       </div>
     </div>
 
     <!-- Not found -->
     <div v-if="error" class="rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
-      <p class="text-white font-semibold text-lg">Portfolio not found</p>
-      <p class="text-blue-200/60 mt-1">{{ (error as any)?.statusMessage || 'You may not have access to this portfolio.' }}</p>
+      <p class="text-white font-semibold text-lg">{{ t('portfolioEditor.notFound') }}</p>
+      <p class="text-blue-200/60 mt-1">{{ (error as any)?.statusMessage || t('portfolioEditor.notFoundMessage') }}</p>
       <NuxtLink to="/dashboard/portfolio" class="inline-block mt-4 rounded-lg bg-blue-500 hover:bg-blue-400 px-5 py-2.5 font-semibold text-white">
-        Back to portfolios
+        {{ t('portfolioEditor.backToPortfolios') }}
       </NuxtLink>
     </div>
 
@@ -492,7 +493,7 @@ const inputClass =
         <!-- Template -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-300">dashboard_customize</span> Template
+            <span class="material-symbols-outlined text-blue-300">dashboard_customize</span> {{ t('portfolioEditor.template') }}
           </h2>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div
@@ -515,13 +516,13 @@ const inputClass =
                 <span
                   v-if="!unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG"
                   class="absolute top-1 right-1 text-[9px] font-bold uppercase tracking-wider rounded px-1 py-0.5 bg-amber-500/90 text-slate-950"
-                >Pro</span>
+                >{{ t('portfolioEditor.pro') }}</span>
                 <button
                   type="button"
                   class="absolute bottom-1 right-1 text-[10px] font-semibold rounded bg-white/90 text-slate-900 px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition"
                   @click.stop="previewSlug = template.slug"
                 >
-                  Preview
+                  {{ t('portfolioEditor.preview') }}
                 </button>
               </div>
               <div class="p-2 flex items-center gap-1.5">
@@ -532,16 +533,16 @@ const inputClass =
             </div>
           </div>
           <p v-if="!unlocked" class="mt-3 text-xs text-blue-200/50">
-            Free plan uses the Visionary template.
-            <NuxtLink to="/pricing" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Upgrade to Pro</NuxtLink>
-            for all designs.
+            {{ t('portfolioEditor.freePlanTemplate') }}
+            <NuxtLink to="/pricing" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">{{ t('portfolioEditor.upgradePro') }}</NuxtLink>
+            {{ t('portfolioEditor.forAllDesigns') }}
           </p>
         </section>
 
         <!-- Color Theme -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-300">palette</span> Color Theme
+            <span class="material-symbols-outlined text-blue-300">palette</span> {{ t('portfolioEditor.colorTheme') }}
           </h2>
           <div class="flex flex-wrap gap-3">
             <button
@@ -562,28 +563,28 @@ const inputClass =
         <!-- Navigation & Buttons -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-300">smart_button</span> Navigation & Buttons
+            <span class="material-symbols-outlined text-blue-300">smart_button</span> {{ t('portfolioEditor.navButtons') }}
           </h2>
           <div class="grid sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Primary Contact CTA</label>
-              <input v-model="form.button_texts!.contact_cta" :class="inputClass" placeholder="e.g. Contact, Get in touch" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.primaryCta') }}</label>
+              <input v-model="form.button_texts!.contact_cta" :class="inputClass" :placeholder="t('portfolioEditor.primaryCtaPlaceholder')" />
             </div>
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Hero CTA</label>
-              <input v-model="form.button_texts!.hero_cta" :class="inputClass" placeholder="e.g. View my work" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.heroCta') }}</label>
+              <input v-model="form.button_texts!.hero_cta" :class="inputClass" :placeholder="t('portfolioEditor.heroCtaPlaceholder')" />
             </div>
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Projects Nav Link</label>
-              <input v-model="form.button_texts!.nav_projects" :class="inputClass" placeholder="e.g. Work, Portfolio" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.navProjects') }}</label>
+              <input v-model="form.button_texts!.nav_projects" :class="inputClass" :placeholder="t('portfolioEditor.navProjectsPlaceholder')" />
             </div>
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Experience Nav Link</label>
-              <input v-model="form.button_texts!.nav_experience" :class="inputClass" placeholder="e.g. Experience, Career" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.navExperience') }}</label>
+              <input v-model="form.button_texts!.nav_experience" :class="inputClass" :placeholder="t('portfolioEditor.navExperiencePlaceholder')" />
             </div>
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Skills Nav Link</label>
-              <input v-model="form.button_texts!.nav_skills" :class="inputClass" placeholder="e.g. Skills, Expertise" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.navSkills') }}</label>
+              <input v-model="form.button_texts!.nav_skills" :class="inputClass" :placeholder="t('portfolioEditor.navSkillsPlaceholder')" />
             </div>
           </div>
         </section>
@@ -591,23 +592,23 @@ const inputClass =
         <!-- Basics -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-300">badge</span> Basics
+            <span class="material-symbols-outlined text-blue-300">badge</span> {{ t('portfolioEditor.basics') }}
           </h2>
           <div class="space-y-3">
             <div>
-              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">Full name</label>
-              <input v-model="form.full_name" :class="inputClass" placeholder="Your name" />
+              <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ t('portfolioEditor.fullName') }}</label>
+              <input v-model="form.full_name" :class="inputClass" :placeholder="t('portfolioEditor.yourName')" />
             </div>
             <div>
               <div class="flex items-center gap-2 mb-1 group">
                 <input
                   class="bg-transparent border-b border-transparent focus:border-blue-400 focus:outline-none text-xs uppercase tracking-widest text-blue-200/50 hover:border-white/20 transition"
-                  placeholder="Professional bio"
+                  :placeholder="t('portfolioEditor.professionalBio')"
                   v-model="form.section_titles!.profile"
                 />
                 <span class="material-symbols-outlined text-[14px] text-blue-200/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">edit</span>
               </div>
-              <textarea v-model="form.professional_bio" rows="4" :class="inputClass" placeholder="A short first-person summary"></textarea>
+              <textarea v-model="form.professional_bio" rows="4" :class="inputClass" :placeholder="t('portfolioEditor.bioPlaceholder')"></textarea>
             </div>
           </div>
         </section>
@@ -615,18 +616,16 @@ const inputClass =
         <!-- Contact -->
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <h2 class="font-semibold text-white mb-1 flex items-center gap-2">
-            <span class="material-symbols-outlined text-blue-300">contact_mail</span> Contact
+            <span class="material-symbols-outlined text-blue-300">contact_mail</span> {{ t('portfolioEditor.contact') }}
           </h2>
           <p class="text-xs text-blue-200/50 mb-4">
-            Hiring managers use the portfolio contact form — messages are emailed to the address below
-            (or your account email if this field is empty). Set <code class="text-blue-200/70">RESEND_API_KEY</code>
-            and <code class="text-blue-200/70">CONTACT_FROM_EMAIL</code> for delivery.
+            {{ t('portfolioEditor.contactHelp') }}
           </p>
           <div class="grid sm:grid-cols-2 gap-3">
             <div v-for="field in contactFields" :key="field.key">
               <label class="block text-xs uppercase tracking-widest text-blue-200/50 mb-1">{{ field.label }}</label>
               <div v-if="['website', 'linkedin', 'github', 'resume'].includes(field.key)" class="flex gap-2">
-                <input v-model="(form[field.key as keyof PortfolioProfileData] as any).label" placeholder="Display text" :class="[inputClass, 'w-1/3']" />
+                <input v-model="(form[field.key as keyof PortfolioProfileData] as any).label" :placeholder="t('portfolioEditor.displayText')" :class="[inputClass, 'w-1/3']" />
                 <div class="relative w-2/3">
                   <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-blue-200/40 text-[18px]">{{ field.icon }}</span>
                   <input v-model="(form[field.key as keyof PortfolioProfileData] as any).url" :placeholder="field.placeholder" :class="[inputClass, 'pl-9']" />
@@ -646,7 +645,7 @@ const inputClass =
             <h2 class="font-semibold text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-blue-300">work_history</span>
               <span v-if="!editingExperienceTitle" class="flex items-center gap-2">
-                {{ form.section_titles!.experience || 'Experience' }}
+                {{ form.section_titles!.experience || t('portfolioEditor.experience') }}
                 <button type="button" @click="editingExperienceTitle = true" class="text-blue-200/40 hover:text-white transition">
                   <span class="material-symbols-outlined text-[16px]">edit</span>
                 </button>
@@ -655,7 +654,7 @@ const inputClass =
                 v-else
                 v-model="form.section_titles!.experience"
                 class="bg-slate-900/60 border border-blue-500/50 rounded px-2 py-0.5 text-sm text-white focus:outline-none w-40"
-                placeholder="Experience Title"
+                :placeholder="t('portfolioEditor.experienceTitle')"
                 @blur="editingExperienceTitle = false; save()"
                 @keyup.enter="editingExperienceTitle = false; save()"
                 autofocus
@@ -663,12 +662,12 @@ const inputClass =
               <span class="text-blue-200/50 text-sm font-normal ml-2">({{ form.formatted_experience?.length || 0 }})</span>
             </h2>
             <button type="button" class="rounded-lg bg-blue-500/90 hover:bg-blue-400 px-3 py-1.5 text-sm font-semibold text-white" @click="addExperience">
-              + Add role
+              {{ t('portfolioEditor.addRole') }}
             </button>
           </div>
 
           <p v-if="!(form.formatted_experience?.length)" class="text-blue-200/50 italic text-sm">
-            No experience yet. Add employment roles separately from projects.
+            {{ t('portfolioEditor.noExperience') }}
           </p>
 
           <div v-else class="space-y-4">
@@ -678,38 +677,38 @@ const inputClass =
               class="rounded-xl border border-white/10 bg-slate-900/40 p-4"
             >
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-blue-200/50 uppercase tracking-widest">Role {{ i + 1 }}</span>
+                <span class="text-xs font-semibold text-blue-200/50 uppercase tracking-widest">{{ t('portfolioEditor.roleN', { n: i + 1 }) }}</span>
                 <div class="flex items-center gap-1">
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" title="Move up" @click="moveExperience(i, -1)">arrow_upward</button>
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === (form.formatted_experience?.length || 0) - 1" title="Move down" @click="moveExperience(i, 1)">arrow_downward</button>
-                  <button type="button" class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300" title="Remove" @click="removeExperience(i)">delete</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" :title="t('portfolioEditor.moveUp')" @click="moveExperience(i, -1)">arrow_upward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === (form.formatted_experience?.length || 0) - 1" :title="t('portfolioEditor.moveDown')" @click="moveExperience(i, 1)">arrow_downward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300" :title="t('portfolioEditor.remove')" @click="removeExperience(i)">delete</button>
                 </div>
               </div>
               <div class="space-y-3">
                 <div class="grid sm:grid-cols-2 gap-3">
-                  <input v-model="role.title" :class="inputClass" placeholder="Job title" />
-                  <input v-model="role.company" :class="inputClass" placeholder="Company" />
+                  <input v-model="role.title" :class="inputClass" :placeholder="t('portfolioEditor.jobTitle')" />
+                  <input v-model="role.company" :class="inputClass" :placeholder="t('portfolioEditor.company')" />
                 </div>
                 <div class="grid sm:grid-cols-3 gap-3">
-                  <input v-model="role.location" :class="inputClass" placeholder="Location" />
-                  <input v-model="role.start_date" :class="inputClass" placeholder="Start (e.g. 2021)" />
-                  <input v-model="role.end_date" :class="inputClass" :disabled="role.is_current" placeholder="End (e.g. 2024)" />
+                  <input v-model="role.location" :class="inputClass" :placeholder="t('portfolioEditor.location')" />
+                  <input v-model="role.start_date" :class="inputClass" :placeholder="t('portfolioEditor.startDate')" />
+                  <input v-model="role.end_date" :class="inputClass" :disabled="role.is_current" :placeholder="t('portfolioEditor.endDate')" />
                 </div>
                 <label class="inline-flex items-center gap-2 text-sm text-blue-100/80">
                   <input v-model="role.is_current" type="checkbox" class="rounded border-white/20 bg-slate-900" />
-                  Current role
+                  {{ t('portfolioEditor.currentRole') }}
                 </label>
 
                 <div>
                   <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">
-                    Description
-                    <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span>
+                    {{ t('portfolioEditor.description') }}
+                    <span class="text-blue-400 normal-case ml-2">{{ t('portfolioEditor.descriptionHint') }}</span>
                   </label>
                   <div class="rounded border border-white/10 bg-white/5 overflow-hidden">
                     <BuilderBulletDescriptionEditor
                       :key="`exp-desc-${i}`"
                       v-model="role.description"
-                      placeholder="What you did and the impact…"
+                      :placeholder="t('portfolioEditor.experienceDescPlaceholder')"
                       :rows="4"
                     />
                   </div>
@@ -729,7 +728,7 @@ const inputClass =
                   <input
                     v-model="experienceTechDraft[i]"
                     :class="inputClass"
-                    placeholder="Add a technology, press Enter"
+                    :placeholder="t('portfolioEditor.addTech')"
                     @keyup.enter="addExperienceTech(role, i)"
                   />
                 </div>
@@ -739,7 +738,7 @@ const inputClass =
                   <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-blue-300 text-lg">analytics</span>
-                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Case Study Quality Check</span>
+                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ t('portfolioEditor.caseStudyCheck') }}</span>
                     </div>
                     <button
                       type="button"
@@ -750,7 +749,7 @@ const inputClass =
                       <span class="material-symbols-outlined text-[14px]" :class="{'animate-spin': analyzingExperienceIdx === i}">
                         {{ analyzingExperienceIdx === i ? 'sync' : 'auto_awesome' }}
                       </span>
-                      {{ analyzingExperienceIdx === i ? 'Analyzing...' : 'Analyze Case Study' }}
+                      {{ analyzingExperienceIdx === i ? t('portfolioEditor.analyzing') : t('portfolioEditor.analyzeCaseStudy') }}
                     </button>
                   </div>
 
@@ -762,33 +761,33 @@ const inputClass =
                           <span class="text-[8px] uppercase tracking-widest text-indigo-300">/ 100</span>
                         </div>
                         <div>
-                          <p class="text-xs font-semibold text-white">Completeness Score</p>
-                          <p class="text-[10px] text-slate-400 leading-none">Measures depth and impact</p>
+                          <p class="text-xs font-semibold text-white">{{ t('portfolioEditor.completenessScore') }}</p>
+                          <p class="text-[10px] text-slate-400 leading-none">{{ t('portfolioEditor.measuresDepth') }}</p>
                         </div>
                       </div>
 
                       <div class="flex-1 max-w-[280px] grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-400">
                         <div class="flex items-center justify-between">
-                          <span>Problem:</span>
+                          <span>{{ t('portfolioEditor.problem') }}</span>
                           <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.problem }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Action:</span>
+                          <span>{{ t('portfolioEditor.action') }}</span>
                           <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.action }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Results:</span>
+                          <span>{{ t('portfolioEditor.results') }}</span>
                           <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.results }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Tech Spec:</span>
+                          <span>{{ t('portfolioEditor.techSpec') }}</span>
                           <span class="font-mono text-white">{{ experienceAnalyses[i].breakdown.tech }}%</span>
                         </div>
                       </div>
                     </div>
 
                     <div v-if="experienceAnalyses[i].improvements?.length" class="space-y-1.5 border-t border-white/5 pt-3">
-                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Targeted Improvements:</h4>
+                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">{{ t('portfolioEditor.targetedImprovements') }}</h4>
                       <ul class="space-y-1 text-xs text-slate-300">
                         <li v-for="(imp, impIdx) in experienceAnalyses[i].improvements" :key="impIdx" class="flex gap-2 items-start text-left">
                           <span class="material-symbols-outlined text-[14px] text-amber-400 mt-0.5 shrink-0">warning</span>
@@ -799,22 +798,22 @@ const inputClass =
 
                     <div v-if="experienceAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
                       <div class="flex justify-between items-center">
-                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
+                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">{{ t('portfolioEditor.suggestedRewrite') }}</h4>
                         <div class="flex items-center gap-1.5">
                           <button
                             v-if="canUndoAiScope(`experience:${i}`)"
                             type="button"
                             class="px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 border border-amber-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
-                            @click="() => { const entry = undoAiScope(`experience:${i}`); if (entry) toast.info('Role rewrite undone.') }"
+                            @click="() => { const entry = undoAiScope(`experience:${i}`); if (entry) toast.info(t('portfolioEditor.roleRewriteUndone')) }"
                           >
-                            Undo
+                            {{ t('portfolioEditor.undo') }}
                           </button>
                           <button
                             type="button"
                             class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
                             @click="applyExperienceRewrite(i)"
                           >
-                            Apply Rewrite
+                            {{ t('portfolioEditor.applyRewrite') }}
                           </button>
                         </div>
                       </div>
@@ -835,7 +834,7 @@ const inputClass =
             <h2 class="font-semibold text-white flex items-center gap-2">
               <span class="material-symbols-outlined text-blue-300">work</span>
               <span v-if="!editingProjectsTitle" class="flex items-center gap-2">
-                {{ form.section_titles!.projects || 'Projects' }}
+                {{ form.section_titles!.projects || t('portfolioEditor.projects') }}
                 <button type="button" @click="editingProjectsTitle = true" class="text-blue-200/40 hover:text-white transition">
                   <span class="material-symbols-outlined text-[16px]">edit</span>
                 </button>
@@ -844,7 +843,7 @@ const inputClass =
                 v-else
                 v-model="form.section_titles!.projects"
                 class="bg-slate-900/60 border border-blue-500/50 rounded px-2 py-0.5 text-sm text-white focus:outline-none w-40"
-                placeholder="Projects Title"
+                :placeholder="t('portfolioEditor.projectsTitle')"
                 @blur="editingProjectsTitle = false; save()"
                 @keyup.enter="editingProjectsTitle = false; save()"
                 autofocus
@@ -852,12 +851,12 @@ const inputClass =
               <span class="text-blue-200/50 text-sm font-normal ml-2">({{ form.formatted_projects.length }})</span>
             </h2>
             <button type="button" class="rounded-lg bg-blue-500/90 hover:bg-blue-400 px-3 py-1.5 text-sm font-semibold text-white" @click="addProject">
-              + Add project
+              {{ t('portfolioEditor.addProject') }}
             </button>
           </div>
 
           <p v-if="!form.formatted_projects.length" class="text-blue-200/50 italic text-sm">
-            No projects yet. Add one to showcase your work.
+            {{ t('portfolioEditor.noProjects') }}
           </p>
 
           <div v-else class="space-y-4">
@@ -867,30 +866,30 @@ const inputClass =
               class="rounded-xl border border-white/10 bg-slate-900/40 p-4"
             >
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-blue-200/50 uppercase tracking-widest">Project {{ i + 1 }}</span>
+                <span class="text-xs font-semibold text-blue-200/50 uppercase tracking-widest">{{ t('portfolioEditor.projectN', { n: i + 1 }) }}</span>
                 <div class="flex items-center gap-1">
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" title="Move up" @click="moveProject(i, -1)">arrow_upward</button>
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === form.formatted_projects.length - 1" title="Move down" @click="moveProject(i, 1)">arrow_downward</button>
-                  <button type="button" class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300" title="Remove" @click="removeProject(i)">delete</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" :title="t('portfolioEditor.moveUp')" @click="moveProject(i, -1)">arrow_upward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === form.formatted_projects.length - 1" :title="t('portfolioEditor.moveDown')" @click="moveProject(i, 1)">arrow_downward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300" :title="t('portfolioEditor.remove')" @click="removeProject(i)">delete</button>
                 </div>
               </div>
               <div class="space-y-3">
-                <input v-model="project.title" :class="inputClass" placeholder="Project title" />
+                <input v-model="project.title" :class="inputClass" :placeholder="t('portfolioEditor.projectTitle')" />
                 <div>
                   <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">
-                    Description
-                    <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span>
+                    {{ t('portfolioEditor.description') }}
+                    <span class="text-blue-400 normal-case ml-2">{{ t('portfolioEditor.descriptionHint') }}</span>
                   </label>
                   <div class="rounded border border-white/10 bg-white/5 overflow-hidden">
                     <BuilderBulletDescriptionEditor
                       :key="`proj-desc-${i}`"
                       v-model="project.description"
-                      placeholder="What it was and the impact…"
+                      :placeholder="t('portfolioEditor.projectDescPlaceholder')"
                       :rows="4"
                     />
                   </div>
                 </div>
-                <input v-model="project.url" :class="inputClass" placeholder="Live / case-study URL (optional)" />
+                <input v-model="project.url" :class="inputClass" :placeholder="t('portfolioEditor.projectUrlPlaceholder')" />
                 <div>
                   <div class="flex flex-wrap gap-1.5 mb-2">
                     <span
@@ -905,7 +904,7 @@ const inputClass =
                   <input
                     v-model="techDraft[i]"
                     :class="inputClass"
-                    placeholder="Add a technology, press Enter"
+                    :placeholder="t('portfolioEditor.addTech')"
                     @keyup.enter="addTech(project, i)"
                   />
                 </div>
@@ -915,7 +914,7 @@ const inputClass =
                   <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-blue-300 text-lg">analytics</span>
-                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Case Study Quality Check</span>
+                      <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">{{ t('portfolioEditor.caseStudyCheck') }}</span>
                     </div>
                     <button
                       type="button"
@@ -926,7 +925,7 @@ const inputClass =
                       <span class="material-symbols-outlined text-[14px]" :class="{'animate-spin': analyzingProjectIdx === i}">
                         {{ analyzingProjectIdx === i ? 'sync' : 'auto_awesome' }}
                       </span>
-                      {{ analyzingProjectIdx === i ? 'Analyzing...' : 'Analyze Case Study' }}
+                      {{ analyzingProjectIdx === i ? t('portfolioEditor.analyzing') : t('portfolioEditor.analyzeCaseStudy') }}
                     </button>
                   </div>
 
@@ -939,27 +938,27 @@ const inputClass =
                           <span class="text-[8px] uppercase tracking-widest text-indigo-300">/ 100</span>
                         </div>
                         <div>
-                          <p class="text-xs font-semibold text-white">Completeness Score</p>
-                          <p class="text-[10px] text-slate-400 leading-none">Measures depth and impact</p>
+                          <p class="text-xs font-semibold text-white">{{ t('portfolioEditor.completenessScore') }}</p>
+                          <p class="text-[10px] text-slate-400 leading-none">{{ t('portfolioEditor.measuresDepth') }}</p>
                         </div>
                       </div>
 
                       <!-- Breakdown bars -->
                       <div class="flex-1 max-w-[280px] grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] text-slate-400">
                         <div class="flex items-center justify-between">
-                          <span>Problem:</span>
+                          <span>{{ t('portfolioEditor.problem') }}</span>
                           <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.problem }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Action:</span>
+                          <span>{{ t('portfolioEditor.action') }}</span>
                           <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.action }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Results:</span>
+                          <span>{{ t('portfolioEditor.results') }}</span>
                           <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.results }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                          <span>Tech Spec:</span>
+                          <span>{{ t('portfolioEditor.techSpec') }}</span>
                           <span class="font-mono text-white">{{ projectAnalyses[i].breakdown.tech }}%</span>
                         </div>
                       </div>
@@ -967,7 +966,7 @@ const inputClass =
 
                     <!-- Targeted Improvements -->
                     <div v-if="projectAnalyses[i].improvements?.length" class="space-y-1.5 border-t border-white/5 pt-3">
-                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">Targeted Improvements:</h4>
+                      <h4 class="text-[10px] uppercase tracking-widest text-amber-300 font-bold">{{ t('portfolioEditor.targetedImprovements') }}</h4>
                       <ul class="space-y-1 text-xs text-slate-300">
                         <li v-for="(imp, impIdx) in projectAnalyses[i].improvements" :key="impIdx" class="flex gap-2 items-start text-left">
                           <span class="material-symbols-outlined text-[14px] text-amber-400 mt-0.5 shrink-0">warning</span>
@@ -979,22 +978,22 @@ const inputClass =
                     <!-- Suggested Rewrite -->
                     <div v-if="projectAnalyses[i].suggestedRewrite" class="border-t border-white/5 pt-3 space-y-2">
                       <div class="flex justify-between items-center">
-                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">Suggested Rewrite:</h4>
+                        <h4 class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold">{{ t('portfolioEditor.suggestedRewrite') }}</h4>
                         <div class="flex items-center gap-1.5">
                           <button
                             v-if="canUndoAiScope(`project:${i}`)"
                             type="button"
                             class="px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/30 border border-amber-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
-                            @click="() => { const entry = undoAiScope(`project:${i}`); if (entry) toast.info('Project rewrite undone.') }"
+                            @click="() => { const entry = undoAiScope(`project:${i}`); if (entry) toast.info(t('portfolioEditor.projectRewriteUndone')) }"
                           >
-                            Undo
+                            {{ t('portfolioEditor.undo') }}
                           </button>
                           <button
                             type="button"
                             class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 rounded text-[10px] transition duration-200 cursor-pointer"
                             @click="applyProjectRewrite(i)"
                           >
-                            Apply Rewrite
+                            {{ t('portfolioEditor.applyRewrite') }}
                           </button>
                         </div>
                       </div>
@@ -1014,7 +1013,7 @@ const inputClass =
           <h2 class="font-semibold text-white mb-4 flex items-center gap-2">
             <span class="material-symbols-outlined text-blue-300">bolt</span>
             <span v-if="!editingSkillsTitle" class="flex items-center gap-2">
-              {{ form.section_titles!.skills || 'Core skills' }}
+              {{ form.section_titles!.skills || t('portfolioEditor.coreSkills') }}
               <button type="button" @click="editingSkillsTitle = true" class="text-blue-200/40 hover:text-white transition">
                 <span class="material-symbols-outlined text-[16px]">edit</span>
               </button>
@@ -1023,7 +1022,7 @@ const inputClass =
               v-else
               v-model="form.section_titles!.skills"
               class="bg-slate-900/60 border border-blue-500/50 rounded px-2 py-0.5 text-sm text-white focus:outline-none w-40"
-              placeholder="Skills Title"
+              :placeholder="t('portfolioEditor.skillsTitle')"
               @blur="editingSkillsTitle = false; save()"
               @keyup.enter="editingSkillsTitle = false; save()"
               autofocus
@@ -1043,7 +1042,7 @@ const inputClass =
           <input
             v-model="skillDraft"
             :class="inputClass"
-            placeholder="Add a skill, press Enter"
+            :placeholder="t('portfolioEditor.addSkill')"
             @keyup.enter="addSkill"
           />
         </section>
@@ -1052,15 +1051,14 @@ const inputClass =
         <section class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-semibold text-white flex items-center gap-2">
-              <span class="material-symbols-outlined text-blue-300">reorder</span> Sections
+              <span class="material-symbols-outlined text-blue-300">reorder</span> {{ t('portfolioEditor.sections') }}
             </h2>
             <button type="button" class="rounded-lg bg-blue-500/90 hover:bg-blue-400 px-3 py-1.5 text-sm font-semibold text-white" @click="addCustomSection">
-              + Custom section
+              {{ t('portfolioEditor.addCustomSection') }}
             </button>
           </div>
           <p class="text-xs text-blue-200/50 mb-3">
-            Drag <span class="material-symbols-outlined text-[13px] align-middle">drag_indicator</span>
-            or use the arrows to reorder how sections appear on your portfolio.
+            {{ t('portfolioEditor.sectionsReorderHelp') }}
           </p>
 
           <ul class="space-y-2">
@@ -1079,20 +1077,20 @@ const inputClass =
               @dragend="sectionDrag = null; sectionOver = null"
             >
               <div class="flex items-center gap-2 px-3 py-2.5">
-                <span class="material-symbols-outlined text-slate-500 text-[18px] cursor-grab active:cursor-grabbing" title="Drag to reorder">drag_indicator</span>
+                <span class="material-symbols-outlined text-slate-500 text-[18px] cursor-grab active:cursor-grabbing" :title="t('portfolioEditor.sectionsReorderHelp')">drag_indicator</span>
                 <span class="material-symbols-outlined text-[16px] text-blue-300/70">
                   {{ entry.kind === 'projects' ? 'work' : entry.kind === 'experience' ? 'work_history' : entry.kind === 'skills' ? 'bolt' : 'article' }}
                 </span>
                 <span class="flex-1 text-sm font-medium text-white truncate">{{ entry.label }}</span>
-                <span v-if="entry.kind !== 'custom'" class="text-[10px] uppercase tracking-wider text-blue-200/40">built-in</span>
+                <span v-if="entry.kind !== 'custom'" class="text-[10px] uppercase tracking-wider text-blue-200/40">{{ t('portfolioEditor.builtIn') }}</span>
                 <div class="flex items-center gap-0.5">
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" title="Move up" @click="moveSection(i, -1)">arrow_upward</button>
-                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === sectionEntries.length - 1" title="Move down" @click="moveSection(i, 1)">arrow_downward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === 0" :title="t('portfolioEditor.moveUp')" @click="moveSection(i, -1)">arrow_upward</button>
+                  <button type="button" class="material-symbols-outlined text-[18px] text-blue-200/50 hover:text-white disabled:opacity-30" :disabled="i === sectionEntries.length - 1" :title="t('portfolioEditor.moveDown')" @click="moveSection(i, 1)">arrow_downward</button>
                   <button
                     v-if="entry.kind === 'custom'"
                     type="button"
                     class="material-symbols-outlined text-[18px] text-red-300/70 hover:text-red-300"
-                    title="Remove section"
+                    :title="t('portfolioEditor.removeSection')"
                     @click="removeCustomSection(entry.key)"
                   >delete</button>
                 </div>
@@ -1102,14 +1100,14 @@ const inputClass =
                 <input
                   :value="customSectionFor(entry.key)!.title"
                   :class="inputClass"
-                  placeholder="Section title (e.g. Awards, Speaking)"
+                  :placeholder="t('portfolioEditor.sectionTitlePlaceholder')"
                   @input="customSectionFor(entry.key)!.title = ($event.target as HTMLInputElement).value"
                 />
                 <textarea
                   :value="customSectionFor(entry.key)!.content"
                   rows="3"
                   :class="inputClass"
-                  placeholder="Section content"
+                  :placeholder="t('portfolioEditor.sectionContentPlaceholder')"
                   @input="customSectionFor(entry.key)!.content = ($event.target as HTMLTextAreaElement).value"
                 ></textarea>
               </div>
@@ -1122,7 +1120,7 @@ const inputClass =
         <!-- Sticky mobile save bar duplicate for convenience -->
         <div class="lg:hidden flex gap-2">
           <button type="button" class="flex-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 font-semibold text-white transition disabled:opacity-50" :disabled="saving" @click="save">
-            {{ saving ? 'Saving…' : 'Save changes' }}
+            {{ saving ? t('portfolioEditor.saving') : t('portfolioEditor.saveChanges') }}
           </button>
         </div>
       </div>
@@ -1130,20 +1128,20 @@ const inputClass =
       <!-- RIGHT: live preview -->
       <div class="lg:sticky lg:top-20">
         <div class="flex items-center justify-between mb-2">
-          <p class="text-xs uppercase tracking-widest text-blue-200/50">Live preview</p>
-          <button type="button" class="text-xs text-blue-300 hover:text-white" @click="previewSlug = templateSlug">Open full screen</button>
+          <p class="text-xs uppercase tracking-widest text-blue-200/50">{{ t('portfolioEditor.livePreview') }}</p>
+          <button type="button" class="text-xs text-blue-300 hover:text-white" @click="previewSlug = templateSlug">{{ t('portfolioEditor.openFullScreen') }}</button>
         </div>
         <div class="rounded-2xl border border-white/10 overflow-hidden bg-white h-[70vh] overflow-y-auto shadow-2xl">
           <PortfolioRenderer :slug="templateSlug" :data="form" />
         </div>
         <p class="text-[11px] text-blue-200/40 mt-2">
-          Edits preview instantly. Click <span class="text-blue-200">Save changes</span> to publish them to
+          {{ t('portfolioEditor.previewPublishHelp') }}
           <code class="text-blue-200/70">{{ origin }}/p/{{ id }}</code>.
         </p>
       </div>
     </div>
 
-    <div v-else class="text-blue-200/60 py-16 text-center">Loading…</div>
+    <div v-else class="text-blue-200/60 py-16 text-center">{{ t('portfolioEditor.loading') }}</div>
 
     <!-- Full-screen preview modal -->
     <Teleport to="body">
@@ -1153,12 +1151,12 @@ const inputClass =
         @click.self="previewSlug = null"
       >
         <div class="flex items-center justify-between px-6 h-14 bg-slate-900 border-b border-white/10 shrink-0">
-          <p class="font-semibold text-white">{{ templateName(previewSlug) }} — preview</p>
+          <p class="font-semibold text-white">{{ templateName(previewSlug) }} {{ t('portfolioEditor.previewSuffix') }}</p>
           <div class="flex items-center gap-2">
             <button type="button" class="rounded-lg bg-blue-500 hover:bg-blue-400 px-4 py-1.5 text-sm font-semibold text-white" @click="templateSlug = previewSlug!; previewSlug = null">
-              Use this template
+              {{ t('portfolioEditor.useThisTemplate') }}
             </button>
-            <button type="button" class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-1.5 text-sm text-blue-100" @click="previewSlug = null">Close</button>
+            <button type="button" class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-1.5 text-sm text-blue-100" @click="previewSlug = null">{{ t('portfolioEditor.close') }}</button>
           </div>
         </div>
         <div class="flex-1 overflow-y-auto bg-white">

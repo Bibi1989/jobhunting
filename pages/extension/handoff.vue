@@ -10,13 +10,17 @@ definePageMeta({
   layout: false,
 })
 
-useHead({ title: 'Importing job…' })
+const { t } = useI18n()
 
-const status = ref('Waiting for job description from the extension…')
+useHead({ title: () => t('extensionHandoff.pageTitle') })
+
+const status = ref('')
 const error = ref('')
 
 onMounted(async () => {
   if (!import.meta.client) return
+
+  status.value = t('extensionHandoff.waiting')
 
   const deadline = Date.now() + 8000
   while (Date.now() < deadline) {
@@ -35,7 +39,7 @@ onMounted(async () => {
             resumeName: parsed.resumeName || '',
             resumeFile: null,
           })
-          status.value = 'Opening resume builder…'
+          status.value = t('extensionHandoff.opening')
           await navigateTo('/builder/resume/new?from=chrome-extension')
           return
         }
@@ -46,9 +50,8 @@ onMounted(async () => {
     await new Promise((r) => setTimeout(r, 150))
   }
 
-  error.value =
-    'No job description arrived from the extension. Open a job page, click the JobFlow icon, then try again.'
-  status.value = 'Timed out'
+  error.value = t('extensionHandoff.errorNoDescription')
+  status.value = t('extensionHandoff.timedOut')
 })
 </script>
 
@@ -65,7 +68,7 @@ onMounted(async () => {
       to="/builder/resume/new"
       class="mt-2 text-sm text-indigo-300 underline underline-offset-2"
     >
-      Open builder manually
+      {{ t('extensionHandoff.openManually') }}
     </NuxtLink>
   </div>
 </template>

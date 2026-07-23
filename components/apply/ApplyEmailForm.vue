@@ -34,6 +34,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useAppToast()
+const { t } = useI18n()
 const { refreshCredits, sessionUser, canAccessAI, aiBlockedMessage } = useSaaS()
 
 const to = ref('')
@@ -391,8 +392,8 @@ defineExpose({
       <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center justify-center mb-4">
         <CheckCircle :size="32" />
       </div>
-      <h3 class="text-lg font-bold text-white mb-1">Email Sent</h3>
-      <p class="text-sm text-slate-400">Delivered to {{ to }}</p>
+      <h3 class="text-lg font-bold text-white mb-1">{{ t('applyEmail.emailSent') }}</h3>
+      <p class="text-sm text-slate-400">{{ t('applyEmail.deliveredTo', { email: to }) }}</p>
     </div>
 
     <template v-else>
@@ -403,13 +404,13 @@ defineExpose({
 
       <!-- Quick load in modal only -->
       <div v-if="variant === 'modal' && templates.length" class="rounded-xl border border-slate-800 bg-slate-950/30 p-4 space-y-3">
-        <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Load saved email</p>
+        <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500">{{ t('applyEmail.loadSaved') }}</p>
         <select
           v-model="selectedTemplateId"
           class="w-full bg-slate-950/60 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none cursor-pointer"
           @change="selectedTemplateId && applyTemplate(selectedTemplateId)"
         >
-          <option value="" class="bg-slate-900">Choose a saved email…</option>
+          <option value="" class="bg-slate-900">{{ t('applyEmail.chooseSaved') }}</option>
           <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id" class="bg-slate-900">
             {{ tpl.name }}
           </option>
@@ -419,21 +420,21 @@ defineExpose({
       <!-- Job context -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="sm:col-span-2 flex flex-col">
-          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job title</label>
+          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('applyEmail.jobTitle') }}</label>
           <input
             v-model="jobTitle"
             type="text"
             class="w-full bg-slate-950/40 border border-slate-700/80 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none"
-            placeholder="Senior Frontend Engineer"
+            :placeholder="t('applyEmail.jobTitlePlaceholder')"
           />
         </div>
         <div class="sm:col-span-2 flex flex-col">
-          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job description</label>
+          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('applyEmail.jobDescription') }}</label>
           <textarea
             v-model="jobDescription"
             rows="4"
             class="w-full bg-slate-950/40 border border-slate-700/80 focus:border-emerald-500 rounded-xl px-4 py-3 text-sm text-white outline-none resize-y min-h-[88px]"
-            placeholder="Paste the job description to tailor the email…"
+            :placeholder="t('applyEmail.jobDescPlaceholder')"
           />
         </div>
       </div>
@@ -446,22 +447,22 @@ defineExpose({
       >
         <Loader2 v-if="generating" class="animate-spin" :size="14" />
         <Sparkles v-else :size="14" />
-        {{ generating ? 'Generating…' : 'Generate email with AI (1 Cr)' }}
+        {{ generating ? t('applyEmail.generating') : t('applyEmail.generate') }}
       </button>
 
       <!-- Email fields -->
       <div class="space-y-4 border-t border-slate-800 pt-4">
         <div class="flex flex-col">
-          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Recipient (To)</label>
+          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('applyEmail.recipient') }}</label>
           <input
             v-model="to"
             type="email"
             class="w-full bg-slate-950/40 border border-slate-700/80 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none"
-            placeholder="hiring@company.com"
+            :placeholder="t('applyEmail.recipientPlaceholder')"
           />
         </div>
         <div class="flex flex-col">
-          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Subject</label>
+          <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('applyEmail.subject') }}</label>
           <input
             v-model="subject"
             type="text"
@@ -470,14 +471,14 @@ defineExpose({
         </div>
         <div class="flex flex-col">
           <div class="flex items-center justify-between mb-1">
-            <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Message</label>
+            <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider">{{ t('applyEmail.message') }}</label>
             <button
               type="button"
               class="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-white inline-flex items-center gap-1 cursor-pointer"
               @click="copyEmail"
             >
               <Copy :size="12" />
-              {{ copied ? 'Copied' : 'Copy email' }}
+              {{ copied ? t('applyEmail.copied') : t('applyEmail.copyEmail') }}
             </button>
           </div>
           <textarea
@@ -490,21 +491,21 @@ defineExpose({
 
       <!-- Attachments -->
       <div class="space-y-3 border-t border-slate-800 pt-4">
-        <p class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Attachments</p>
+        <p class="text-xs uppercase font-semibold text-slate-400 tracking-wider">{{ t('applyEmail.attachments') }}</p>
 
         <div class="rounded-xl border border-slate-800 p-3 space-y-2">
           <label class="flex items-center gap-2 cursor-pointer">
             <input v-model="attachResume" type="checkbox" class="rounded border-slate-700 text-emerald-500 w-4 h-4" />
-            <span class="text-xs font-semibold text-white">Attach resume / CV</span>
+            <span class="text-xs font-semibold text-white">{{ t('applyEmail.attachResume') }}</span>
           </label>
           <div class="flex flex-wrap gap-2 pl-6">
             <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
               <input v-model="resumeSource" type="radio" value="builder" class="text-emerald-500" />
-              Builder PDF
+              {{ t('applyEmail.builderPdf') }}
             </label>
             <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
               <input v-model="resumeSource" type="radio" value="upload" class="text-emerald-500" />
-              Upload file
+              {{ t('applyEmail.uploadFile') }}
             </label>
           </div>
           <div v-if="resumeSource === 'upload'" class="pl-6 flex items-center gap-2 flex-wrap">
@@ -517,9 +518,9 @@ defineExpose({
             >
               <Loader2 v-if="uploading === 'resume'" class="animate-spin" :size="12" />
               <Upload v-else :size="12" />
-                    Upload CV
+                    {{ t('applyEmail.uploadCv') }}
                   </button>
-                  <span class="text-[10px] text-slate-500">Max 3 pages</span>
+                  <span class="text-[10px] text-slate-500">{{ t('applyEmail.maxPages') }}</span>
             <span v-if="resumeAttachmentLabel" class="text-[10px] text-slate-400 truncate max-w-[200px] inline-flex items-center gap-1">
               <FileText :size="12" class="text-emerald-400 shrink-0" />
               {{ resumeAttachmentLabel }}
@@ -530,7 +531,7 @@ defineExpose({
         <div class="rounded-xl border border-slate-800 p-3 space-y-2">
           <label class="flex items-center gap-2 cursor-pointer">
             <input v-model="attachCoverLetter" type="checkbox" class="rounded border-slate-700 text-emerald-500 w-4 h-4" />
-            <span class="text-xs font-semibold text-white">Attach cover letter</span>
+            <span class="text-xs font-semibold text-white">{{ t('applyEmail.attachCoverLetter') }}</span>
           </label>
           <div class="flex flex-wrap gap-2 pl-6">
             <label
@@ -544,11 +545,11 @@ defineExpose({
                 :disabled="!hasBuilderCoverLetter"
                 class="text-emerald-500"
               />
-              Builder PDF
+              {{ t('applyEmail.builderPdf') }}
             </label>
             <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
               <input v-model="coverLetterSource" type="radio" value="upload" class="text-emerald-500" />
-              Upload file
+              {{ t('applyEmail.uploadFile') }}
             </label>
           </div>
           <div v-if="coverLetterSource === 'upload'" class="pl-6 flex items-center gap-2 flex-wrap">
@@ -561,9 +562,9 @@ defineExpose({
             >
               <Loader2 v-if="uploading === 'cover_letter'" class="animate-spin" :size="12" />
               <Upload v-else :size="12" />
-                    Upload cover letter
+                    {{ t('applyEmail.uploadCoverLetter') }}
                   </button>
-                  <span class="text-[10px] text-slate-500">Max 3 pages</span>
+                  <span class="text-[10px] text-slate-500">{{ t('applyEmail.maxPages') }}</span>
             <span v-if="coverAttachmentLabel" class="text-[10px] text-slate-400 truncate max-w-[200px] inline-flex items-center gap-1">
               <FileText :size="12" class="text-emerald-400 shrink-0" />
               {{ coverAttachmentLabel }}
@@ -574,12 +575,12 @@ defineExpose({
 
       <!-- Page: save name + save button -->
       <div v-if="variant === 'page'" class="rounded-xl border border-slate-800 bg-slate-950/30 p-4 space-y-3">
-        <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500">Save this email</p>
+        <p class="text-[10px] uppercase tracking-wider font-bold text-slate-500">{{ t('applyEmail.saveThisEmail') }}</p>
         <div class="flex flex-col sm:flex-row gap-2">
           <input
             v-model="templateName"
             type="text"
-            placeholder="Email name (e.g. Frontend role at Acme)"
+            :placeholder="t('applyEmail.templateNamePlaceholder')"
             class="flex-1 min-w-0 bg-slate-950/60 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none"
           />
           <button
@@ -588,7 +589,7 @@ defineExpose({
             @click="saveTemplate"
           >
             <Save :size="14" />
-            Save email
+            {{ t('applyEmail.saveTemplate') }}
           </button>
         </div>
       </div>
@@ -601,7 +602,7 @@ defineExpose({
           class="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-950/60 text-xs font-semibold text-slate-200 hover:bg-slate-800 cursor-pointer disabled:opacity-40"
           @click="emit('close')"
         >
-          Cancel
+          {{ t('applyEmail.cancel') }}
         </button>
         <button
           type="button"
@@ -610,7 +611,7 @@ defineExpose({
           @click="copyEmail"
         >
           <Copy :size="14" />
-          Copy
+          {{ t('applyEmail.copy') }}
         </button>
         <button
           type="button"
@@ -620,7 +621,7 @@ defineExpose({
         >
           <Loader2 v-if="sending" class="animate-spin" :size="14" />
           <Sparkles v-else :size="14" />
-          {{ sending ? 'Sending…' : 'Send (1 Cr)' }}
+          {{ sending ? t('applyEmail.sending') : t('applyEmail.send') }}
         </button>
       </div>
     </template>

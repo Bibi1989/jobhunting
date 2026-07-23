@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { BuilderResumeData, BuilderCoverLetter } from '~/shared/types/builder'
 import { DEFAULT_DESIGN_SETTINGS } from '~/shared/types/builder'
@@ -11,6 +11,8 @@ import { useAiUndo } from '~/composables/useAiUndo'
 import { dedupeCoverLetterHtml } from '~/utils/richText'
 
 const toast = useAppToast()
+const { t } = useI18n()
+const { coverLetterLabel } = useTemplateLabels()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
 const {
   canUndo: canUndoAi,
@@ -51,12 +53,12 @@ const translating = ref(false)
 const mobileNavOpen = ref(false)
 const mobilePane = ref<'edit' | 'preview'>('edit')
 
-const coverLetterTabs = [
-  { id: 'details', label: 'Target Role', icon: 'work' },
-  { id: 'template', label: 'Template', icon: 'view_quilt' },
-  { id: 'contact', label: 'Contact Info', icon: 'person' },
-  { id: 'content', label: 'Letter Content', icon: 'edit_note' },
-] as const
+const coverLetterTabs = computed(() => [
+  { id: 'details', label: t('builderUi.tabTargetRole'), icon: 'work' },
+  { id: 'template', label: t('builderUi.tabTemplate'), icon: 'view_quilt' },
+  { id: 'contact', label: t('builderUi.tabContactInfo'), icon: 'person' },
+  { id: 'content', label: t('builderUi.tabLetterContent'), icon: 'edit_note' },
+] as const)
 
 function selectCoverLetterTab(id: string) {
   activeTab.value = id
@@ -495,8 +497,8 @@ async function enhanceCoverLetter() {
   }
 }
 
-function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
-  coverLetter.value.tone = t
+function selectTone(tone: 'professional' | 'enthusiastic' | 'confident') {
+  coverLetter.value.tone = tone
 }
 </script>
 
@@ -507,7 +509,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
-          aria-label="Go back"
+          :aria-label="t('builderUi.goBack')"
           @click="goBack"
         >
           <span class="material-symbols-outlined">arrow_back</span>
@@ -515,19 +517,19 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
-          aria-label="Open sections"
+          :aria-label="t('builderUi.openSections')"
           @click="mobileNavOpen = !mobileNavOpen"
         >
           <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
         </button>
         <AppLogo size="sm" :show-tagline="false" class="truncate" />
         <nav class="hidden lg:flex gap-6 items-center">
-          <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
+          <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">{{ t('builderUi.myProjects') }}</NuxtLink>
         </nav>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
         <div class="hidden sm:flex items-center gap-2">
-          <span class="text-white text-sm font-semibold opacity-80 mr-2 border-r border-white/20 pr-3 hidden md:inline">Cover Letter</span>
+          <span class="text-white text-sm font-semibold opacity-80 mr-2 border-r border-white/20 pr-3 hidden md:inline">{{ t('builderUi.coverLetter') }}</span>
           <select
             v-model="resumeData.language"
             class="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all cursor-pointer"
@@ -544,7 +546,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
             v-model="resumeData.name"
             type="text"
             class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all w-28 lg:w-40"
-            placeholder="Document Name"
+            :placeholder="t('builderUi.documentNamePlaceholder')"
           />
         </div>
         <button
@@ -555,31 +557,31 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
           @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
         >
           <span class="material-symbols-outlined text-[16px]">undo</span>
-          <span class="hidden sm:inline">Undo AI</span>
+          <span class="hidden sm:inline">{{ t('builderUi.undoAi') }}</span>
         </button>
         <button
           :disabled="saving"
           class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer"
           @click="saveDraft"
         >
-          <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
-          <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
+          <span class="sm:hidden">{{ saving ? '…' : t('builderUi.save') }}</span>
+          <span class="hidden sm:inline">{{ saving ? t('builderUi.saving') : t('builderUi.saveDraft') }}</span>
         </button>
         <button
           class="px-2.5 sm:px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer inline-flex items-center gap-1.5"
           @click="showApplyModal = true"
         >
           <span class="material-symbols-outlined text-[16px]">mail</span>
-          <span class="hidden sm:inline">Apply via Email</span>
-          <span class="sm:hidden">Apply</span>
+          <span class="hidden sm:inline">{{ t('builderUi.applyViaEmail') }}</span>
+          <span class="sm:hidden">{{ t('builderUi.apply') }}</span>
         </button>
         <button
           :disabled="exporting"
           class="px-2.5 sm:px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50"
           @click="exportPdf"
         >
-          <span class="sm:hidden">{{ exporting ? '…' : 'PDF' }}</span>
-          <span class="hidden sm:inline">{{ exporting ? 'Exporting...' : 'Export PDF' }}</span>
+          <span class="sm:hidden">{{ exporting ? '…' : t('builderUi.pdf') }}</span>
+          <span class="hidden sm:inline">{{ exporting ? t('builderUi.exporting') : t('builderUi.exportPdf') }}</span>
         </button>
       </div>
     </header>
@@ -591,7 +593,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         :class="mobilePane === 'edit' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
         @click="mobilePane = 'edit'"
       >
-        Edit
+        {{ t('builderUi.edit') }}
       </button>
       <button
         type="button"
@@ -599,7 +601,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         :class="mobilePane === 'preview' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
         @click="mobilePane = 'preview'"
       >
-        Preview
+        {{ t('builderUi.preview') }}
       </button>
     </div>
 
@@ -632,17 +634,17 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
               @click="goToApplyEmailPage"
             >
               <span class="material-symbols-outlined">mail</span>
-              <span class="flex-1 text-left font-semibold">Apply via Email</span>
-              <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Pro</span>
+              <span class="flex-1 text-left font-semibold">{{ t('builderUi.applyViaEmail') }}</span>
+              <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{{ t('builderUi.pro') }}</span>
             </button>
           </div>
         </nav>
       </aside>
 
       <div v-if="mobileNavOpen" class="fixed inset-0 z-40 lg:hidden">
-        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Close sections" @click="mobileNavOpen = false" />
+        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" :aria-label="t('builderUi.closeSections')" @click="mobileNavOpen = false" />
         <aside class="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-white/10 py-4 overflow-y-auto shadow-2xl">
-          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">Sections</p>
+          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">{{ t('builderUi.sections') }}</p>
           <nav>
             <ul class="space-y-0.5">
               <li v-for="tab in coverLetterTabs" :key="`m-${tab.id}`">
@@ -664,12 +666,12 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                 @click="goToApplyEmailPage"
               >
                 <span class="material-symbols-outlined">mail</span>
-                <span class="flex-1 text-left font-semibold">Apply via Email</span>
+                <span class="flex-1 text-left font-semibold">{{ t('builderUi.applyViaEmail') }}</span>
               </button>
             </div>
           </nav>
           <div class="px-5 pt-4 mt-2 border-t border-white/10 space-y-2 sm:hidden">
-            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Language</label>
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">{{ t('builderUi.language') }}</label>
             <select
               v-model="resumeData.language"
               class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none cursor-pointer"
@@ -680,13 +682,13 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
               <option value="fr" class="bg-slate-800">FR</option>
               <option value="es" class="bg-slate-800">ES</option>
             </select>
-            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">Name</label>
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">{{ t('builderUi.name') }}</label>
             <input
               v-if="resumeData"
               v-model="resumeData.name"
               type="text"
               class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none"
-              placeholder="Document Name"
+              :placeholder="t('builderUi.documentNamePlaceholder')"
             />
           </div>
         </aside>
@@ -699,8 +701,8 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
         >
           <div v-if="activeTab === 'template'">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Choose Template</h1>
-              <p class="text-blue-200/60 text-sm">Switch cover letter layouts without losing your draft.</p>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.chooseTemplate') }}</h1>
+              <p class="text-blue-200/60 text-sm">{{ t('builderUi.templateHelpCover') }}</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
@@ -755,19 +757,19 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                     v-if="resumeData.templateId === tpl.id"
                     class="absolute top-2 right-2 bg-blue-500 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
                   >
-                    Selected
+                    {{ t('builderUi.selected') }}
                   </div>
                 </div>
                 <div class="p-3 bg-white/5">
-                  <h3 class="font-bold text-white text-sm mb-0.5">{{ tpl.name }}</h3>
-                  <p class="text-[11px] text-slate-400">{{ tpl.desc }}</p>
+                  <h3 class="font-bold text-white text-sm mb-0.5">{{ coverLetterLabel(tpl.id, 'name', tpl.name) }}</h3>
+                  <p class="text-[11px] text-slate-400">{{ coverLetterLabel(tpl.id, 'desc', tpl.desc) }}</p>
                 </div>
               </button>
             </div>
             <div class="mt-8 pt-6 border-t border-white/10">
               <div class="mb-4">
-                <h3 class="font-bold text-lg text-white mb-0.5">Design</h3>
-                <p class="text-blue-200/60 text-xs">Fonts, colors, header layout, and profile photo.</p>
+                <h3 class="font-bold text-lg text-white mb-0.5">{{ t('builderUi.design') }}</h3>
+                <p class="text-blue-200/60 text-xs">{{ t('builderUi.designHelp') }}</p>
               </div>
               <BuilderDesignPanel v-model="resumeData" />
             </div>
@@ -775,55 +777,55 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
           <div v-else-if="activeTab === 'contact'">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Contact Info</h1>
-              <p class="text-blue-200/60 text-sm">Shown in the letter header, matching your resume.</p>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.tabContactInfo') }}</h1>
+              <p class="text-blue-200/60 text-sm">{{ t('builderUi.contactInfoHelp') }}</p>
             </div>
             <div class="space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Name</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.fullName') }}</label>
                   <input v-model="resumeData.personalInfo.fullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.jobTitle') }}</label>
                   <input v-model="resumeData.personalInfo.jobTitle" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Email</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.email') }}</label>
                   <input v-model="resumeData.personalInfo.email" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Phone</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.phone') }}</label>
                   <input v-model="resumeData.personalInfo.phone" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.location') }}</label>
                   <input v-model="resumeData.personalInfo.location" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Portfolio</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.portfolio') }}</label>
                   <input
                     v-model="resumeData.personalInfo.portfolio"
                     type="text"
-                    placeholder="yourname.dev"
+                    :placeholder="t('builderFields.portfolioPlaceholder')"
                     class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
                   />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">LinkedIn</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.linkedin') }}</label>
                   <input
                     v-model="resumeData.personalInfo.linkedin"
                     type="text"
-                    placeholder="linkedin.com/in/you"
+                    :placeholder="t('builderFields.linkedinPlaceholder')"
                     class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
                   />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">GitHub</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.github') }}</label>
                   <input
                     v-model="resumeData.personalInfo.github"
                     type="text"
-                    placeholder="github.com/you"
+                    :placeholder="t('builderFields.githubPlaceholder')"
                     class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
                   />
                 </div>
@@ -833,9 +835,9 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
           <div v-else-if="activeTab === 'details'">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.targetRoleTitle') }}</h1>
               <p class="text-blue-200/60 text-sm">
-                Upload a resume and/or paste a job description, either is enough to draft; both is best. Uploads are limited to 3 pages.
+                {{ t('builderUi.targetRoleHelpCover') }}
               </p>
             </div>
             <ExtensionInstallBanner class="mb-5" />
@@ -843,9 +845,9 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
               <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3 flex-wrap">
                   <div class="min-w-0">
-                    <p class="text-sm font-semibold text-white">Resume for drafting</p>
+                    <p class="text-sm font-semibold text-white">{{ t('builderUi.resumeForDrafting') }}</p>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                      {{ uploadedResumeName || (hasResumeSignal() ? 'Using contact & experience from this project' : 'Optional — upload PDF, DOCX, or TXT (max 3 pages)') }}
+                      {{ uploadedResumeName || (hasResumeSignal() ? t('builderUi.usingProjectResume') : t('builderUi.uploadOptional')) }}
                     </p>
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
@@ -865,7 +867,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                       <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': importing }">
                         {{ importing ? 'refresh' : 'upload_file' }}
                       </span>
-                      {{ importing ? 'Importing…' : 'Upload resume' }}
+                      {{ importing ? t('builderUi.importing') : t('builderUi.uploadResume') }}
                     </button>
                   </div>
                 </div>
@@ -873,47 +875,47 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
 
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Target Company
+                  {{ t('builderUi.targetCompany') }}
                 </label>
                 <input
                   v-model="coverLetter.companyName"
                   type="text"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
-                  placeholder="e.g. Google, Stripe (optional)"
+                  :placeholder="t('builderUi.targetCompanyPlaceholder')"
                 />
               </div>
               <div class="flex flex-col">
-                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Hiring Manager</label>
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderUi.hiringManager') }}</label>
                 <input
                   v-model="coverLetter.hiringManager"
                   type="text"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
-                  placeholder="e.g. John Doe, Hiring Manager"
+                  :placeholder="t('builderUi.hiringManagerPlaceholder')"
                 />
               </div>
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Job Description
+                  {{ t('builderUi.jobDescription') }}
                 </label>
                 <textarea
                   v-model="coverLetter.jobDescription"
                   class="w-full h-48 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
-                  placeholder="Optional if you uploaded a resume. Paste the job requirements for a tighter draft…"
+                  :placeholder="t('builderUi.jobDescPlaceholder')"
                 />
               </div>
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Additional AI instructions
+                  {{ t('builderUi.aiInstructions') }}
                 </label>
                 <textarea
                   v-model="coverLetter.additionalInstructions"
                   class="w-full h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
-                  placeholder="Optional. Example: Keep the cover letter to one page. Emphasize leadership and German language skills."
+                  :placeholder="t('builderUi.aiInstructionsPlaceholderCover')"
                 />
-                <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
+                <p class="mt-1.5 text-[11px] text-slate-500">{{ t('builderUi.aiInstructionsHelp') }}</p>
               </div>
               <div class="flex flex-col">
-                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2">Tone</label>
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-2">{{ t('builderUi.tone') }}</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -922,7 +924,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                     @click="selectTone('professional')"
                   >
                     <span class="material-symbols-outlined text-lg mb-1">work</span>
-                    <span class="text-[10px] font-bold">Professional</span>
+                    <span class="text-[10px] font-bold">{{ t('builderUi.toneProfessional') }}</span>
                   </button>
                   <button
                     type="button"
@@ -931,7 +933,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                     @click="selectTone('enthusiastic')"
                   >
                     <span class="material-symbols-outlined text-lg mb-1">bolt</span>
-                    <span class="text-[10px] font-bold">Enthusiastic</span>
+                    <span class="text-[10px] font-bold">{{ t('builderUi.toneEnthusiastic') }}</span>
                   </button>
                   <button
                     type="button"
@@ -940,7 +942,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                     @click="selectTone('confident')"
                   >
                     <span class="material-symbols-outlined text-lg mb-1">verified_user</span>
-                    <span class="text-[10px] font-bold">Confident</span>
+                    <span class="text-[10px] font-bold">{{ t('builderUi.toneConfident') }}</span>
                   </button>
                 </div>
               </div>
@@ -954,7 +956,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                 <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': enhancing }">
                   {{ enhancing ? 'refresh' : 'auto_awesome' }}
                 </span>
-                {{ enhancing ? 'Drafting…' : 'Draft cover letter with AI' }}
+                {{ enhancing ? t('builderUi.drafting') : t('builderUi.draftCoverLetter') }}
               </button>
             </div>
           </div>
@@ -962,8 +964,8 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
           <div v-else>
             <div class="mb-6 flex items-start justify-between gap-3">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Letter Content</h1>
-                <p class="text-blue-200/60 text-sm">Edit your draft, or regenerate with AI from resume and/or job details.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.tabLetterContent') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.letterContentHelp') }}</p>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button
@@ -973,7 +975,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   @click="() => { const entry = undoAiScope('coverLetter:content'); if (entry) toast.info('Cover letter draft undone.') }"
                 >
                   <span class="material-symbols-outlined text-[12px]">undo</span>
-                  Undo
+                  {{ t('builderUi.undo') }}
                 </button>
                 <button
                   type="button"
@@ -984,7 +986,7 @@ function selectTone(t: 'professional' | 'enthusiastic' | 'confident') {
                   <span class="material-symbols-outlined text-[12px]" :class="{ 'animate-spin': enhancing }">
                     {{ enhancing ? 'refresh' : 'auto_awesome' }}
                   </span>
-                  {{ enhancing ? 'Drafting...' : 'AI Draft / Enhance (1 Cr)' }}
+                  {{ enhancing ? t('builderUi.drafting') : t('builderUi.aiDraftEnhance') }}
                 </button>
               </div>
             </div>

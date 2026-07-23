@@ -2,16 +2,70 @@ import type Stripe from 'stripe'
 import {
   FREE_CREDITS,
   PRO_CREDITS,
+  addCredits,
   getUserById,
   getUserByStripeCustomerId,
   setPlanAndCredits,
   setStripeSubscriptionId,
 } from '~/server/utils/db'
-import { getStripe } from '~/server/utils/stripe'
+import { getStripe, getStripeWebhookSecret } from '~/server/utils/stripe'
+
+async function applyCreditTopupFromSession(session: Stripe.Checkout.Session) {
+  if (session.metadata?.kind !== 'credit_topup') return
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') return
+
+  const credits = Number(session.metadata.credits || 0)
+  if (!Number.isFinite(credits) || credits <= 0) {
+    console.warn('[stripe webhook] top-up session missing credits', session.id)
+    return
+  }
+
+  let userId = session.metadata.userId || session.client_reference_id || null
+  if (!userId) {
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id
+    if (customerId) {
+      const byCustomer = await getUserByStripeCustomerId(customerId)
+      userId = byCustomer?.id || null
+    }
+  }
+  if (!userId) {
+    console.warn(`[stripe webhook] no user for top-up session ${session.id}`)
+    return
+  }
+
+  const reason = `stripe_topup:${session.id}`
+  await addCredits(userId, credits, reason)
+}
+
+async function applyCreditTopupFromPaymentIntent(pi: Stripe.PaymentIntent) {
+  if (pi.metadata?.kind !== 'credit_topup') return
+  if (pi.status !== 'succeeded') return
+
+  const credits = Number(pi.metadata.credits || 0)
+  if (!Number.isFinite(credits) || credits <= 0) {
+    console.warn('[stripe webhook] top-up payment intent missing credits', pi.id)
+    return
+  }
+
+  let userId = pi.metadata.userId || null
+  if (!userId) {
+    const customerId = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id
+    if (customerId) {
+      const byCustomer = await getUserByStripeCustomerId(customerId)
+      userId = byCustomer?.id || null
+    }
+  }
+  if (!userId) {
+    console.warn(`[stripe webhook] no user for top-up payment intent ${pi.id}`)
+    return
+  }
+
+  await addCredits(userId, credits, `stripe_topup:${pi.id}`)
+}
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const webhookSecret = config.stripeWebhookSecret
+  const webhookSecret = getStripeWebhookSecret()
 
   if (!webhookSecret) {
     throw createError({
@@ -42,6 +96,19 @@ export default defineEventHandler(async (event) => {
 
   try {
     switch (stripeEvent.type) {
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded': {
+        const session = stripeEvent.data.object as Stripe.Checkout.Session
+        await applyCreditTopupFromSession(session)
+        break
+      }
+
+      case 'payment_intent.succeeded': {
+        const pi = stripeEvent.data.object as Stripe.PaymentIntent
+        await applyCreditTopupFromPaymentIntent(pi)
+        break
+      }
+
       case 'invoice.payment_succeeded': {
         const invoice = stripeEvent.data.object as Stripe.Invoice
         const customerId =

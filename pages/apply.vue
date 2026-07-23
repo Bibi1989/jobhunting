@@ -12,8 +12,10 @@ import {
   persistApplyPrefill,
 } from '~/utils/builderJobPrefill'
 
+const { t } = useI18n()
+
 useHead({
-  title: 'Document Generator',
+  title: () => t('applyPage.title'),
 })
 
 const APPLY_DRAFT_STORAGE_KEY = 'jobflow-apply-draft'
@@ -68,7 +70,7 @@ function onFileSelect(event: Event, kind: 'resume' | 'coverLetter') {
 
 function assignFile(file: File, kind: 'resume' | 'coverLetter') {
   if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-    error.value = 'Please upload a PDF file.'
+    error.value = t('applyPage.errorPdfOnly')
     return
   }
   error.value = null
@@ -90,7 +92,7 @@ function removeFile(kind: 'resume' | 'coverLetter') {
 
 async function generate() {
   if (!canGenerate.value) {
-    error.value = 'Paste a job description (at least a short posting).'
+    error.value = t('applyPage.errorMinDescription')
     return
   }
 
@@ -126,7 +128,7 @@ async function generate() {
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
     error.value =
-      fetchError.data?.statusMessage || fetchError.message || 'Could not open the resume builder'
+      fetchError.data?.statusMessage || fetchError.message || t('applyPage.errorOpenBuilder')
   } finally {
     loading.value = false
   }
@@ -142,16 +144,16 @@ async function generate() {
             to="/scraper"
             class="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors"
           >
-            <ArrowLeft :size="14" /> Back to scraper
+            <ArrowLeft :size="14" /> {{ t('applyPage.backToScraper') }}
           </NuxtLink>
           <div class="mb-4">
             <AppLogo />
           </div>
           <h1 class="text-3xl font-extrabold tracking-tight md:text-4xl">
-            Document <span class="text-gradient">Generator</span>
+            {{ t('applyPage.titleDocument') }} <span class="text-gradient">{{ t('applyPage.titleAccent') }}</span>
           </h1>
           <p class="mt-2 max-w-2xl text-sm text-slate-400">
-            Paste a job description, upload your PDF resume, and open the Resume Builder with Target Role prefilled so you can draft tailored materials.
+            {{ t('applyPage.subtitle') }}
           </p>
         </div>
       </div>
@@ -164,12 +166,12 @@ async function generate() {
 
           <div>
             <label class="mb-2 block text-xs font-bold uppercase tracking-widest text-indigo-400 select-none">
-              Job Description
+              {{ t('applyPage.jobDescription') }}
             </label>
             <textarea
               v-model="jobDescription"
               rows="12"
-              placeholder="Paste the full job posting details here..."
+              :placeholder="t('applyPage.jobDescPlaceholder')"
               class="w-full bg-slate-950/40 border border-slate-800/80 focus:border-indigo-500/80 rounded-2xl px-4 py-3.5 text-slate-100 text-sm leading-relaxed outline-none transition-all duration-300 focus:ring-4 focus:ring-indigo-500/5 focus:bg-slate-950/60 placeholder:text-slate-650"
             />
           </div>
@@ -177,7 +179,7 @@ async function generate() {
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 select-none">
-                Resume PDF
+                {{ t('applyPage.resumePdf') }}
               </p>
               <label
                 class="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-6 text-center transition-all duration-300"
@@ -192,7 +194,7 @@ async function generate() {
               >
                 <FileUp :size="20" class="mb-2 text-slate-500" />
                 <span class="text-[11px] font-medium text-slate-300 leading-snug truncate max-w-full">
-                  {{ resumeFile?.name || 'Drop PDF or Browse' }}
+                  {{ resumeFile?.name || t('applyPage.dropOrBrowse') }}
                 </span>
                 <input
                   type="file"
@@ -207,13 +209,13 @@ async function generate() {
                 class="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400 transition-colors"
                 @click="removeFile('resume')"
               >
-                <Trash2 :size="12" /> Remove Resume
+                <Trash2 :size="12" /> {{ t('applyPage.removeResume') }}
               </button>
             </div>
 
             <div>
               <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 select-none">
-                Cover Letter PDF
+                {{ t('applyPage.coverLetterPdf') }}
               </p>
               <label
                 class="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-6 text-center transition-all duration-300"
@@ -228,7 +230,7 @@ async function generate() {
               >
                 <FileUp :size="20" class="mb-2 text-slate-500" />
                 <span class="text-[11px] font-medium text-slate-300 leading-snug truncate max-w-full">
-                  {{ coverLetterFile?.name || 'Optional PDF' }}
+                  {{ coverLetterFile?.name || t('applyPage.optionalPdf') }}
                 </span>
                 <input
                   type="file"
@@ -243,7 +245,7 @@ async function generate() {
                 class="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400 transition-colors"
                 @click="removeFile('coverLetter')"
               >
-                <Trash2 :size="12" /> Remove Cover Letter
+                <Trash2 :size="12" /> {{ t('applyPage.removeCoverLetter') }}
               </button>
             </div>
           </div>
@@ -263,10 +265,10 @@ async function generate() {
           >
             <Loader2 v-if="loading" class="animate-spin" :size="18" />
             <Sparkles v-else :size="18" />
-            {{ loading ? 'Opening Resume Builder…' : 'Generate Tailored Materials' }}
+            {{ loading ? t('applyPage.preparing') : t('applyPage.generateTailored') }}
           </button>
           <p class="text-[11px] text-slate-500 text-center">
-            Opens the Resume Builder with your job description and uploaded resume prefilled. Uses 1 credit.
+            {{ t('applyPage.creditHint') }}
           </p>
         </section>
 
@@ -279,20 +281,20 @@ async function generate() {
               class="flex flex-col items-center gap-4 text-sm text-slate-400"
             >
               <Loader2 class="animate-spin text-indigo-400" :size="28" />
-              <span>Preparing the Resume Builder…</span>
+              <span>{{ t('applyPage.preparing') }}</span>
             </div>
             <template v-else>
               <div class="w-12 h-12 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-4">
                 <FileText :size="24" class="text-slate-400" />
               </div>
-              <p class="text-sm font-bold text-slate-400 select-none">Ready for the Resume Builder</p>
+              <p class="text-sm font-bold text-slate-400 select-none">{{ t('applyPage.ready') }}</p>
               <p class="mt-1 max-w-sm text-xs leading-relaxed">
-                Paste a job description and optionally upload your resume PDF, then generate to open the builder with Target Role prefilled.
+                {{ t('applyPage.readyHint') }}
               </p>
               <ol class="mt-6 text-left text-xs text-slate-500 space-y-2 max-w-sm">
-                <li>1. Paste the job posting</li>
-                <li>2. Upload your current resume (recommended)</li>
-                <li>3. Generate → resume builder opens with Target Role filled</li>
+                <li>{{ t('applyPage.step1') }}</li>
+                <li>{{ t('applyPage.step2') }}</li>
+                <li>{{ t('applyPage.step3') }}</li>
               </ol>
             </template>
           </div>

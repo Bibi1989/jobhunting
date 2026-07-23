@@ -61,7 +61,7 @@ async function onLogout() {
         {{ t('nav.account') }}
       </NuxtLink>
       <NuxtLink
-        to="/pricing"
+        to="/account/billing"
         class="block px-3 py-2.5 text-sm text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)] cursor-pointer"
         role="menuitem"
         @click="open = false"

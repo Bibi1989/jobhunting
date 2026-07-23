@@ -335,6 +335,70 @@ export async function decrementCreditAtomic(
   }
 }
 
+/** True if a ledger row with this exact reason already exists (webhook idempotency). */
+export async function creditLedgerHasReason(userId: string, reason: string): Promise<boolean> {
+  await ensureSchema()
+  const result = await query<{ id: string }>(
+    `SELECT id FROM credit_ledger WHERE user_id = $1 AND reason = $2 LIMIT 1`,
+    [userId, reason],
+  )
+  return Boolean(result.rows[0])
+}
+
+/** Add credits without changing plan tier (e.g. mid-cycle top-up). */
+export async function addCredits(
+  userId: string,
+  delta: number,
+  reason: string,
+): Promise<AppUser | null> {
+  if (!Number.isFinite(delta) || delta <= 0) {
+    throw new Error('addCredits requires a positive delta')
+  }
+  const client = await getPool().connect()
+  try {
+    await ensureSchema()
+    await client.query('BEGIN')
+    const existing = await client.query<{ id: string }>(
+      `SELECT id FROM credit_ledger WHERE user_id = $1 AND reason = $2 LIMIT 1`,
+      [userId, reason],
+    )
+    if (existing.rows[0]) {
+      const current = await client.query<UserRow>(`SELECT * FROM users WHERE id = $1`, [userId])
+      await client.query('COMMIT')
+      return current.rows[0] ? mapUser(current.rows[0]) : null
+    }
+    const updated = await client.query<UserRow>(
+      `UPDATE users
+       SET credits_remaining = credits_remaining + $2,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [userId, delta],
+    )
+    if (!updated.rows[0]) {
+      await client.query('ROLLBACK')
+      return null
+    }
+    await client.query(
+      `INSERT INTO credit_ledger (user_id, delta, reason) VALUES ($1, $2, $3)`,
+      [userId, delta, reason],
+    )
+    await client.query('COMMIT')
+    try {
+      const { invalidateAuthUserCache } = await import('~/server/utils/auth')
+      invalidateAuthUserCache(userId)
+    } catch {
+      /* ignore */
+    }
+    return mapUser(updated.rows[0])
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
 export async function setPlanAndCredits(
   userId: string,
   planTier: PlanTier,

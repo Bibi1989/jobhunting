@@ -30,6 +30,7 @@ const { history, showDropdown, addToHistory } = useScrapeHistory()
 const { visitedJobs, markVisited } = useVisitedJobs()
 const mobileMenuOpen = ref(false)
 const mobileToolsOpen = ref(false)
+const { t } = useI18n()
 const { canAccessScraper, loggedIn, refreshCredits, scraperBlockedMessage, pending } = useSaaS()
 
 const runtimeConfig = useRuntimeConfig()
@@ -38,9 +39,10 @@ const apiBackendLabel = computed(() =>
 )
 const apiHealthBackend = ref<string | null>(null)
 const apiStatusLabel = computed(() => {
-  if (apiHealthBackend.value === 'fastapi') return 'Healthy · FastAPI'
-  if (apiHealthBackend.value === 'nuxt') return 'Healthy · Nitro'
-  return 'Healthy'
+  if (loading.value) return t('scraper.processing')
+  if (apiHealthBackend.value === 'fastapi') return t('scraper.healthyFastApi')
+  if (apiHealthBackend.value === 'nuxt') return t('scraper.healthyNitro')
+  return t('scraper.healthy')
 })
 
 /** Keep the form usable while credits are loading for signed-in users. */
@@ -66,6 +68,10 @@ const {
   filteredJobs,
   clearFilters,
 } = useJobFilters(jobs, favorites, showFavorites)
+
+watch(scrapeJobTitle, (value) => {
+  searchQuery.value = value
+})
 
 async function loadSavedJobs() {
   try {
@@ -227,6 +233,35 @@ async function removeJob(job: Job) {
   }, 2500)
 }
 
+async function deleteAllJobs() {
+  if (!jobs.value.length) return
+  const { confirm } = useAppConfirm()
+  const confirmed = await confirm({
+    title: 'Delete all scraped jobs',
+    message: `Permanently delete all ${jobs.value.length} saved scraped jobs? Favorites will also be cleared for those roles.`,
+    confirmLabel: 'Delete all',
+    danger: true,
+  })
+  if (!confirmed) return
+
+  try {
+    await $fetch('/api/jobs', { method: 'DELETE' })
+  } catch (err: unknown) {
+    error.value = getErrorMessage(err)
+    return
+  }
+
+  for (const job of [...jobs.value]) {
+    removeFavorite(job)
+  }
+  jobs.value = []
+  hasScraped.value = false
+  toastMessage.value = 'All scraped jobs deleted.'
+  setTimeout(() => {
+    toastMessage.value = null
+  }, 2500)
+}
+
 function applyToJob(job: Job) {
   markVisited(job.url)
   window.open(job.url, '_blank', 'noopener,noreferrer')
@@ -259,21 +294,21 @@ function hideHistoryDropdown() {
               to="/pricing"
               class="flex items-center gap-2 px-3 py-2 border border-violet-500/20 bg-violet-500/10 text-violet-300 hover:bg-violet-500 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              Pricing
+              {{ t('scraper.pricing') }}
             </NuxtLink>
             <NuxtLink
               to="/apply"
               class="flex items-center gap-2 px-3 py-2 border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-slate-950 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               <Sparkles :size="14" />
-              Docs Gen
+              {{ t('scraper.docsGen') }}
             </NuxtLink>
             <NuxtLink
               to="/builder"
               class="flex items-center gap-2 px-3 py-2 border border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               <Sparkles :size="14" />
-              Builder
+              {{ t('scraper.builder') }}
             </NuxtLink>
             <button
               type="button"
@@ -286,14 +321,14 @@ function hideHistoryDropdown() {
               @click="showFavorites = !showFavorites"
             >
               <Bookmark :size="14" :class="showFavorites ? 'fill-current' : ''" />
-              Favorites
+              {{ t('scraper.favorites') }}
             </button>
             <div class="flex items-center gap-2 px-3 py-2 bg-slate-900/60 border border-slate-800/80 rounded-xl text-xs">
               <span
                 class="w-2.5 h-2.5 rounded-full"
                 :class="loading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"
               />
-              <span class="text-slate-400 font-semibold">{{ loading ? 'Scraping listings + details…' : 'Ready' }}</span>
+              <span class="text-slate-400 font-semibold">{{ loading ? t('scraper.scraping') : t('scraper.ready') }}</span>
             </div>
             <CreditBadge />
             <NuxtLink
@@ -301,7 +336,7 @@ function hideHistoryDropdown() {
               to="/login"
               class="flex items-center gap-2 px-3 py-2 border border-slate-700 bg-slate-900/80 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              Sign in
+              {{ t('nav.signIn') }}
             </NuxtLink>
             <UserMenu />
           </div>
@@ -312,7 +347,7 @@ function hideHistoryDropdown() {
             <button
               type="button"
               class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-slate-200 cursor-pointer"
-              aria-label="Open menu"
+              :aria-label="t('nav.openMenu')"
               @click="mobileMenuOpen = true"
             >
               <span class="material-symbols-outlined text-[22px]">menu</span>
@@ -326,29 +361,29 @@ function hideHistoryDropdown() {
             <button
               type="button"
               class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
-              aria-label="Close menu"
+              :aria-label="t('nav.closeMenu')"
               @click="mobileMenuOpen = false"
             />
             <nav
               class="absolute right-0 top-0 h-full w-[min(20rem,88vw)] bg-slate-950 border-l border-slate-800 p-5 flex flex-col gap-2 shadow-2xl"
             >
               <div class="flex items-center justify-between mb-4">
-                <p class="text-sm font-bold text-white">Menu</p>
+                <p class="text-sm font-bold text-white">{{ t('scraper.menu') }}</p>
                 <button
                   type="button"
                   class="p-2 rounded-lg text-slate-400 hover:text-white"
-                  aria-label="Close"
+                  :aria-label="t('nav.closeMenu')"
                   @click="mobileMenuOpen = false"
                 >
                   <X :size="18" />
                 </button>
               </div>
-              <NuxtLink to="/pricing" class="mobile-nav-link" @click="mobileMenuOpen = false">Pricing</NuxtLink>
-              <NuxtLink to="/apply" class="mobile-nav-link" @click="mobileMenuOpen = false">Docs Gen</NuxtLink>
-              <NuxtLink to="/builder" class="mobile-nav-link" @click="mobileMenuOpen = false">Resume Builder</NuxtLink>
-              <NuxtLink to="/builder/apply-email" class="mobile-nav-link" @click="mobileMenuOpen = false">Apply via Email</NuxtLink>
+              <NuxtLink to="/pricing" class="mobile-nav-link" @click="mobileMenuOpen = false">{{ t('scraper.pricing') }}</NuxtLink>
+              <NuxtLink to="/apply" class="mobile-nav-link" @click="mobileMenuOpen = false">{{ t('scraper.docsGen') }}</NuxtLink>
+              <NuxtLink to="/builder" class="mobile-nav-link" @click="mobileMenuOpen = false">{{ t('scraper.resumeBuilder') }}</NuxtLink>
+              <NuxtLink to="/builder/apply-email" class="mobile-nav-link" @click="mobileMenuOpen = false">{{ t('scraper.applyViaEmail') }}</NuxtLink>
               <button type="button" class="mobile-nav-link text-left cursor-pointer" @click="showFavorites = !showFavorites; mobileMenuOpen = false">
-                {{ showFavorites ? 'Show all jobs' : 'View favorites' }}
+                {{ showFavorites ? t('scraper.showAllJobs') : t('scraper.viewFavorites') }}
               </button>
               <NuxtLink
                 v-if="!loggedIn"
@@ -356,10 +391,10 @@ function hideHistoryDropdown() {
                 class="mobile-nav-link"
                 @click="mobileMenuOpen = false"
               >
-                Sign in
+                {{ t('nav.signIn') }}
               </NuxtLink>
               <div class="mt-auto pt-4 text-xs text-slate-500">
-                Status: {{ loading ? 'Scraping listings + details…' : 'Ready' }}
+                {{ t('scraper.statusLabel') }} {{ loading ? t('scraper.scraping') : t('scraper.ready') }}
               </div>
             </nav>
           </div>
@@ -383,7 +418,7 @@ function hideHistoryDropdown() {
               <div class="flex flex-col sm:flex-row items-end gap-4">
                 <div class="flex-grow w-full relative">
                   <label class="block text-[10px] uppercase tracking-wider text-indigo-400 mb-2 font-bold select-none">
-                    Source URL / Careers Page
+                    {{ t('scraper.sourceUrl') }}
                   </label>
                   <div class="relative flex items-center">
                     <input
@@ -420,7 +455,7 @@ function hideHistoryDropdown() {
                 >
                   <Loader2 v-if="loading" class="animate-spin" :size="18" />
                   <Sparkles v-else :size="18" />
-                  Execute Scrape (1 Cr)
+                  {{ t('scraper.executeScrape') }}
                 </button>
               </div>
               <p
@@ -429,7 +464,7 @@ function hideHistoryDropdown() {
               >
                 {{ scraperBlockedMessage() }}
                 <NuxtLink to="/pricing" class="font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2 ml-1">
-                  Upgrade to Pro
+                  {{ t('scraper.upgradePro') }}
                 </NuxtLink>
               </p>
 
@@ -438,7 +473,7 @@ function hideHistoryDropdown() {
                 :class="scrapeInputDisabled ? 'opacity-50 pointer-events-none' : ''"
               >
                 <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Find related roles — uses resume job title when “Use resume” is on
+                  {{ t('scraper.relatedRolesHint') }}
                 </p>
                 <div class="flex flex-col lg:flex-row lg:items-center gap-3">
                   <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
@@ -449,8 +484,8 @@ function hideHistoryDropdown() {
                       :disabled="scrapeInputDisabled || !resumeDoc"
                     />
                     <span>
-                      Use resume job title
-                      <span v-if="!resumeDoc" class="text-slate-500">(upload first)</span>
+                      {{ t('scraper.useResumeTitle') }}
+                      <span v-if="!resumeDoc" class="text-slate-500">{{ t('scraper.uploadFirst') }}</span>
                     </span>
                   </label>
                   <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
@@ -461,15 +496,15 @@ function hideHistoryDropdown() {
                       :disabled="scrapeInputDisabled || !coverLetterDoc"
                     />
                     <span>
-                      Use cover letter
-                      <span v-if="!coverLetterDoc" class="text-slate-500">(upload first)</span>
+                      {{ t('scraper.useCoverLetter') }}
+                      <span v-if="!coverLetterDoc" class="text-slate-500">{{ t('scraper.uploadFirst') }}</span>
                     </span>
                   </label>
                   <div class="flex-1 min-w-0">
                     <input
                       v-model="scrapeJobTitle"
                       type="text"
-                      placeholder="Target job title (auto-filled from resume)"
+                      :placeholder="t('scraper.positionFilterPlaceholder')"
                       class="w-full bg-slate-950/40 border border-slate-800/80 focus:border-indigo-500/60 rounded-xl px-3 py-2 text-xs text-slate-100 outline-none transition-all disabled:cursor-not-allowed"
                       :disabled="scrapeInputDisabled"
                     />
@@ -483,7 +518,7 @@ function hideHistoryDropdown() {
           <div class="md:col-span-1 bg-gradient-to-br from-emerald-950/20 to-teal-950/15 border border-emerald-500/15 rounded-3xl p-5 flex flex-col justify-center relative overflow-hidden group">
             <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
             <span class="text-emerald-400/80 text-[10px] uppercase font-bold tracking-widest select-none">
-              {{ showFavorites ? 'Saved Favorites' : 'Total Jobs Found' }}
+              {{ showFavorites ? t('scraper.savedFavorites') : t('scraper.totalJobsFound') }}
             </span>
             <span class="text-4xl font-extrabold text-gradient-emerald mt-1 tracking-tight">{{ sourceJobs.length }}</span>
           </div>
@@ -496,7 +531,7 @@ function hideHistoryDropdown() {
             class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-slate-800 bg-slate-900/70 text-sm font-semibold text-slate-200 cursor-pointer"
             @click="mobileToolsOpen = !mobileToolsOpen"
           >
-            <span>Filters &amp; documents</span>
+            <span>{{ t('scraper.filtersDocuments') }}</span>
             <span class="material-symbols-outlined text-[20px] text-slate-400">
               {{ mobileToolsOpen ? 'expand_less' : 'expand_more' }}
             </span>
@@ -535,11 +570,11 @@ function hideHistoryDropdown() {
                 <Globe :size="18" />
               </div>
               <div class="flex flex-col min-w-0">
-                <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest select-none">API Status</span>
+                <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest select-none">{{ t('scraper.apiStatus') }}</span>
                 <span class="text-xs font-semibold" :class="loading ? 'text-amber-400' : 'text-emerald-400'">
-                  {{ loading ? 'Processing...' : apiStatusLabel }}
+                  {{ apiStatusLabel }}
                 </span>
-                <span class="text-[10px] text-slate-500 mt-0.5 truncate">Backend: {{ apiBackendLabel }}</span>
+                <span class="text-[10px] text-slate-500 mt-0.5 truncate">{{ t('scraper.backendLabel', { backend: apiBackendLabel }) }}</span>
               </div>
             </div>
           </div>
@@ -553,19 +588,27 @@ function hideHistoryDropdown() {
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                   </span>
-                  {{ showFavorites ? 'Saved Roles' : 'Live Stream' }}
+                  {{ showFavorites ? t('scraper.savedRoles') : t('scraper.liveStream') }}
                 </h3>
                 <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
                   <span class="text-xs text-slate-400 font-medium">
-                    Showing <span class="text-indigo-400 font-bold">{{ filteredJobs.length }}</span> matches
+                    {{ t('scraper.showingMatches', { count: filteredJobs.length }) }}
                   </span>
+                  <button
+                    v-if="!showFavorites && jobs.length > 0"
+                    type="button"
+                    class="text-xs font-semibold text-rose-300/90 hover:text-rose-200 border border-rose-500/30 hover:border-rose-400/50 rounded-xl px-3 py-1.5 transition-colors cursor-pointer"
+                    @click="deleteAllJobs"
+                  >
+                    {{ t('scraper.deleteAll') }}
+                  </button>
                   <select
                     v-model="sortOption"
                     class="bg-slate-950 border border-slate-800/80 text-slate-300 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all duration-300 cursor-pointer"
                   >
-                    <option value="default">Sort: Newest</option>
-                    <option value="salary-high">Highest Salary</option>
-                    <option value="salary-low">Lowest Salary</option>
+                    <option value="default">{{ t('scraper.sortNewest') }}</option>
+                    <option value="salary-high">{{ t('scraper.sortHighest') }}</option>
+                    <option value="salary-low">{{ t('scraper.sortLowest') }}</option>
                   </select>
                 </div>
               </div>
@@ -580,9 +623,9 @@ function hideHistoryDropdown() {
                   <div class="w-16 h-16 border-2 border-dashed border-slate-700 rounded-2xl flex items-center justify-center mb-4">
                     <Globe class="text-slate-500" :size="24" />
                   </div>
-                  <p class="text-slate-400 font-bold text-sm">System Idle</p>
+                  <p class="text-slate-400 font-bold text-sm">{{ t('scraper.systemIdle') }}</p>
                   <p class="text-slate-500 text-xs mt-1">
-                    Awaiting target URL input to commence scraping.
+                    {{ t('scraper.systemIdleHint') }}
                   </p>
                 </div>
 
@@ -591,9 +634,9 @@ function hideHistoryDropdown() {
                   v-else-if="!loading && hasScraped && sourceJobs.length === 0 && !showFavorites"
                   class="h-full flex flex-col items-center justify-center text-center opacity-50"
                 >
-                  <p class="text-slate-400 font-bold text-sm">No Jobs Found</p>
+                  <p class="text-slate-400 font-bold text-sm">{{ t('scraper.noJobs') }}</p>
                   <p class="text-slate-500 text-xs mt-1 max-w-sm">
-                    The page may be JavaScript-rendered, blocked, or Gemini may be temporarily overloaded. Try again or use another careers URL.
+                    {{ t('scraper.noJobsHint') }}
                   </p>
                 </div>
 
@@ -602,8 +645,8 @@ function hideHistoryDropdown() {
                   v-else-if="!loading && showFavorites && sourceJobs.length === 0"
                   class="h-full flex flex-col items-center justify-center text-center opacity-50"
                 >
-                  <p class="text-slate-400 font-bold text-sm">No Favorites Yet</p>
-                  <p class="text-slate-500 text-xs mt-1">Save some jobs to view them here.</p>
+                  <p class="text-slate-400 font-bold text-sm">{{ t('scraper.noFavorites') }}</p>
+                  <p class="text-slate-500 text-xs mt-1">{{ t('scraper.noFavoritesHint') }}</p>
                 </div>
 
                 <!-- No matches -->
@@ -611,8 +654,8 @@ function hideHistoryDropdown() {
                   v-else-if="filteredJobs.length === 0 && sourceJobs.length > 0"
                   class="h-full flex flex-col items-center justify-center text-center opacity-50"
                 >
-                  <p class="text-slate-400 font-bold text-sm">No matches found</p>
-                  <p class="text-slate-550 text-xs mt-1">Try relaxing your filter parameters.</p>
+                  <p class="text-slate-400 font-bold text-sm">{{ t('scraper.noMatches') }}</p>
+                  <p class="text-slate-550 text-xs mt-1">{{ t('scraper.noMatchesHint') }}</p>
                 </div>
 
                 <!-- Job list stream -->

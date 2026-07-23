@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import { resumeTemplates, coverLetterTemplates } from '~/utils/templates'
 import { PORTFOLIO_TEMPLATES, SAMPLE_PROFILE } from '~/shared/types/portfolio'
 
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+
+const { t } = useI18n()
+const { coverLetterLabel, resumeDesc } = useTemplateLabels()
+
 const activeFilter = ref('All')
-const filters = ['All', 'Professional', 'Modern', 'Minimalist', 'Technical', 'Creative']
 const portfolioPreviewSlug = ref<string | null>(null)
+
+const filters = computed(() => [
+  { id: 'All', label: t('templates.filterAll') },
+  { id: 'Professional', label: t('templates.filterProfessional') },
+  { id: 'Modern', label: t('templates.filterModern') },
+  { id: 'Minimalist', label: t('templates.filterMinimalist') },
+  { id: 'Technical', label: t('templates.filterTechnical') },
+  { id: 'Creative', label: t('templates.filterCreative') },
+])
+
+const categoryLabel = (category: string) => {
+  const map: Record<string, string> = {
+    Professional: t('templates.filterProfessional'),
+    Modern: t('templates.filterModern'),
+    Minimalist: t('templates.filterMinimalist'),
+    Technical: t('templates.filterTechnical'),
+    Creative: t('templates.filterCreative'),
+  }
+  return map[category] || category
+}
 
 const filteredTemplates = computed(() => {
   if (activeFilter.value === 'All') return resumeTemplates
   return resumeTemplates.filter(t => t.category === activeFilter.value)
 })
-
-definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 </script>
 
 <template>
@@ -21,27 +41,27 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
       <div class="max-w-[1200px] mx-auto px-6">
         <!-- Header Section -->
         <div class="mb-12">
-          <h1 class="font-serif text-4xl text-app-fg mb-3">Template Gallery</h1>
-          <p class="text-app-muted max-w-xl text-lg">Choose from our curated Stitch resume layouts and cover letter styles. Switch templates instantly while preserving your data.</p>
+          <h1 class="font-serif text-4xl text-app-fg mb-3">{{ t('templates.title') }}</h1>
+          <p class="text-app-muted max-w-xl text-lg">{{ t('templates.subtitle') }}</p>
         </div>
 
         <!-- Filters & Categories -->
         <div class="sticky top-16 z-30 bg-app-bg-elevated/80 backdrop-blur-md py-4 mb-10 border-b border-app-border">
           <div class="flex flex-wrap items-center gap-6">
             <button 
-              v-for="filter in filters" :key="filter"
-              @click="activeFilter = filter"
-              :class="['font-semibold text-sm pb-1 border-b-2 transition-colors', activeFilter === filter ? 'text-blue-500 border-blue-500' : 'text-app-muted border-transparent hover:text-app-fg']"
+              v-for="filter in filters" :key="filter.id"
+              @click="activeFilter = filter.id"
+              :class="['font-semibold text-sm pb-1 border-b-2 transition-colors', activeFilter === filter.id ? 'text-blue-500 border-blue-500' : 'text-app-muted border-transparent hover:text-app-fg']"
             >
-              {{ filter }}
+              {{ filter.label }}
             </button>
           </div>
         </div>
 
         <!-- Resume Templates Grid -->
         <div class="mb-8 flex items-center justify-between">
-          <h2 class="font-serif text-2xl text-white">Resume Templates</h2>
-          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">{{ filteredTemplates.length }} Results</span>
+          <h2 class="font-serif text-2xl text-white">{{ t('templates.resumeTemplates') }}</h2>
+          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">{{ t('templates.results', { n: filteredTemplates.length }) }}</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
@@ -51,20 +71,20 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
               
               <!-- Hover Overlay -->
               <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-4">
-                <button type="button" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:bg-blue-400 transition-colors">Use Template</button>
+                <button type="button" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:bg-blue-400 transition-colors">{{ t('templates.useTemplate') }}</button>
               </div>
             </div>
             <div>
               <h4 class="font-semibold text-lg text-white group-hover:text-blue-400 transition-colors">{{ tpl.name }}</h4>
-              <p class="text-xs font-semibold text-blue-200/60 uppercase tracking-widest mt-1">{{ tpl.category }} • {{ tpl.desc }}</p>
+              <p class="text-xs font-semibold text-blue-200/60 uppercase tracking-widest mt-1">{{ categoryLabel(tpl.category) }} • {{ resumeDesc(tpl.id, tpl.desc) }}</p>
             </div>
           </div>
         </div>
 
         <!-- Cover Letter Templates Grid -->
         <div class="mb-8 flex items-center justify-between border-t border-white/10 pt-16">
-          <h2 class="font-serif text-2xl text-white">Cover Letter Templates</h2>
-          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">4 Results</span>
+          <h2 class="font-serif text-2xl text-white">{{ t('templates.coverLetterTemplates') }}</h2>
+          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">{{ t('templates.results', { n: coverLetterTemplates.length }) }}</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
@@ -131,12 +151,12 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
               </div>
 
               <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-4">
-                <button type="button" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:bg-blue-400 transition-colors">Use Template</button>
+                <button type="button" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:bg-blue-400 transition-colors">{{ t('templates.useTemplate') }}</button>
               </div>
             </div>
             <div>
-              <h4 class="font-semibold text-lg text-white group-hover:text-blue-400 transition-colors">{{ tpl.name }}</h4>
-              <p class="text-xs font-semibold text-blue-200/60 uppercase tracking-widest mt-1">{{ tpl.category }} • {{ tpl.desc }}</p>
+              <h4 class="font-semibold text-lg text-white group-hover:text-blue-400 transition-colors">{{ coverLetterLabel(tpl.id, 'name', tpl.name) }}</h4>
+              <p class="text-xs font-semibold text-blue-200/60 uppercase tracking-widest mt-1">{{ categoryLabel(tpl.category) }} • {{ coverLetterLabel(tpl.id, 'desc', tpl.desc) }}</p>
             </div>
           </div>
         </div>
@@ -144,86 +164,49 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
         <!-- Portfolio Templates -->
         <div class="mb-8 flex items-center justify-between border-t border-white/10 pt-16">
           <div>
-            <h2 class="font-serif text-2xl text-white">Portfolio Templates</h2>
-            <p class="text-blue-200/60 text-sm mt-1">Ten live site themes for AI Portfolio — preview interactively, then publish.</p>
+            <h2 class="font-serif text-2xl text-white">{{ t('templates.portfolioTemplates') }}</h2>
+            <p class="text-blue-200/60 text-sm mt-1">{{ t('templates.portfolioSubtitle') }}</p>
           </div>
-          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">{{ PORTFOLIO_TEMPLATES.length }} Designs</span>
+          <span class="text-blue-300/60 text-sm font-semibold uppercase tracking-wider">{{ t('templates.designs', { n: PORTFOLIO_TEMPLATES.length }) }}</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
           <div
             v-for="tpl in PORTFOLIO_TEMPLATES"
             :key="tpl.slug"
-            class="group relative flex flex-col rounded-xl border border-white/10 overflow-hidden bg-white/[0.02] hover:border-blue-400/50 transition"
+            class="group relative flex flex-col cursor-pointer"
+            @click="portfolioPreviewSlug = tpl.slug"
           >
-            <div class="relative h-44 overflow-hidden bg-slate-900 border-b border-white/10">
-              <div
-                class="absolute top-0 left-0 origin-top-left pointer-events-none"
-                style="width: 400%; height: 400%; transform: scale(0.25);"
-              >
+            <div class="relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 mb-3 bg-slate-900 hover:border-blue-400/50 transition-all">
+              <div class="absolute inset-0 origin-top-left pointer-events-none" style="width: 400%; height: 400%; transform: scale(0.25);">
                 <PortfolioRenderer :slug="tpl.slug" :data="SAMPLE_PROFILE" />
               </div>
-            </div>
-            <div class="p-4 flex flex-col gap-3 flex-1">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full" :class="tpl.accentClass" />
-                  <h4 class="font-semibold text-white">{{ tpl.name }}</h4>
-                </div>
-                <p class="text-xs text-blue-200/60 uppercase tracking-wider mt-1">{{ tpl.persona }}</p>
-                <p class="text-sm text-blue-200/50 mt-2 line-clamp-2">{{ tpl.description }}</p>
-              </div>
-              <div class="mt-auto flex gap-2">
-                <button
-                  type="button"
-                  class="flex-1 rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100"
-                  @click="portfolioPreviewSlug = tpl.slug"
-                >
-                  Preview
-                </button>
-                <NuxtLink
-                  :to="`/dashboard/portfolio?template=${tpl.slug}`"
-                  class="flex-1 text-center rounded-lg bg-blue-500 hover:bg-blue-400 px-3 py-2 text-sm font-semibold text-white"
-                >
-                  Use
-                </NuxtLink>
+              <div class="absolute inset-0 bg-slate-900/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span class="px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg">{{ t('templates.preview') }}</span>
               </div>
             </div>
+            <h4 class="font-semibold text-white group-hover:text-blue-400 transition-colors">{{ tpl.name }}</h4>
+            <p class="text-xs text-blue-200/60 mt-0.5">{{ tpl.persona }}</p>
           </div>
         </div>
-
-        <Teleport to="body">
-          <div
-            v-if="portfolioPreviewSlug"
-            class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex flex-col"
-            @click.self="portfolioPreviewSlug = null"
-          >
-            <div class="flex items-center justify-between px-6 h-14 bg-slate-900 border-b border-white/10 shrink-0">
-              <p class="font-semibold text-white">
-                {{ PORTFOLIO_TEMPLATES.find(t => t.slug === portfolioPreviewSlug)?.name }} — interactive preview
-              </p>
-              <div class="flex items-center gap-2">
-                <NuxtLink
-                  :to="`/dashboard/portfolio?template=${portfolioPreviewSlug}`"
-                  class="rounded-lg bg-blue-500 hover:bg-blue-400 px-4 py-1.5 text-sm font-semibold text-white"
-                  @click="portfolioPreviewSlug = null"
-                >
-                  Use this template
-                </NuxtLink>
-                <button
-                  type="button"
-                  class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-1.5 text-sm text-blue-100"
-                  @click="portfolioPreviewSlug = null"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-            <div class="flex-1 overflow-y-auto bg-white">
-              <PortfolioRenderer :slug="portfolioPreviewSlug" :data="SAMPLE_PROFILE" />
-            </div>
-          </div>
-        </Teleport>
       </div>
+
+      <Teleport to="body">
+        <div
+          v-if="portfolioPreviewSlug"
+          class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex flex-col"
+          @click.self="portfolioPreviewSlug = null"
+        >
+          <div class="flex items-center justify-between px-6 h-14 bg-slate-900 border-b border-white/10 shrink-0">
+            <p class="font-semibold text-white">{{ PORTFOLIO_TEMPLATES.find(t => t.slug === portfolioPreviewSlug)?.name }}</p>
+            <button type="button" class="text-slate-400 hover:text-white cursor-pointer" @click="portfolioPreviewSlug = null">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="flex-1 overflow-auto">
+            <PortfolioRenderer :slug="portfolioPreviewSlug" :data="SAMPLE_PROFILE" />
+          </div>
+        </div>
+      </Teleport>
     </div>
 </template>

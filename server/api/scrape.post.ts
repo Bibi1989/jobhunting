@@ -28,6 +28,14 @@ export default withCredits(
       useResume?: boolean
       useCoverLetter?: boolean
       jobTitle?: string
+      /** Optional client-extracted job stubs (e.g. Chrome extension list detect). */
+      jobs?: Array<{
+        title?: string
+        company?: string
+        location?: string
+        url?: string
+        description?: string
+      }>
     }>(event)
     const url = body?.url?.trim()
     const manualJobTitle = body?.jobTitle?.trim() || ''
@@ -35,6 +43,19 @@ export default withCredits(
     if (!url) {
       throw createError({ statusCode: 400, statusMessage: 'URL is required' })
     }
+
+    const clientJobs: Job[] = Array.isArray(body?.jobs)
+      ? body.jobs
+          .map((j) => ({
+            title: String(j?.title || '').trim() || 'Untitled role',
+            company: String(j?.company || '').trim() || undefined,
+            location: String(j?.location || '').trim() || 'Remote',
+            url: String(j?.url || '').trim(),
+            description: String(j?.description || '').trim() || undefined,
+          }))
+          .filter((j) => /^https?:\/\//i.test(j.url))
+          .slice(0, 60)
+      : []
 
     let target: JobScrapeTarget | null = null
     let resolvedJobTitle = manualJobTitle
@@ -60,7 +81,6 @@ export default withCredits(
       }
 
       const resumeText = body.useResume ? docs.resume?.contentText : undefined
-      // Prefer an explicit title; otherwise derive from the uploaded resume.
       if (!resolvedJobTitle && resumeText) {
         resolvedJobTitle = extractJobTitleFromResumeText(resumeText)
       }
@@ -78,28 +98,40 @@ export default withCredits(
     const ai = createGeminiClient()
     const models = getGeminiModels(resolveGeminiModel())
 
-    const { html, isError, statusText, status, finalUrl } = await fetchPageHtml(url)
-    const cleanedHtml = isError ? '' : cleanHtmlForExtraction(html, finalUrl)
-
     let jobs: Job[] = []
     let usedSearch = false
+    let finalUrl = url
+    let statusText = 'ok'
+    let sourceFromClient = false
 
-    if (shouldUseSearchFallback(isError, cleanedHtml, status)) {
-      usedSearch = true
-      const reason = isError ? `fetch failed: ${statusText}` : `page unusable (${statusText})`
-      jobs = await searchJobsForUrl(ai, models, finalUrl, reason, target)
+    if (clientJobs.length > 0) {
+      sourceFromClient = true
+      jobs = clientJobs
+      statusText = `client list (${clientJobs.length})`
     } else {
-      jobs = await extractJobsFromHtml(ai, models, cleanedHtml, finalUrl, target)
+      const { html, isError, statusText: fetchStatus, status, finalUrl: fetchedUrl } =
+        await fetchPageHtml(url)
+      finalUrl = fetchedUrl
+      statusText = fetchStatus
+      const cleanedHtml = isError ? '' : cleanHtmlForExtraction(html, finalUrl)
 
-      if (jobs.length === 0) {
+      if (shouldUseSearchFallback(isError, cleanedHtml, status)) {
         usedSearch = true
-        jobs = await searchJobsForUrl(
-          ai,
-          models,
-          finalUrl,
-          'no jobs found in page HTML (likely JavaScript-rendered)',
-          target,
-        )
+        const reason = isError ? `fetch failed: ${statusText}` : `page unusable (${statusText})`
+        jobs = await searchJobsForUrl(ai, models, finalUrl, reason, target)
+      } else {
+        jobs = await extractJobsFromHtml(ai, models, cleanedHtml, finalUrl, target)
+
+        if (jobs.length === 0) {
+          usedSearch = true
+          jobs = await searchJobsForUrl(
+            ai,
+            models,
+            finalUrl,
+            'no jobs found in page HTML (likely JavaScript-rendered)',
+            target,
+          )
+        }
       }
     }
 
@@ -107,6 +139,7 @@ export default withCredits(
       jobs = await filterJobsByTarget(ai, models, jobs, target)
     }
 
+    // Fetch each job detail page and extract the full JD (responsibilities, requirements, etc.)
     jobs = await enrichJobsWithFullDescriptions(
       ai,
       getGeminiModels(resolveGeminiParsekitModel()),
@@ -139,6 +172,7 @@ export default withCredits(
         targetJobTitle: resolvedJobTitle || null,
         sourceStatus: statusText,
         scrapeRunId,
+        sourceFromClient,
         enriched: savedJobs.filter((j) => j.descriptionSource === 'detail_page').length,
       },
     }

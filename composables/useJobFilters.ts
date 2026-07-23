@@ -12,10 +12,12 @@ export function useJobFilters(jobs: Ref<Job[]>, favorites: Ref<Job[]>, showFavor
 
   const filteredJobs = computed(() => {
     let filtered = sourceJobs.value.filter((job) => {
-      const matchSearch =
-        !searchQuery.value ||
-        job.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        (job.company?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)
+      const q = searchQuery.value.trim().toLowerCase()
+      const matchPosition =
+        !q ||
+        job.title.toLowerCase().includes(q) ||
+        (job.company?.toLowerCase().includes(q) ?? false) ||
+        (job.description?.toLowerCase().includes(q) ?? false)
 
       const matchLocation =
         !locationFilter.value ||
@@ -32,7 +34,7 @@ export function useJobFilters(jobs: Ref<Job[]>, favorites: Ref<Job[]>, showFavor
         }
       }
 
-      return matchSearch && matchLocation && matchSalary
+      return matchPosition && matchLocation && matchSalary
     })
 
     if (sortOption.value === 'salary-high') {

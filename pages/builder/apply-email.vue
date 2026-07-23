@@ -15,6 +15,7 @@ type BuilderDocCard = {
 
 const route = useRoute()
 const toast = useAppToast()
+const { t } = useI18n()
 
 const activeTab = ref<'compose' | 'saved'>('compose')
 const resumeData = ref<BuilderResumeData | null>(null)
@@ -24,10 +25,10 @@ const selectedResumeId = ref('')
 const formRef = ref<InstanceType<typeof ApplyEmailForm> | null>(null)
 const savedPanelRef = ref<InstanceType<typeof ApplyEmailSavedPanel> | null>(null)
 
-const applyTabs = [
-  { id: 'compose' as const, label: 'Compose', icon: 'edit_note' },
-  { id: 'saved' as const, label: 'Saved Emails', icon: 'bookmark' },
-]
+const applyTabs = computed(() => [
+  { id: 'compose' as const, label: t('applyEmail.compose'), icon: 'edit_note' },
+  { id: 'saved' as const, label: t('applyEmail.savedEmails'), icon: 'bookmark' },
+])
 
 const { data: documents, pending: documentsPending } = useFetch<BuilderDocCard[]>('/api/builder/documents')
 
@@ -66,7 +67,7 @@ async function loadResume(id: string) {
     }
   } catch (err: unknown) {
     const e = err as { data?: { statusMessage?: string }; statusMessage?: string }
-    toast.error(e.data?.statusMessage || e.statusMessage || 'Could not load resume.')
+    toast.error(e.data?.statusMessage || e.statusMessage || t('applyEmail.loadFailed'))
     resumeData.value = emptyResumeData()
   } finally {
     loadingResume.value = false
@@ -124,8 +125,8 @@ watch(
             <span class="material-symbols-outlined">mail</span>
           </div>
           <div>
-            <p class="font-semibold text-app-fg text-sm">Apply via Email</p>
-            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Compose & send</p>
+            <p class="font-semibold text-app-fg text-sm">{{ t('applyEmail.title') }}</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">{{ t('applyEmail.subtitle') }}</p>
           </div>
         </div>
       </div>
@@ -165,20 +166,20 @@ watch(
       <div class="max-w-3xl">
         <div v-if="activeTab === 'compose'" class="space-y-6">
           <div>
-            <h1 class="text-2xl font-bold text-app-fg mb-1">Compose application email</h1>
+            <h1 class="text-2xl font-bold text-app-fg mb-1">{{ t('applyEmail.composeHeading') }}</h1>
             <p class="text-sm text-slate-400">
-              Generate a tailored email, attach your resume or cover letter, then send or copy.
+              {{ t('applyEmail.composeHelp') }}
             </p>
           </div>
 
           <div v-if="documentsPending || loadingResume" class="rounded-xl border border-white/10 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-            Loading…
+            {{ t('applyEmail.loading') }}
           </div>
 
           <template v-else-if="resumeData">
             <div class="rounded-xl border border-white/10 bg-slate-900/40 p-4 space-y-2">
               <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-500">
-                Resume for attachments & AI context
+                {{ t('applyEmail.resumeForContext') }}
               </label>
               <select
                 v-if="resumeOptions.length"
@@ -191,9 +192,9 @@ watch(
                 </option>
               </select>
               <p v-else class="text-xs text-slate-400">
-                No builder resume yet —
-                <NuxtLink to="/builder" class="text-blue-400 hover:underline">create one</NuxtLink>
-                or upload files in the form below.
+                {{ t('applyEmail.noResumeYet') }}
+                <NuxtLink to="/builder" class="text-blue-400 hover:underline">{{ t('applyEmail.createOne') }}</NuxtLink>
+                {{ t('applyEmail.orUploadBelow') }}
               </p>
             </div>
 
@@ -210,9 +211,9 @@ watch(
 
         <div v-else class="space-y-6">
           <div>
-            <h1 class="text-2xl font-bold text-app-fg mb-1">Saved emails</h1>
+            <h1 class="text-2xl font-bold text-app-fg mb-1">{{ t('applyEmail.savedHeading') }}</h1>
             <p class="text-sm text-slate-400">
-              Reuse application emails you saved from the Compose tab.
+              {{ t('applyEmail.savedHelp') }}
             </p>
           </div>
 

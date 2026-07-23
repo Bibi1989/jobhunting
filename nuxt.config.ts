@@ -16,7 +16,6 @@ export default defineNuxtConfig({
       { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
       { code: 'de', language: 'de-DE', name: 'Deutsch', file: 'de.json' },
     ],
-    lazy: true,
     langDir: 'locales', // resolved under web/i18n/locales by @nuxtjs/i18n
     defaultLocale: 'en',
     strategy: 'no_prefix',
@@ -81,9 +80,17 @@ export default defineNuxtConfig({
     ollamaBaseUrl: '',
     ollamaModel: '',
     ollamaFallbackModels: '',
+    /** Override with NUXT_STRIPE_SECRET_KEY or STRIPE_SECRET_KEY */
     stripeSecretKey: '',
+    /** Override with NUXT_STRIPE_WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET */
     stripeWebhookSecret: '',
+    /** Monthly Pro — Price id (price_…) or EUR amount e.g. 5.99 */
     stripePriceProMonthly: '',
+    /** Optional dedicated Price id / amount for 6-month billing */
+    stripePriceProSemiannual: '',
+    /** Optional dedicated Price id / amount for yearly billing */
+    stripePriceProYearly: '',
+    /** Override with NUXT_APP_URL or APP_URL */
     appUrl: '',
     adminEmails: '',
     resendApiKey: '',
@@ -107,6 +114,8 @@ export default defineNuxtConfig({
        * Override with NUXT_PUBLIC_CHROME_EXTENSION_STORE_URL
        */
       chromeExtensionStoreUrl: '',
+      /** Override with NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY */
+      stripePublishableKey: '',
     },
   },
 })

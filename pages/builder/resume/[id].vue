@@ -23,6 +23,8 @@ import { cloneJson, useAiUndo } from '~/composables/useAiUndo'
 
 const toast = useAppToast()
 const confirmDialog = useAppConfirm()
+const { t } = useI18n()
+const { resumeDesc } = useTemplateLabels()
 const { canAccessAI, aiBlockedMessage, refreshCredits } = useSaaS()
 const showApplyModal = ref(false)
 const {
@@ -265,20 +267,20 @@ const activePopoverId = ref<string | null>(null)
 const mobileNavOpen = ref(false)
 const mobilePane = ref<'edit' | 'preview'>('edit')
 
-const builderTabs = [
-  { id: 'targetRole', label: 'Target Role', icon: 'business_center' },
-  { id: 'template', label: 'Template', icon: 'view_quilt' },
-  { id: 'layout', label: 'Section Order', icon: 'reorder' },
-  { id: 'personalInfo', label: 'Personal Info', icon: 'person' },
-  { id: 'experience', label: 'Experience', icon: 'work' },
-  { id: 'projects', label: 'Projects', icon: 'integration_instructions' },
-  { id: 'education', label: 'Education', icon: 'school' },
-  { id: 'skills', label: 'Skills', icon: 'psychology' },
-  { id: 'achievements', label: 'Achievements', icon: 'emoji_events' },
-  { id: 'custom', label: 'Custom Sections', icon: 'dashboard_customize' },
-  { id: 'atsCheck', label: 'ATS Check', icon: 'fact_check' },
-  { id: 'history', label: 'History', icon: 'history' },
-] as const
+const builderTabs = computed(() => [
+  { id: 'targetRole', label: t('builderUi.tabTargetRole'), icon: 'business_center' },
+  { id: 'template', label: t('builderUi.tabTemplate'), icon: 'view_quilt' },
+  { id: 'layout', label: t('builderUi.tabSectionOrder'), icon: 'reorder' },
+  { id: 'personalInfo', label: t('builderUi.tabPersonalInfo'), icon: 'person' },
+  { id: 'experience', label: t('builderUi.tabExperience'), icon: 'work' },
+  { id: 'projects', label: t('builderUi.tabProjects'), icon: 'integration_instructions' },
+  { id: 'education', label: t('builderUi.tabEducation'), icon: 'school' },
+  { id: 'skills', label: t('builderUi.tabSkills'), icon: 'psychology' },
+  { id: 'achievements', label: t('builderUi.tabAchievements'), icon: 'emoji_events' },
+  { id: 'custom', label: t('builderUi.tabCustomSections'), icon: 'dashboard_customize' },
+  { id: 'atsCheck', label: t('builderUi.tabAtsCheck'), icon: 'fact_check' },
+  { id: 'history', label: t('builderUi.tabHistory'), icon: 'history' },
+])
 
 function selectBuilderTab(id: string) {
   activeTab.value = id
@@ -1355,7 +1357,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
-          aria-label="Go back"
+          :aria-label="t('builderUi.goBack')"
           @click="goBack"
         >
           <span class="material-symbols-outlined">arrow_back</span>
@@ -1363,15 +1365,15 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-white/10 text-slate-200 hover:bg-white/5 cursor-pointer"
-          aria-label="Open sections"
+          :aria-label="t('builderUi.openSections')"
           @click="mobileNavOpen = !mobileNavOpen"
         >
           <span class="material-symbols-outlined">{{ mobileNavOpen ? 'close' : 'menu' }}</span>
         </button>
         <AppLogo size="sm" :show-tagline="false" class="truncate" />
         <nav class="hidden lg:flex gap-6 items-center">
-          <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">My Projects</NuxtLink>
-          <NuxtLink to="/builder/templates" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">Templates</NuxtLink>
+          <NuxtLink to="/builder" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">{{ t('builderUi.myProjects') }}</NuxtLink>
+          <NuxtLink to="/builder/templates" class="font-semibold text-slate-300 hover:text-white transition-colors duration-200">{{ t('builderUi.templates') }}</NuxtLink>
         </nav>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -1383,7 +1385,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <option value="es" class="bg-slate-800 text-white">ES</option>
           </select>
           <span v-if="translating" class="material-symbols-outlined text-blue-400 animate-spin text-sm">refresh</span>
-          <input type="text" v-model="resumeData.name" class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all w-28 lg:w-40" placeholder="Resume Name" />
+          <input type="text" v-model="resumeData.name" class="bg-white/5 border border-white/10 rounded px-3 py-1 text-sm focus:border-blue-400 focus:bg-white/10 outline-none text-white transition-all w-28 lg:w-40" :placeholder="t('builderUi.resumeNamePlaceholder')" />
         </div>
         
         <input type="file" ref="importFileInput" class="hidden" accept=".pdf,.docx,.doc,.txt" @change="handleImportResume" />
@@ -1392,7 +1394,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <span class="material-symbols-outlined text-[16px]" :class="{'animate-spin': importing}">
             {{ importing ? 'refresh' : 'upload_file' }}
           </span>
-          <span class="hidden md:inline">{{ importing ? 'Importing...' : 'Import Resume' }}</span>
+          <span class="hidden md:inline">{{ importing ? t('builderUi.importing') : t('builderUi.importResume') }}</span>
         </button>
 
         <button
@@ -1403,20 +1405,20 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           @click="() => { const entry = undoAi(); if (entry) toast.info(`Reverted: ${entry.label}`) }"
         >
           <span class="material-symbols-outlined text-[16px]">undo</span>
-          <span class="hidden sm:inline">Undo AI</span>
+          <span class="hidden sm:inline">{{ t('builderUi.undoAi') }}</span>
         </button>
         <button @click="saveDraft" :disabled="saving" class="px-2.5 sm:px-4 py-1.5 bg-blue-500/20 text-blue-300 border border-blue-500/50 rounded hover:bg-blue-500 hover:text-white transition-colors font-semibold text-sm disabled:opacity-50 cursor-pointer">
-          <span class="sm:hidden">{{ saving ? '…' : 'Save' }}</span>
-          <span class="hidden sm:inline">{{ saving ? 'Saving...' : 'Save Draft' }}</span>
+          <span class="sm:hidden">{{ saving ? '…' : t('builderUi.save') }}</span>
+          <span class="hidden sm:inline">{{ saving ? t('builderUi.saving') : t('builderUi.saveDraft') }}</span>
         </button>
         <button @click="showApplyModal = true" class="px-2.5 sm:px-4 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer inline-flex items-center gap-1.5">
           <span class="material-symbols-outlined text-[16px]">mail</span>
-          <span class="hidden sm:inline">Apply via Email</span>
-          <span class="sm:hidden">Apply</span>
+          <span class="hidden sm:inline">{{ t('builderUi.applyViaEmail') }}</span>
+          <span class="sm:hidden">{{ t('builderUi.apply') }}</span>
         </button>
         <button @click="exportPdf" :disabled="exporting" class="px-2.5 sm:px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors font-semibold text-sm shadow-[0_0_15px_rgba(59,130,246,0.5)] cursor-pointer disabled:opacity-50">
-          <span class="sm:hidden">{{ exporting ? '…' : 'PDF' }}</span>
-          <span class="hidden sm:inline">{{ exporting ? 'Exporting...' : 'Export PDF' }}</span>
+          <span class="sm:hidden">{{ exporting ? '…' : t('builderUi.pdf') }}</span>
+          <span class="hidden sm:inline">{{ exporting ? t('builderUi.exporting') : t('builderUi.exportPdf') }}</span>
         </button>
       </div>
     </header>
@@ -1429,7 +1431,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         :class="mobilePane === 'edit' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
         @click="mobilePane = 'edit'"
       >
-        Edit
+        {{ t('builderUi.edit') }}
       </button>
       <button
         type="button"
@@ -1437,7 +1439,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         :class="mobilePane === 'preview' ? 'text-blue-300 border-b-2 border-blue-400 bg-blue-500/10' : 'text-slate-400'"
         @click="mobilePane = 'preview'"
       >
-        Preview
+        {{ t('builderUi.preview') }}
       </button>
     </div>
 
@@ -1453,7 +1455,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <span
                   v-if="tab.id === 'atsCheck'"
                   class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                >Pro</span>
+                >{{ t('builderUi.pro') }}</span>
               </button>
             </li>
           </ul>
@@ -1464,8 +1466,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               @click="goToApplyEmailPage"
             >
               <span class="material-symbols-outlined">mail</span>
-              <span class="flex-1 text-left font-semibold">Apply via Email</span>
-              <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Pro</span>
+              <span class="flex-1 text-left font-semibold">{{ t('builderUi.applyViaEmail') }}</span>
+              <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{{ t('builderUi.pro') }}</span>
             </button>
           </div>
         </nav>
@@ -1473,9 +1475,9 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
       <!-- Mobile section drawer -->
       <div v-if="mobileNavOpen" class="fixed inset-0 z-40 lg:hidden">
-        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Close sections" @click="mobileNavOpen = false" />
+        <button type="button" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" :aria-label="t('builderUi.closeSections')" @click="mobileNavOpen = false" />
         <aside class="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-slate-900 border-r border-white/10 py-4 overflow-y-auto shadow-2xl">
-          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">Sections</p>
+          <p class="px-5 mb-3 text-xs uppercase tracking-widest text-blue-200/60 font-semibold">{{ t('builderUi.sections') }}</p>
           <nav>
             <ul class="space-y-0.5">
               <li v-for="tab in builderTabs" :key="`m-${tab.id}`">
@@ -1497,20 +1499,20 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 @click="goToApplyEmailPage"
               >
                 <span class="material-symbols-outlined">mail</span>
-                <span class="flex-1 text-left font-semibold">Apply via Email</span>
+                <span class="flex-1 text-left font-semibold">{{ t('builderUi.applyViaEmail') }}</span>
               </button>
             </div>
           </nav>
           <div class="px-5 pt-4 mt-2 border-t border-white/10 space-y-2 sm:hidden">
-            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">Language</label>
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold">{{ t('builderUi.language') }}</label>
             <select v-model="resumeData.language" @change="handleLanguageChange" class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none cursor-pointer">
               <option value="en" class="bg-slate-800">EN</option>
               <option value="de" class="bg-slate-800">DE</option>
               <option value="fr" class="bg-slate-800">FR</option>
               <option value="es" class="bg-slate-800">ES</option>
             </select>
-            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">Name</label>
-            <input type="text" v-model="resumeData.name" class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none" placeholder="Resume Name" />
+            <label class="block text-[10px] uppercase tracking-wider text-slate-500 font-bold pt-1">{{ t('builderUi.name') }}</label>
+            <input type="text" v-model="resumeData.name" class="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white outline-none" :placeholder="t('builderUi.resumeNamePlaceholder')" />
           </div>
         </aside>
       </div>
@@ -1526,8 +1528,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           
           <div v-if="activeTab === 'template'">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Choose Template</h1>
-              <p class="text-blue-200/60 text-sm">Select a design for your resume.</p>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.chooseTemplate') }}</h1>
+              <p class="text-blue-200/60 text-sm">{{ t('builderUi.templateHelpResume') }}</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
@@ -1544,20 +1546,20 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     v-if="resolvedFormatId === tpl.id"
                     class="absolute top-2 right-2 bg-blue-500 text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
                   >
-                    Selected
+                    {{ t('builderUi.selected') }}
                   </div>
                 </div>
                 <div class="p-3 bg-white/5">
                   <h3 class="font-bold text-white text-sm mb-0.5 group-hover:text-blue-300 transition-colors">{{ tpl.name }}</h3>
-                  <p class="text-[11px] text-slate-400 leading-snug">{{ tpl.desc }}</p>
+                  <p class="text-[11px] text-slate-400 leading-snug">{{ resumeDesc(tpl.id, tpl.desc) }}</p>
                 </div>
               </button>
             </div>
             <!-- Spacing & Typography Presets -->
             <div class="mt-8 pt-6 border-t border-white/10 space-y-4 text-left">
               <div>
-                <h3 class="font-bold text-lg text-white mb-0.5">Spacing & Typography</h3>
-                <p class="text-blue-200/60 text-xs">Presets set a baseline; fine-tune with the sliders below.</p>
+                <h3 class="font-bold text-lg text-white mb-0.5">{{ t('builderUi.spacingTypography') }}</h3>
+                <p class="text-blue-200/60 text-xs">{{ t('builderUi.spacingHelp') }}</p>
               </div>
 
               <div class="grid grid-cols-3 gap-2">
@@ -1566,28 +1568,28 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   @click="applySpacingPreset('ats-stable')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'ats-stable' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
-                  ATS Stable
+                  {{ t('builderUi.presetAtsStable') }}
                 </button>
                 <button
                   type="button"
                   @click="applySpacingPreset('balanced')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'balanced' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
-                  Balanced
+                  {{ t('builderUi.presetBalanced') }}
                 </button>
                 <button
                   type="button"
                   @click="applySpacingPreset('compact')"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', (resumeData.spacingPreset || 'balanced') === 'compact' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                 >
-                  Compact
+                  {{ t('builderUi.presetCompact') }}
                 </button>
               </div>
 
               <div class="space-y-4 pt-2">
                 <label class="block space-y-1.5">
                   <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-semibold uppercase tracking-wider text-slate-400">Font size</span>
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderUi.fontSize') }}</span>
                     <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('fontSize', 9.5).toFixed(1) }} pt</span>
                   </div>
                   <input
@@ -1603,7 +1605,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
                 <label class="block space-y-1.5">
                   <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-semibold uppercase tracking-wider text-slate-400">Line height</span>
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderUi.lineHeight') }}</span>
                     <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('lineHeight', 1.35).toFixed(2) }}</span>
                   </div>
                   <input
@@ -1619,7 +1621,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
                 <label class="block space-y-1.5">
                   <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-semibold uppercase tracking-wider text-slate-400">Margin horizontal</span>
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderUi.marginH') }}</span>
                     <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('marginHorizontal', 32) }} pt</span>
                   </div>
                   <input
@@ -1635,7 +1637,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
                 <label class="block space-y-1.5">
                   <div class="flex items-center justify-between text-[11px]">
-                    <span class="font-semibold uppercase tracking-wider text-slate-400">Margin vertical</span>
+                    <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderUi.marginV') }}</span>
                     <span class="text-slate-300 tabular-nums">{{ layoutSliderValue('marginVertical', 32) }} pt</span>
                   </div>
                   <input
@@ -1653,8 +1655,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <!-- Design customization -->
             <div class="mt-8 pt-6 border-t border-white/10">
               <div class="mb-4">
-                <h3 class="font-bold text-lg text-white mb-0.5">Design</h3>
-                <p class="text-blue-200/60 text-xs">Fonts, colors, header layout, and profile photo.</p>
+                <h3 class="font-bold text-lg text-white mb-0.5">{{ t('builderUi.design') }}</h3>
+                <p class="text-blue-200/60 text-xs">{{ t('builderUi.designHelp') }}</p>
               </div>
               <BuilderDesignPanel v-model="resumeData" />
             </div>
@@ -1662,9 +1664,9 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
           <div v-if="activeTab === 'layout'" class="space-y-6">
             <div class="mb-2">
-              <h1 class="font-bold text-2xl text-white mb-1">Section Order</h1>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.sectionOrderTitle') }}</h1>
               <p class="text-blue-200/60 text-sm">
-                Reorder blocks for both the live PDF canvas and the downloaded file.
+                {{ t('builderUi.sectionOrderHelp') }}
               </p>
             </div>
             <BuilderPdfSectionReorderPanel
@@ -1675,74 +1677,74 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
           <div v-if="activeTab === 'personalInfo'">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Personal Info</h1>
-              <p class="text-blue-200/60 text-sm">Update your contact details and professional summary.</p>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.personalInfoTitle') }}</h1>
+              <p class="text-blue-200/60 text-sm">{{ t('builderUi.personalInfoHelp') }}</p>
             </div>
             <div class="space-y-6">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Name</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.fullName') }}</label>
                   <input v-model="resumeData.personalInfo.fullName" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.jobTitle') }}</label>
                   <input v-model="resumeData.personalInfo.jobTitle" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Email</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.email') }}</label>
                   <input v-model="resumeData.personalInfo.email" type="email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Phone</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.phone') }}</label>
                   <input v-model="resumeData.personalInfo.phone" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.location') }}</label>
                   <input v-model="resumeData.personalInfo.location" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Portfolio Website</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.portfolioWebsite') }}</label>
                   <input v-model="resumeData.personalInfo.portfolio" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all" />
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">LinkedIn</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.linkedin') }}</label>
                   <input
                     v-model="resumeData.personalInfo.linkedin"
                     type="text"
-                    placeholder="linkedin.com/in/you"
+                    :placeholder="t('builderFields.linkedinPlaceholder')"
                     class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
                   />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">GitHub</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.github') }}</label>
                   <input
                     v-model="resumeData.personalInfo.github"
                     type="text"
-                    placeholder="github.com/you"
+                    :placeholder="t('builderFields.githubPlaceholder')"
                     class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all"
                   />
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
-                  <textarea v-model="resumeData.personalInfo.targetRole" rows="2" placeholder="e.g. Senior Product Designer" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm resize-y"></textarea>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.targetRoleOptional') }}</label>
+                  <textarea v-model="resumeData.personalInfo.targetRole" rows="2" :placeholder="t('builderFields.targetRolePlaceholder')" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm resize-y"></textarea>
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
-                  <input v-model="resumeData.personalInfo.commandPrompt" type="text" placeholder="e.g. Focus on UX research and strategy" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm" />
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.aiInstructionsOptional') }}</label>
+                  <input v-model="resumeData.personalInfo.commandPrompt" type="text" :placeholder="t('builderFields.aiHintPlaceholder')" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all text-sm" />
                 </div>
               </div>
 
               <div class="flex flex-col relative">
                 <div class="flex justify-between items-end mb-1">
-                  <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Professional Summary <span class="text-blue-400 normal-case ml-2">(Rich Text Supported)</span></label>
+                  <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">{{ t('builderFields.professionalSummary') }} <span class="text-blue-400 normal-case ml-2">{{ t('builderUi.richTextSupported') }}</span></label>
                   <div class="flex items-center gap-1.5 z-10">
                     <button
                       v-if="canUndoAiScope('summary')"
@@ -1751,11 +1753,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                       @click="() => { const entry = undoAiScope('summary'); if (entry) toast.info('Summary enhance undone.') }"
                     >
                       <span class="material-symbols-outlined text-[12px]">undo</span>
-                      Undo
+                      {{ t('builderUi.undo') }}
                     </button>
                     <button @click="enhanceDescription({ id: 'summary', description: resumeData.personalInfo.summary, targetRole: resumeData.personalInfo.targetRole, commandPrompt: resumeData.personalInfo.commandPrompt }, 'summary')" :disabled="enhancingIds.has('summary')" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                       <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has('summary')}">{{ enhancingIds.has('summary') ? 'refresh' : 'auto_awesome' }}</span>
-                      {{ enhancingIds.has('summary') ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
+                      {{ enhancingIds.has('summary') ? t('builderUi.enhancing') : t('builderUi.aiEnhance') }}
                     </button>
                   </div>
                 </div>
@@ -1769,10 +1771,10 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <!-- Summary Keyword Assistance -->
                 <div class="mt-3 space-y-1.5 text-left">
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in Summary</span>
-                    <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(k => k.isCovered && k.locations.some(loc => loc.section === 'Summary')).length }} covered</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ t('builderUi.keywordsInSummary') }}</span>
+                    <span class="text-[10px] text-slate-400 font-semibold">{{ t('builderUi.coveredCount', { n: liveKeywordMatches.filter(k => k.isCovered && k.locations.some(loc => loc.section === 'Summary')).length }) }}</span>
                   </div>
-                  <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                  <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">{{ t('builderUi.noKeywordsYet') }}</div>
                   <div v-else class="flex flex-wrap gap-1">
                     <span
                       v-for="m in liveKeywordMatches"
@@ -1790,9 +1792,9 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
           <div v-if="activeTab === 'targetRole'" class="pb-8">
             <div class="mb-8">
-              <h1 class="font-bold text-2xl text-white mb-1">Target Role</h1>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.targetRoleTitle') }}</h1>
               <p class="text-blue-200/60 text-sm">
-                Upload a resume and/or paste a job description — either is enough to draft; both is best. Uploads are limited to 3 pages.
+                {{ t('builderUi.targetRoleHelpResume') }}
               </p>
             </div>
             <ExtensionInstallBanner class="mb-5" />
@@ -1800,13 +1802,13 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               <div class="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3 flex-wrap">
                   <div class="min-w-0">
-                    <p class="text-sm font-semibold text-white">Resume for drafting</p>
+                    <p class="text-sm font-semibold text-white">{{ t('builderUi.resumeForDrafting') }}</p>
                     <p class="text-[11px] text-slate-400 mt-0.5">
                       {{
                         uploadedResumeName ||
                         (hasResumeSignal()
-                          ? 'Using contact & experience from this project'
-                          : 'Optional — upload PDF, DOCX, or TXT (max 3 pages)')
+                          ? t('builderUi.usingProjectResume')
+                          : t('builderUi.uploadOptional'))
                       }}
                     </p>
                   </div>
@@ -1819,32 +1821,32 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     <span class="material-symbols-outlined text-[14px]" :class="{ 'animate-spin': importing }">
                       {{ importing ? 'refresh' : 'upload_file' }}
                     </span>
-                    {{ importing ? 'Importing…' : 'Upload resume' }}
+                    {{ importing ? t('builderUi.importing') : t('builderUi.uploadResume') }}
                   </button>
                 </div>
               </div>
 
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Job Description
+                  {{ t('builderUi.jobDescription') }}
                 </label>
                 <textarea
                   v-model="resumeData.targetJobDescription"
                   class="w-full h-48 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
-                  placeholder="Optional if you uploaded a resume. Paste the job requirements for a tighter draft…"
+                  :placeholder="t('builderUi.jobDescPlaceholder')"
                 />
               </div>
 
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Additional AI instructions
+                  {{ t('builderUi.aiInstructions') }}
                 </label>
                 <textarea
                   v-model="resumeData.additionalInstructions"
                   class="w-full h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 focus:border-blue-400 focus:bg-white/10 text-white outline-none transition-all resize-none custom-scrollbar"
-                  placeholder="Optional. Example: Emphasize leadership and TypeScript. Keep bullets concise."
+                  :placeholder="t('builderUi.aiInstructionsPlaceholder')"
                 />
-                <p class="mt-1.5 text-[11px] text-slate-500">Passed to AI as extra tasks or constraints.</p>
+                <p class="mt-1.5 text-[11px] text-slate-500">{{ t('builderUi.aiInstructionsHelp') }}</p>
               </div>
 
               <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-1.5">
@@ -1863,7 +1865,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               <!-- Tailoring Preset Selector -->
               <div class="space-y-2 text-left">
                 <label class="text-xs font-bold uppercase tracking-widest text-slate-500 block">
-                  Tailoring Personality / Preset
+                  {{ t('builderUi.tailoringPreset') }}
                 </label>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
@@ -1871,35 +1873,35 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     @click="tailoringPreset = 'ats-first'"
                     :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'ats-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                   >
-                    ATS-First
+                    {{ t('builderUi.presetAts') }}
                   </button>
                   <button
                     type="button"
                     @click="tailoringPreset = 'impact-first'"
                     :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'impact-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                   >
-                    Impact/Metrics
+                    {{ t('builderUi.presetImpact') }}
                   </button>
                   <button
                     type="button"
                     @click="tailoringPreset = 'leadership'"
                     :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'leadership' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                   >
-                    Leadership
+                    {{ t('builderUi.presetLeadership') }}
                   </button>
                   <button
                     type="button"
                     @click="tailoringPreset = 'tech-expert'"
                     :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'tech-expert' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-white/5 text-slate-300 border-white/10 hover:border-blue-400/50']"
                   >
-                    Tech Expert
+                    {{ t('builderUi.presetTech') }}
                   </button>
                 </div>
                 <p class="text-[10px] text-slate-500 leading-snug">
-                  <span v-if="tailoringPreset === 'ats-first'">Optimized for parsing and strict keyword density. Uses objective phrasing.</span>
-                  <span v-if="tailoringPreset === 'impact-first'">Places high-impact quantitative achievements, percentages, and metrics first.</span>
-                  <span v-if="tailoringPreset === 'leadership'">Showcases management, mentorship, communication, and project ownership.</span>
-                  <span v-if="tailoringPreset === 'tech-expert'">Focuses on engineering depth, architecture, and tool mastery.</span>
+                  <span v-if="tailoringPreset === 'ats-first'">{{ t('builderUi.presetAtsHelp') }}</span>
+                  <span v-if="tailoringPreset === 'impact-first'">{{ t('builderUi.presetImpactHelp') }}</span>
+                  <span v-if="tailoringPreset === 'leadership'">{{ t('builderUi.presetLeadershipHelp') }}</span>
+                  <span v-if="tailoringPreset === 'tech-expert'">{{ t('builderUi.presetTechHelp') }}</span>
                 </p>
               </div>
 
@@ -1911,7 +1913,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   class="w-4 h-4 rounded border-white/10 bg-white/5 text-blue-600 focus:ring-blue-500/50 outline-none cursor-pointer"
                 />
                 <label for="also-generate-cover-letter" class="text-xs font-medium text-slate-300 cursor-pointer">
-                  Also draft a tailored cover letter
+                  {{ t('builderUi.alsoCoverLetter') }}
                 </label>
               </div>
 
@@ -1924,7 +1926,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': enhancing }">
                   {{ enhancing ? 'refresh' : 'auto_awesome' }}
                 </span>
-                {{ enhancing ? 'Drafting…' : 'Draft resume with AI' }}
+                {{ enhancing ? t('builderUi.drafting') : t('builderUi.draftResume') }}
               </button>
 
               <div
@@ -1935,13 +1937,13 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   :to="`/builder/cover-letter/new?jobId=${encodeURIComponent(String(route.query.jobId))}`"
                   class="text-[11px] px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 hover:border-blue-400 hover:text-white transition-colors"
                 >
-                  Cover letter builder
+                  {{ t('builderUi.coverLetterBuilder') }}
                 </NuxtLink>
                 <NuxtLink
                   :to="`/dashboard/portfolio?jobId=${encodeURIComponent(String(route.query.jobId))}`"
                   class="text-[11px] px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 hover:border-blue-400 hover:text-white transition-colors"
                 >
-                  Portfolio
+                  {{ t('builderUi.portfolio') }}
                 </NuxtLink>
               </div>
             </div>
@@ -1950,11 +1952,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'experience'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Professional Experience</h1>
-                <p class="text-blue-200/60 text-sm">Highlight your career progression.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.experienceTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.experienceHelp') }}</p>
               </div>
               <button @click="addExperience" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.add') }}
               </button>
             </div>
             <div class="space-y-8 pb-10">
@@ -1962,60 +1964,60 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <button @click="removeExperience(index)" class="absolute top-4 right-4 text-red-400 hover:text-red-300 material-symbols-outlined text-sm bg-red-400/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 z-10">delete</button>
                 <div class="space-y-5 mt-2">
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.jobTitle') }}</label>
                     <input v-model="exp.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Company</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.company') }}</label>
                       <div class="flex items-center gap-2 relative">
                         <input v-model="exp.company" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                         <button @click.stop="activePopoverId = activePopoverId === exp.id ? null : exp.id" class="text-slate-400 hover:text-blue-400 material-symbols-outlined text-[16px] transition-colors" :class="{'text-blue-400': exp.companyWebsite || activePopoverId === exp.id}">link</button>
                         
                         <!-- Slack-style Link Popover -->
                         <div v-if="activePopoverId === exp.id" @click.stop class="absolute top-full right-0 mt-2 p-3 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl z-50 w-72">
-                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">Link URL</label>
-                          <input v-model="exp.companyWebsite" placeholder="https://" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm mb-3 text-white outline-none focus:border-blue-500 transition-colors" />
-                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">Display Text</label>
-                          <input v-model="exp.companyWebsiteName" placeholder="Text to display (optional)" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500 transition-colors" />
+                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">{{ t('builderFields.linkUrl') }}</label>
+                          <input v-model="exp.companyWebsite" :placeholder="t('builderFields.httpsPlaceholder')" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm mb-3 text-white outline-none focus:border-blue-500 transition-colors" />
+                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">{{ t('builderFields.displayText') }}</label>
+                          <input v-model="exp.companyWebsiteName" :placeholder="t('builderFields.displayTextOptional')" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500 transition-colors" />
                         </div>
                       </div>
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.location') }}</label>
                       <input v-model="exp.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Start Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.startDate') }}</label>
                       <input v-model="exp.startDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">End Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.endDate') }}</label>
                       <input v-if="!exp.isCurrent" v-model="exp.endDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
-                      <div v-else class="py-1 text-blue-300 font-semibold text-sm">Present</div>
+                      <div v-else class="py-1 text-blue-300 font-semibold text-sm">{{ t('builderUi.present') }}</div>
                       <label class="flex items-center gap-2 mt-2 cursor-pointer w-max">
                         <input type="checkbox" v-model="exp.isCurrent" class="accent-blue-500 w-4 h-4 rounded border-white/20" />
-                        <span class="text-xs text-slate-300">I currently work here</span>
+                        <span class="text-xs text-slate-300">{{ t('builderUi.currentlyWorkHere') }}</span>
                       </label>
                     </div>
                   </div>
                   <!-- AI Enhance Helpers for Experience -->
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-3 rounded-lg border border-white/5">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
-                      <textarea v-model="exp.targetRole" rows="2" placeholder="e.g. Principal Web Architect" class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.targetRoleOptional') }}</label>
+                      <textarea v-model="exp.targetRole" rows="2" :placeholder="t('builderFields.targetRolePlaceholder')" class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
-                      <input v-model="exp.commandPrompt" type="text" placeholder="e.g. Focus on system architecture and Next.js" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.aiInstructionsOptional') }}</label>
+                      <input v-model="exp.commandPrompt" type="text" :placeholder="t('builderFields.aiHintPlaceholder')" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
                     </div>
                   </div>
 
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">{{ t('builderUi.descriptionBullets') }}</label>
                       <div class="flex items-center gap-1.5 z-10">
                         <button
                           v-if="canUndoAiScope(`experience:${exp.id}`)"
@@ -2024,11 +2026,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                           @click="() => { const entry = undoAiScope(`experience:${exp.id}`); if (entry) toast.info('Experience enhance undone.') }"
                         >
                           <span class="material-symbols-outlined text-[12px]">undo</span>
-                          Undo
+                          {{ t('builderUi.undo') }}
                         </button>
                         <button @click="enhanceDescription(exp, 'experience')" :disabled="enhancingIds.has(exp.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                           <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(exp.id)}">{{ enhancingIds.has(exp.id) ? 'refresh' : 'auto_awesome' }}</span>
-                          {{ enhancingIds.has(exp.id) ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
+                          {{ enhancingIds.has(exp.id) ? t('builderUi.enhancing') : t('builderUi.aiEnhance') }}
                         </button>
                       </div>
                     </div>
@@ -2039,13 +2041,18 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                       />
                     </div>
 
+                    <SyncToLinkedIn
+                      :experience="exp"
+                      :pdf-export="downloadPreviewPdf"
+                    />
+
                     <!-- Experience Bullet Keyword Assistance -->
                     <div class="mt-3 space-y-1.5 text-left">
                       <div class="flex items-center justify-between">
-                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in this Role</span>
-                        <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Experience' && loc.title.includes(exp.title || 'Role'))).length }} covered</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ t('builderUi.keywordsInSection') }}</span>
+                        <span class="text-[10px] text-slate-400 font-semibold">{{ t('builderUi.coveredCount', { n: liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Experience' && loc.title.includes(exp.title || 'Role'))).length }) }}</span>
                       </div>
-                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">{{ t('builderUi.noKeywordsYet') }}</div>
                       <div v-else class="flex flex-wrap gap-1">
                         <span
                           v-for="m in liveKeywordMatches"
@@ -2066,11 +2073,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'projects'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Projects</h1>
-                <p class="text-blue-200/60 text-sm">Key projects and case studies.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.projectsTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.projectsHelp') }}</p>
               </div>
               <button @click="addProject" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.add') }}
               </button>
             </div>
             <div class="space-y-8 pb-10">
@@ -2078,66 +2085,66 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <button @click="removeProject(index)" class="absolute top-4 right-4 text-red-400 hover:text-red-300 material-symbols-outlined text-sm bg-red-400/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 z-10">delete</button>
                 <div class="space-y-5 mt-2">
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Project Title</label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.itemTitle') }}</label>
                     <div class="flex items-center gap-2 relative">
                       <input v-model="proj.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                       <button @click.stop="activePopoverId = activePopoverId === proj.id ? null : proj.id" class="text-slate-400 hover:text-blue-400 material-symbols-outlined text-[16px] transition-colors" :class="{'text-blue-400': proj.linkUrl || activePopoverId === proj.id}">link</button>
                       
                       <!-- Slack-style Link Popover -->
                       <div v-if="activePopoverId === proj.id" @click.stop class="absolute top-full right-0 mt-2 p-3 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl z-50 w-72">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">Link URL</label>
-                        <input v-model="proj.linkUrl" placeholder="https://" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm mb-3 text-white outline-none focus:border-blue-500 transition-colors" />
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">Display Text</label>
-                        <input v-model="proj.linkName" placeholder="Text to display (optional)" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500 transition-colors" />
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">{{ t('builderFields.linkUrl') }}</label>
+                        <input v-model="proj.linkUrl" :placeholder="t('builderFields.httpsPlaceholder')" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm mb-3 text-white outline-none focus:border-blue-500 transition-colors" />
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1 block">{{ t('builderFields.displayText') }}</label>
+                        <input v-model="proj.linkName" :placeholder="t('builderFields.displayTextOptional')" class="w-full bg-black/50 border border-slate-600 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500 transition-colors" />
                       </div>
                     </div>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Organization / Client</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.organizationClient') }}</label>
                       <input v-model="proj.organization" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.location') }}</label>
                       <input v-model="proj.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Start Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.startDate') }}</label>
                       <input v-model="proj.startDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">End Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.endDate') }}</label>
                       <input v-if="!proj.isCurrent" v-model="proj.endDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
-                      <div v-else class="py-1 text-blue-300 font-semibold text-sm">Present</div>
+                      <div v-else class="py-1 text-blue-300 font-semibold text-sm">{{ t('builderUi.present') }}</div>
                       <label class="flex items-center gap-2 mt-2 cursor-pointer w-max">
                         <input type="checkbox" v-model="proj.isCurrent" class="accent-blue-500 w-4 h-4 rounded border-white/20" />
-                        <span class="text-xs text-slate-300">I currently work on this</span>
+                        <span class="text-xs text-slate-300">{{ t('builderUi.currentlyWorkHere') }}</span>
                       </label>
                     </div>
                   </div>
                   <!-- AI Enhance Helpers for Project -->
                   <div class="grid grid-cols-1 gap-4 bg-white/5 p-4 rounded-lg border border-white/5">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Describe the Project (for AI Enhance)</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.describeProject') }}</label>
                       <textarea v-model="proj.projectDescription" rows="2" placeholder="e.g. Built a real-time metrics dashboard using Nuxt 3 and WebSockets to monitor server resources, processing 5K requests/sec." class="w-full bg-transparent border border-white/20 rounded-lg p-2 focus:border-blue-400 text-white outline-none transition-colors text-sm resize-y" @click.stop></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div class="flex flex-col">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Target Role (Optional for AI Enhance)</label>
-                        <input v-model="proj.targetRole" type="text" placeholder="e.g. Lead Engineer" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.targetRoleOptional') }}</label>
+                        <input v-model="proj.targetRole" type="text" :placeholder="t('builderFields.targetRolePlaceholder')" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
                       </div>
                       <div class="flex flex-col">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Additional AI Instructions (Optional)</label>
-                        <input v-model="proj.commandPrompt" type="text" placeholder="e.g. Focus on low-latency messaging" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.aiInstructionsOptional') }}</label>
+                        <input v-model="proj.commandPrompt" type="text" :placeholder="t('builderFields.aiHintPlaceholder')" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors text-sm" />
                       </div>
                     </div>
                   </div>
 
                   <div class="flex flex-col relative">
                     <div class="flex justify-between items-end mb-1">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">{{ t('builderUi.descriptionBullets') }}</label>
                       <div class="flex items-center gap-1.5 z-10">
                         <button
                           v-if="canUndoAiScope(`project:${proj.id}`)"
@@ -2146,11 +2153,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                           @click="() => { const entry = undoAiScope(`project:${proj.id}`); if (entry) toast.info('Project enhance undone.') }"
                         >
                           <span class="material-symbols-outlined text-[12px]">undo</span>
-                          Undo
+                          {{ t('builderUi.undo') }}
                         </button>
                         <button @click="enhanceDescription(proj, 'project')" :disabled="enhancingIds.has(proj.id)" class="text-[10px] flex items-center gap-1 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white px-2 py-1 rounded border border-indigo-500/30 transition-colors disabled:opacity-50 cursor-pointer">
                           <span class="material-symbols-outlined text-[12px]" :class="{'animate-spin': enhancingIds.has(proj.id)}">{{ enhancingIds.has(proj.id) ? 'refresh' : 'auto_awesome' }}</span>
-                          {{ enhancingIds.has(proj.id) ? 'Enhancing...' : 'AI Enhance (1 Cr)' }}
+                          {{ enhancingIds.has(proj.id) ? t('builderUi.enhancing') : t('builderUi.aiEnhance') }}
                         </button>
                       </div>
                     </div>
@@ -2164,10 +2171,10 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     <!-- Project Bullet Keyword Assistance -->
                     <div class="mt-3 space-y-1.5 text-left">
                       <div class="flex items-center justify-between">
-                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Keywords in this Project</span>
-                        <span class="text-[10px] text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Projects' && loc.title.includes(proj.title || 'Project'))).length }} covered</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ t('builderUi.keywordsInSection') }}</span>
+                        <span class="text-[10px] text-slate-400 font-semibold">{{ t('builderUi.coveredCount', { n: liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Projects' && loc.title.includes(proj.title || 'Project'))).length }) }}</span>
                       </div>
-                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+                      <div v-if="!liveKeywordMatches.length" class="text-[10px] text-slate-500 italic">{{ t('builderUi.noKeywordsYet') }}</div>
                       <div v-else class="flex flex-wrap gap-1">
                         <span
                           v-for="m in liveKeywordMatches"
@@ -2188,11 +2195,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'education'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Education</h1>
-                <p class="text-blue-200/60 text-sm">Your academic background.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.educationTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.educationHelp') }}</p>
               </div>
               <button @click="addEducation" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.add') }}
               </button>
             </div>
             <div class="space-y-8 pb-10">
@@ -2200,25 +2207,25 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <button @click="removeEducation(index)" class="absolute top-4 right-4 text-red-400 hover:text-red-300 material-symbols-outlined text-sm bg-red-400/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 z-10">delete</button>
                 <div class="space-y-5 mt-2">
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Degree / Program</label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.degreeProgram') }}</label>
                     <input v-model="edu.degree" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                   </div>
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">School / University</label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.schoolUniversity') }}</label>
                     <input v-model="edu.school" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.location') }}</label>
                       <input v-model="edu.location" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Graduation Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.graduationDate') }}</label>
                       <input v-model="edu.graduationDate" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description / Honors <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderUi.descriptionBullets') }}</label>
                     <div class="bg-white/5 rounded border border-white/10 mt-1">
                       <BuilderBulletDescriptionEditor
                         :key="`edu-desc-${edu.id}`"
@@ -2235,16 +2242,16 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'skills'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Skills</h1>
-                <p class="text-blue-200/60 text-sm">Core competencies and technical skills.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.skillsTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.skillsHelp') }}</p>
               </div>
               <button @click="addSkill" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.add') }}
               </button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-10">
               <div v-for="(skill, index) in resumeData.skills" :key="skill.id" class="flex items-center gap-2 bg-white/5 p-2 px-3 rounded-lg border border-white/10 group hover:border-white/20 transition-colors">
-                <input v-model="skill.name" type="text" class="flex-1 bg-transparent border-none text-sm outline-none text-white" placeholder="e.g. TypeScript" />
+                <input v-model="skill.name" type="text" class="flex-1 bg-transparent border-none text-sm outline-none text-white" :placeholder="t('builderFields.skillPlaceholder')" />
                 <button @click="removeSkill(index)" class="text-red-400 material-symbols-outlined text-sm hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity">close</button>
               </div>
             </div>
@@ -2252,10 +2259,10 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <!-- Skills Keyword Assistance -->
             <div class="mt-4 pt-4 border-t border-white/10 space-y-2.5 text-left pb-10">
               <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Target Keywords in Skills</span>
-                <span class="text-xs text-slate-400 font-semibold">{{ liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Skills')).length }} / {{ liveKeywordMatches.length }} covered</span>
+                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">{{ t('builderUi.keywordsInSection') }}</span>
+                <span class="text-xs text-slate-400 font-semibold">{{ t('builderUi.keywordPresent', { covered: liveKeywordMatches.filter(m => m.isCovered && m.locations.some(loc => loc.section === 'Skills')).length, total: liveKeywordMatches.length }) }}</span>
               </div>
-              <div v-if="!liveKeywordMatches.length" class="text-xs text-slate-500 italic">No target keywords identified yet. Paste a job description in the Target Role tab.</div>
+              <div v-if="!liveKeywordMatches.length" class="text-xs text-slate-500 italic">{{ t('builderUi.noKeywordsYet') }}</div>
               <div v-else class="flex flex-wrap gap-1.5">
                 <button
                   v-for="m in liveKeywordMatches"
@@ -2276,11 +2283,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'achievements'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Achievements & Awards</h1>
-                <p class="text-blue-200/60 text-sm">Notable honors, certifications, and awards.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.achievementsTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.achievementsHelp') }}</p>
               </div>
               <button @click="addAchievement" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Add
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.add') }}
               </button>
             </div>
             <div class="space-y-6 pb-10">
@@ -2288,21 +2295,21 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <button @click="removeAchievement(index)" class="absolute top-4 right-4 text-red-400 hover:text-red-300 material-symbols-outlined text-sm bg-red-400/10 p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 z-10">delete</button>
                 <div class="space-y-5 mt-2">
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Title</label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.itemTitle') }}</label>
                     <input v-model="ach.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none transition-colors" />
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Issuer / Organization</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.issuerOrg') }}</label>
                       <input v-model="ach.issuer" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                     <div class="flex flex-col">
-                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Date</label>
+                      <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.date') }}</label>
                       <input v-model="ach.date" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none transition-colors" />
                     </div>
                   </div>
                   <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description (Optional) <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
+                    <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderUi.descriptionBullets') }}</label>
                     <div class="bg-white/5 rounded border border-white/10 mt-1">
                       <BuilderBulletDescriptionEditor
                         :key="`ach-desc-${ach.id}`"
@@ -2319,18 +2326,18 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'custom'">
             <div class="mb-8 flex justify-between items-end">
               <div>
-                <h1 class="font-bold text-2xl text-white mb-1">Custom Sections</h1>
-                <p class="text-blue-200/60 text-sm">Add any custom categories like Publications, Volunteering, etc.</p>
+                <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderUi.customSectionsTitle') }}</h1>
+                <p class="text-blue-200/60 text-sm">{{ t('builderUi.customSectionsHelp') }}</p>
               </div>
               <button @click="addCustomSection" class="text-sm bg-blue-500/20 text-blue-300 border border-blue-500/50 px-4 py-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors font-semibold shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> Section
+                <span class="material-symbols-outlined text-[16px] align-text-bottom mr-1">add</span> {{ t('builderUi.addSection') }}
               </button>
             </div>
             <div class="space-y-10 pb-10">
               <div v-for="(section, sIndex) in resumeData.customSections" :key="section.id" class="bg-white/5 p-6 rounded-xl border border-white/10 relative">
                 <button @click="removeCustomSection(sIndex)" class="absolute top-4 right-4 text-red-400 hover:text-red-300 material-symbols-outlined text-sm bg-red-400/10 p-1.5 rounded-md transition-colors z-10">delete</button>
                 <div class="flex flex-col mb-6 w-3/4">
-                  <label class="text-[10px] uppercase font-semibold text-blue-400 tracking-wider mb-1">Section Title</label>
+                  <label class="text-[10px] uppercase font-semibold text-blue-400 tracking-wider mb-1">{{ t('builderFields.sectionTitle') }}</label>
                   <input v-model="section.title" type="text" class="w-full bg-transparent border-0 border-b-2 border-blue-500/50 py-1 focus:border-blue-400 text-white text-lg font-bold outline-none transition-colors" />
                 </div>
                 
@@ -2340,20 +2347,20 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     <div class="space-y-4">
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="flex flex-col">
-                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Item Title</label>
+                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.itemTitle') }}</label>
                           <input v-model="item.title" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white font-semibold outline-none text-sm transition-colors" />
                         </div>
                         <div class="flex flex-col">
-                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Date</label>
+                          <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.date') }}</label>
                           <input v-model="item.date" type="month" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none text-sm transition-colors" />
                         </div>
                       </div>
                       <div class="flex flex-col">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Subtitle</label>
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderFields.subtitle') }}</label>
                         <input v-model="item.subtitle" type="text" class="w-full bg-transparent border-0 border-b border-white/20 py-1 focus:border-blue-400 text-white outline-none text-sm transition-colors" />
                       </div>
                       <div class="flex flex-col">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">Description <span class="text-blue-400 normal-case ml-2">(bold / italic · one bullet per line)</span></label>
+                        <label class="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('builderUi.descriptionBullets') }}</label>
                         <div class="bg-white/5 rounded border border-white/10 mt-1">
                           <BuilderBulletDescriptionEditor
                             :key="`custom-desc-${item.id}`"
@@ -2367,7 +2374,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 </div>
                 
                 <button @click="addCustomItem(section)" class="text-xs flex items-center text-blue-300 hover:text-blue-400 transition-colors mt-4">
-                  <span class="material-symbols-outlined text-[14px] mr-1">add</span> Add Item
+                  <span class="material-symbols-outlined text-[14px] mr-1">add</span> {{ t('builderUi.addItem') }}
                 </button>
               </div>
             </div>
@@ -2376,40 +2383,40 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div v-if="activeTab === 'atsCheck'" class="pb-12">
             <div class="mb-8">
               <div class="flex items-center gap-2 mb-1">
-                <h1 class="font-bold text-2xl text-white">ATS Check</h1>
-                <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Pro</span>
+                <h1 class="font-bold text-2xl text-white">{{ t('builderAts.title') }}</h1>
+                <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">{{ t('builderUi.pro') }}</span>
               </div>
               <p class="text-blue-200/60 text-sm">
-                Score your resume for applicant tracking systems and get concrete fixes. Uses 2 credits per run.
+                {{ t('builderAts.help') }}
               </p>
             </div>
 
             <div v-if="!canAccessAI" class="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100 text-sm">
-              {{ aiBlockedMessage() || 'Upgrade to Pro and keep credits available to run ATS Check.' }}
-              <NuxtLink to="/pricing" class="ml-2 underline text-amber-200 hover:text-white">View pricing</NuxtLink>
+              {{ aiBlockedMessage() || t('builderAts.upgradeHelp') }}
+              <NuxtLink to="/pricing" class="ml-2 underline text-amber-200 hover:text-white">{{ t('builderUi.viewPricing') }}</NuxtLink>
             </div>
 
             <div class="space-y-4 mb-6">
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Target job description <span class="normal-case text-slate-500">(optional)</span>
+                  {{ t('builderAts.jobDescOptional') }}
                 </label>
                 <textarea
                   v-model="resumeData.targetJobDescription"
                   rows="5"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
-                  placeholder="Paste a job description to check keyword alignment (same field as Target Role)…"
+                  :placeholder="t('builderAts.jobDescPlaceholder')"
                 />
               </div>
               <div class="flex flex-col">
                 <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                  Fix instructions <span class="normal-case text-slate-500">(optional — for Fix ATS Issues)</span>
+                  {{ t('builderAts.fixInstructions') }}
                 </label>
                 <textarea
                   v-model="atsFixInstructions"
                   rows="3"
                   class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
-                  placeholder="What to fix or leave alone. Example: Improve bullets and keywords, but do not change company names or dates. Keep the summary short."
+                  :placeholder="t('builderAts.fixPlaceholder')"
                 />
               </div>
               <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 space-y-1.5">
@@ -2434,7 +2441,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': atsRunning }">
                   {{ atsRunning ? 'refresh' : 'fact_check' }}
                 </span>
-                {{ atsRunning ? 'Analyzing…' : 'Run ATS Check' }}
+                {{ atsRunning ? t('builderAts.analyzing') : t('builderAts.runCheck') }}
               </button>
               <button
                 v-if="atsResult"
@@ -2446,7 +2453,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': atsFixing }">
                   {{ atsFixing ? 'refresh' : 'auto_fix_high' }}
                 </span>
-                {{ atsFixing ? 'Applying fixes…' : 'Fix ATS Issues' }}
+                {{ atsFixing ? t('builderAts.applyingFixes') : t('builderAts.fixIssues') }}
               </button>
               </div>
               <p v-if="atsResult" class="text-[11px] text-slate-400 w-full">
@@ -2461,13 +2468,13 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   <span class="text-[10px] uppercase tracking-widest text-indigo-600 dark:text-indigo-200">/ 100</span>
                 </div>
                 <div class="flex-1 min-w-[200px]">
-                  <p class="text-xs uppercase tracking-widest text-app-muted mb-1">Grade {{ atsResult.grade }}</p>
+                  <p class="text-xs uppercase tracking-widest text-app-muted mb-1">{{ t('builderAts.grade') }} {{ atsResult.grade }}</p>
                   <p class="text-app-fg text-sm leading-relaxed">{{ atsResult.summary }}</p>
                 </div>
               </div>
 
               <div v-if="atsResult.strengths.length">
-                <h3 class="text-xs uppercase tracking-widest text-emerald-700 dark:text-emerald-300/80 font-semibold mb-2">Strengths</h3>
+                <h3 class="text-xs uppercase tracking-widest text-emerald-700 dark:text-emerald-300/80 font-semibold mb-2">{{ t('builderAts.strengths') }}</h3>
                 <ul class="space-y-1.5">
                   <li
                     v-for="(s, i) in atsResult.strengths"
@@ -2481,7 +2488,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               </div>
 
               <div v-if="atsResult.issues.length">
-                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">Issues</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">{{ t('builderAts.issues') }}</h3>
                 <div class="space-y-3">
                   <div
                     v-for="(issue, i) in atsResult.issues"
@@ -2501,7 +2508,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
               <!-- Detailed Keyword Explainability -->
               <div v-if="atsResult.keywordsAnalysis && atsResult.keywordsAnalysis.length" class="space-y-3">
-                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">Keyword Alignment Analysis</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">{{ t('builderAts.keywordAlignment') }}</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     v-for="(k, i) in atsResult.keywordsAnalysis"
@@ -2513,7 +2520,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                       <p v-if="k.status === 'found'" class="text-[10px] text-app-muted">
                         Found in: <span class="text-indigo-600 dark:text-blue-300 capitalize font-medium">{{ k.foundInSection }}</span> ({{ k.count }}x)
                       </p>
-                      <p v-else class="text-[10px] text-app-muted">Not found in resume</p>
+                      <p v-else class="text-[10px] text-app-muted">{{ t('builderAts.notFound') }}</p>
                     </div>
                     <span
                       class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
@@ -2527,7 +2534,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
               <!-- Fallback Legacy Keyword Gaps -->
               <div v-else-if="atsResult.keywordGaps.length" class="flex flex-wrap gap-2">
-                <h3 class="w-full text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">Keyword gaps</h3>
+                <h3 class="w-full text-xs uppercase tracking-widest text-app-muted font-semibold mb-1">{{ t('builderAts.keywordGaps') }}</h3>
                 <span
                   v-for="(kw, i) in atsResult.keywordGaps"
                   :key="`kw-${i}`"
@@ -2537,7 +2544,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
               <!-- Suggested Section Changes & Rewrites -->
               <div v-if="atsResult.sectionChanges && atsResult.sectionChanges.length" class="space-y-4">
-                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">Suggested Section Rewrites</h3>
+                <h3 class="text-xs uppercase tracking-widest text-app-muted font-semibold mb-2">{{ t('builderAts.suggestedRewrites') }}</h3>
                 <div class="space-y-4">
                   <div
                     v-for="(sc, i) in atsResult.sectionChanges"
@@ -2561,11 +2568,11 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                       >
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div class="p-2.5 bg-rose-500/10 border border-rose-500/25 rounded text-xs text-rose-950 dark:text-rose-100">
-                            <span class="text-[9px] uppercase font-bold text-rose-700 dark:text-rose-400 block mb-1">Original</span>
+                            <span class="text-[9px] uppercase font-bold text-rose-700 dark:text-rose-400 block mb-1">{{ t('builderAts.original') }}</span>
                             <p class="italic text-rose-950 dark:text-rose-100/95">{{ rw.original }}</p>
                           </div>
                           <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded text-xs text-emerald-950 dark:text-emerald-100 relative">
-                            <span class="text-[9px] uppercase font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Suggested</span>
+                            <span class="text-[9px] uppercase font-bold text-emerald-700 dark:text-emerald-400 block mb-1">{{ t('builderAts.suggested') }}</span>
                             <p class="italic pr-14 text-emerald-950 dark:text-emerald-100/95">{{ rw.suggested }}</p>
                             <button
                               type="button"
@@ -2577,7 +2584,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                           </div>
                         </div>
                         <p class="text-[10px] text-app-muted leading-relaxed">
-                          <strong class="text-app-fg">Why this rewrite:</strong> {{ rw.explanation }}
+                          <strong class="text-app-fg">{{ t('builderAts.whyRewrite') }}</strong> {{ rw.explanation }}
                         </p>
                       </div>
                     </div>
@@ -2586,7 +2593,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               </div>
 
               <div v-if="atsResult.quickWins.length">
-                <h3 class="text-xs uppercase tracking-widest text-indigo-700 dark:text-blue-300/80 font-semibold mb-2">Quick wins</h3>
+                <h3 class="text-xs uppercase tracking-widest text-indigo-700 dark:text-blue-300/80 font-semibold mb-2">{{ t('builderAts.quickWins') }}</h3>
                 <ol class="list-decimal list-inside space-y-1.5 text-sm text-app-fg">
                   <li v-for="(w, i) in atsResult.quickWins" :key="`qw-${i}`">{{ w }}</li>
                 </ol>
@@ -2597,7 +2604,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <!-- History & Version Diff tab -->
           <div v-if="activeTab === 'history'" class="pb-12 space-y-6">
             <div class="mb-6">
-              <h1 class="font-bold text-2xl text-white mb-1">Version History & Diff Mode</h1>
+              <h1 class="font-bold text-2xl text-white mb-1">{{ t('builderHistory.title') }}</h1>
               <p class="text-blue-200/60 text-sm">
                 View previous snapshots of your resume, compare changes, and revert if needed.
               </p>
@@ -2606,13 +2613,13 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <!-- Loading indicator -->
             <div v-if="loadingVersions && !versions.length" class="flex items-center gap-2 text-sm text-slate-400">
               <span class="material-symbols-outlined animate-spin text-[18px]">refresh</span>
-              <span>Loading version history...</span>
+              <span>{{ t('builderHistory.loading') }}</span>
             </div>
 
             <!-- Version List -->
             <div v-if="!selectedVersionId" class="space-y-3">
               <div v-if="!versions.length" class="text-slate-500 italic text-sm py-4">
-                No saved versions yet. Changes are recorded when you save drafts or run AI improvements.
+                {{ t('builderHistory.empty') }}
               </div>
               <div
                 v-for="v in versions"
@@ -2633,14 +2640,14 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     type="button"
                     class="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs transition duration-200 cursor-pointer font-semibold"
                   >
-                    Compare Diff
+                    {{ t('builderHistory.compareDiff') }}
                   </button>
                   <button
                     type="button"
                     class="px-2.5 py-1 bg-blue-500/20 text-blue-300 hover:bg-blue-600 hover:text-white rounded text-xs transition duration-200 cursor-pointer font-semibold"
                     @click.stop="revertToVersion(v.id)"
                   >
-                    Restore
+                    {{ t('builderHistory.restore') }}
                   </button>
                 </div>
               </div>
@@ -2660,46 +2667,46 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                     :disabled="reverting"
                     @click="revertToVersion(selectedVersion.id)"
                   >
-                    Restore This Version
+                    {{ t('builderHistory.restoreThis') }}
                   </button>
                   <button
                     type="button"
                     class="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white rounded font-semibold text-xs transition duration-200 cursor-pointer"
                     @click="selectedVersionId = null"
                   >
-                    Clear Comparison
+                    {{ t('builderHistory.clearComparison') }}
                   </button>
                 </div>
               </div>
 
               <!-- Summary Diff -->
               <div class="space-y-2">
-                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Professional Summary</h3>
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">{{ t('builderFields.professionalSummary') }}</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
-                    <p class="font-semibold text-rose-400 mb-1">Previous Version</p>
-                    <p class="whitespace-pre-wrap">{{ selectedVersion.content.personalInfo?.summary || '(Empty)' }}</p>
+                    <p class="font-semibold text-rose-400 mb-1">{{ t('builderHistory.previousVersion') }}</p>
+                    <p class="whitespace-pre-wrap">{{ selectedVersion.content.personalInfo?.summary || t('builderHistory.emptyContent') }}</p>
                   </div>
                   <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
-                    <p class="font-semibold text-emerald-400 mb-1">Current Version</p>
-                    <p class="whitespace-pre-wrap">{{ resumeData.personalInfo.summary || '(Empty)' }}</p>
+                    <p class="font-semibold text-emerald-400 mb-1">{{ t('builderHistory.currentVersion') }}</p>
+                    <p class="whitespace-pre-wrap">{{ resumeData.personalInfo.summary || t('builderHistory.emptyContent') }}</p>
                   </div>
                 </div>
               </div>
 
               <!-- Experience Diff -->
               <div class="space-y-2">
-                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Work Experience</h3>
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">{{ t('builderUi.experienceTitle') }}</h3>
                 <div class="space-y-4">
                   <div v-for="(exp, idx) in resumeData.experience" :key="exp.id" class="border-b border-white/5 pb-4 last:border-b-0">
                     <h4 class="text-xs font-semibold text-white mb-2 text-left">{{ exp.title }} @ {{ exp.company }}</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
-                        <p class="font-semibold text-rose-400 mb-1">Previous Description</p>
-                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.experience?.[idx]?.description || '(Not present)'"></p>
+                        <p class="font-semibold text-rose-400 mb-1">{{ t('builderHistory.previousVersion') }}</p>
+                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.experience?.[idx]?.description || t('builderHistory.notPresent')"></p>
                       </div>
                       <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
-                        <p class="font-semibold text-emerald-400 mb-1">Current Description</p>
+                        <p class="font-semibold text-emerald-400 mb-1">{{ t('builderHistory.currentVersion') }}</p>
                         <p class="whitespace-pre-wrap" v-html="exp.description"></p>
                       </div>
                     </div>
@@ -2709,17 +2716,17 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
 
               <!-- Projects Diff -->
               <div class="space-y-2">
-                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">Projects</h3>
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 text-left">{{ t('builderUi.projectsTitle') }}</h3>
                 <div class="space-y-4">
                   <div v-for="(proj, idx) in resumeData.projects" :key="proj.id" class="border-b border-white/5 pb-4 last:border-b-0">
                     <h4 class="text-xs font-semibold text-white mb-2 text-left">{{ proj.title }}</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-slate-200 text-left">
-                        <p class="font-semibold text-rose-400 mb-1">Previous Description</p>
-                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.projects?.[idx]?.description || '(Not present)'"></p>
+                        <p class="font-semibold text-rose-400 mb-1">{{ t('builderHistory.previousVersion') }}</p>
+                        <p class="whitespace-pre-wrap" v-html="selectedVersion.content.projects?.[idx]?.description || t('builderHistory.notPresent')"></p>
                       </div>
                       <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-slate-200 text-left">
-                        <p class="font-semibold text-emerald-400 mb-1">Current Description</p>
+                        <p class="font-semibold text-emerald-400 mb-1">{{ t('builderHistory.currentVersion') }}</p>
                         <p class="whitespace-pre-wrap" v-html="proj.description"></p>
                       </div>
                     </div>
@@ -2771,8 +2778,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
             <span class="text-[8px] font-black text-slate-300">{{ Math.round((liveCoverageCount / Math.max(1, liveCoverageTotal)) * 100) }}%</span>
           </div>
           <div class="text-left leading-none">
-            <p class="font-bold text-white text-[11px]">Keyword Coverage</p>
-            <p class="text-[9px] text-slate-400 mt-0.5">{{ liveCoverageCount }} / {{ liveCoverageTotal }} present</p>
+            <p class="font-bold text-white text-[11px]">{{ t('builderUi.keywordCoverage') }}</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">{{ t('builderUi.keywordPresent', { covered: liveCoverageCount, total: liveCoverageTotal }) }}</p>
           </div>
           <span class="material-symbols-outlined text-[16px] text-slate-400">expand_less</span>
         </button>
@@ -2784,8 +2791,8 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
         >
           <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
             <div class="text-left">
-              <h3 class="font-bold text-sm text-white">Keyword Coverage Heatmap</h3>
-              <p class="text-[10px] text-slate-400 mt-0.5">{{ liveCoverageCount }} of {{ liveCoverageTotal }} skills identified in resume</p>
+              <h3 class="font-bold text-sm text-white">{{ t('builderUi.keywordHeatmapTitle') }}</h3>
+              <p class="text-[10px] text-slate-400 mt-0.5">{{ t('builderUi.keywordPresent', { covered: liveCoverageCount, total: liveCoverageTotal }) }}</p>
             </div>
             <button
               type="button"
@@ -2807,7 +2814,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
           <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0 space-y-4">
             <!-- Keyword Clouds -->
             <div>
-              <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 text-left">Click a keyword to inspect location</p>
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 text-left">{{ t('builderUi.keywordHeatmapHint') }}</p>
               <div class="flex flex-wrap gap-1.5">
                 <button
                   v-for="m in liveKeywordMatches"
@@ -2832,18 +2839,18 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
               class="bg-white/5 border border-white/10 rounded-xl p-3.5 space-y-2 text-left text-xs transition-all duration-200"
             >
               <div class="flex items-center justify-between">
-                <span class="font-bold text-white text-xs">Inspecting: {{ selectedHeatmapKeyword }}</span>
+                <span class="font-bold text-white text-xs">{{ t('builderUi.inspecting') }} {{ selectedHeatmapKeyword }}</span>
                 <span
                   class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded"
                   :class="liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered ? 'bg-emerald-500/25 text-emerald-300' : 'bg-rose-500/25 text-rose-300'"
                 >
-                  {{ liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered ? 'Present' : 'Missing' }}
+                  {{ liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered ? t('builderUi.present') : t('builderUi.missing') }}
                 </span>
               </div>
 
               <!-- Found Locations -->
               <div v-if="liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.isCovered">
-                <p class="text-[10px] text-slate-400 font-semibold mb-1">Found in these locations:</p>
+                <p class="text-[10px] text-slate-400 font-semibold mb-1">{{ t('builderUi.foundInLocations') }}</p>
                 <ul class="space-y-1.5">
                   <li
                     v-for="(loc, lIdx) in liveKeywordMatches.find(m => m.keyword === selectedHeatmapKeyword)?.locations"
@@ -2852,7 +2859,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                   >
                     <div class="flex items-center justify-between">
                       <span class="font-bold text-blue-300 text-[10px] uppercase tracking-wider">{{ loc.section }}</span>
-                      <span v-if="loc.bulletIndex" class="text-[9px] text-slate-400">Bullet {{ loc.bulletIndex }}</span>
+                      <span v-if="loc.bulletIndex" class="text-[9px] text-slate-400">{{ t('builderUi.bulletN', { n: loc.bulletIndex }) }}</span>
                     </div>
                     <p class="text-[11px] text-slate-200 italic leading-relaxed" v-if="loc.text">
                       "{{ loc.text }}"
@@ -2870,7 +2877,7 @@ function applySuggestedRewrite(section: 'experience' | 'projects' | 'skills' | '
                 <div class="bg-blue-500/10 border border-blue-500/20 p-2.5 rounded text-blue-200 space-y-1">
                   <p class="font-semibold text-[10px]">Guided Suggestion:</p>
                   <p class="text-[10px] leading-relaxed">
-                    Try adding this keyword to your <strong class="text-white">Skills section</strong> or draft a bullet in <strong class="text-white">Experience</strong> showing how you solved problems using {{ selectedHeatmapKeyword }}.
+                    {{ t('builderUi.keywordSuggestion', { keyword: selectedHeatmapKeyword }) }}
                   </p>
                 </div>
               </div>

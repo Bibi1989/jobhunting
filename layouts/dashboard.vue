@@ -28,6 +28,7 @@ const sideNav = computed(() => [
   { label: t('nav.aiPortfolio'), to: '/dashboard/portfolio', icon: 'stars' },
   { label: t('nav.analytics'), to: '/dashboard/analytics', icon: 'monitoring' },
   { label: t('nav.account'), to: '/account', icon: 'manage_accounts' },
+  { label: t('nav.billing'), to: '/account/billing', icon: 'credit_card' },
 ])
 
 watch(
@@ -54,7 +55,7 @@ watch(
         <button
           type="button"
           class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-[color:var(--app-border)] text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)]"
-          aria-label="Open menu"
+          :aria-label="mobileOpen ? t('nav.closeMenu') : t('nav.openMenu')"
           @click="mobileOpen = !mobileOpen"
         >
           <span class="material-symbols-outlined">{{ mobileOpen ? 'close' : 'menu' }}</span>
@@ -106,7 +107,7 @@ watch(
           :key="item.to"
           :to="item.to"
           class="flex items-center gap-4 px-6 py-3 text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)] transition-all duration-150"
-          active-class="!text-blue-500 font-bold border-r-2 border-blue-500 bg-blue-500/10"
+          :class="route.path === item.to ? '!text-blue-500 font-bold border-r-2 border-blue-500 bg-blue-500/10' : ''"
         >
           <span class="material-symbols-outlined">{{ item.icon }}</span>
           <span class="font-semibold text-sm">{{ item.label }}</span>
@@ -133,7 +134,7 @@ watch(
             :key="item.to"
             :to="item.to"
             class="flex items-center gap-4 px-6 py-3 text-[color:var(--app-muted)] hover:text-[color:var(--app-fg)] hover:bg-[color:var(--app-input)] transition-all"
-            active-class="!text-blue-500 font-bold bg-blue-500/10"
+            :class="route.path === item.to ? '!text-blue-500 font-bold bg-blue-500/10' : ''"
           >
             <span class="material-symbols-outlined">{{ item.icon }}</span>
             <span class="font-semibold text-sm">{{ item.label }}</span>

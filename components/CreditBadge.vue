@@ -5,7 +5,7 @@ const { creditsRemaining, planTier, loggedIn, pending } = useSaaS()
 <template>
   <NuxtLink
     v-if="loggedIn"
-    to="/pricing"
+    to="/account/billing"
     class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer"
     :class="
       creditsRemaining > 0

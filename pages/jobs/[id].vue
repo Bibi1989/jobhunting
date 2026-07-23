@@ -28,8 +28,10 @@ import {
 import { downloadTextFile, slugifyFilename } from '~/utils/download'
 import { downloadProfessionalPdf } from '~/utils/exportPdf'
 
+const { t } = useI18n()
+
 useHead({
-  title: 'Job Details | JobFlow',
+  title: () => t('jobsDetail.pageTitle'),
 })
 
 const route = useRoute()
@@ -246,15 +248,15 @@ async function saveJobEdits() {
       jobData.value.job = data.job
     }
     isEditingJob.value = false
-    toastMessage.value = 'Job details updated successfully!'
+    toastMessage.value = t('jobsDetail.jobUpdatedSuccess')
     setTimeout(() => {
-      if (toastMessage.value === 'Job details updated successfully!') {
+      if (toastMessage.value === t('jobsDetail.jobUpdatedSuccess')) {
         toastMessage.value = null
       }
     }, 3000)
   } catch (err: any) {
     console.error(err)
-    error.value = err.data?.statusMessage || err.message || 'Failed to update job details.'
+    error.value = err.data?.statusMessage || err.message || t('jobsDetail.failedUpdateJob')
   } finally {
     savingJob.value = false
   }
@@ -284,7 +286,7 @@ async function uploadDocument(event: Event, type: 'resume' | 'cover_letter') {
     await loadDocuments()
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
-    error.value = fetchError.data?.statusMessage || fetchError.message || 'Upload failed'
+    error.value = fetchError.data?.statusMessage || fetchError.message || t('jobsDetail.uploadFailed')
   } finally {
     uploading.value = null
     input.value = ''
@@ -309,7 +311,7 @@ async function removeStoredDocument(type: 'resume' | 'cover_letter') {
     await loadDocuments()
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
-    error.value = fetchError.data?.statusMessage || fetchError.message || 'Remove failed'
+    error.value = fetchError.data?.statusMessage || fetchError.message || t('jobsDetail.removeFailed')
   } finally {
     removing.value = null
   }
@@ -318,8 +320,7 @@ async function removeStoredDocument(type: 'resume' | 'cover_letter') {
 async function handleTailor() {
   if (!job.value) return
   if (needsProfileDetails.value && !profileReady.value) {
-    error.value =
-      'Fill in your name, email, phone, location, skills, and work experience, or upload a CV.'
+    error.value = t('jobsDetail.fillProfileError')
     return
   }
 
@@ -368,7 +369,7 @@ async function handleTailor() {
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
     error.value =
-      fetchError.data?.statusMessage || fetchError.message || 'Failed to tailor materials'
+      fetchError.data?.statusMessage || fetchError.message || t('jobsDetail.failedTailor')
   } finally {
     isTailoring.value = false
   }
@@ -386,7 +387,7 @@ function saveTailoredForJob() {
       coverLetter: tailoredCoverLetter.value,
       cvFormat: cvFormat.value,
     })
-    saveMessage.value = 'Tailored resume and cover letter saved with this job.'
+    saveMessage.value = t('jobsDetail.savedWithJob')
   } finally {
     saving.value = null
   }
@@ -432,11 +433,11 @@ async function saveDocument(type: 'resume' | 'cover_letter') {
       cvFormat: cvFormat.value,
     })
     saveMessage.value =
-      type === 'resume' ? 'Resume saved to your documents.' : 'Cover letter saved to your documents.'
+      type === 'resume' ? t('jobsDetail.resumeSavedDocs') : t('jobsDetail.coverLetterSavedDocs')
     await loadDocuments()
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
-    error.value = fetchError.data?.statusMessage || fetchError.message || 'Save failed'
+    error.value = fetchError.data?.statusMessage || fetchError.message || t('jobsDetail.saveFailed')
   } finally {
     saving.value = null
   }
@@ -474,11 +475,11 @@ async function saveBoth() {
       coverLetter: tailoredCoverLetter.value,
       cvFormat: cvFormat.value,
     })
-    saveMessage.value = 'Saved to documents and attached to this job.'
+    saveMessage.value = t('jobsDetail.savedDocsAndJob')
     await loadDocuments()
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
-    error.value = fetchError.data?.statusMessage || fetchError.message || 'Save failed'
+    error.value = fetchError.data?.statusMessage || fetchError.message || t('jobsDetail.saveFailed')
   } finally {
     saving.value = null
   }
@@ -521,9 +522,9 @@ async function removeJob() {
   if (!job.value) return
   const { confirm } = useAppConfirm()
   const confirmed = await confirm({
-    title: 'Remove job',
-    message: `Remove “${job.value.title}” from your list?`,
-    confirmLabel: 'Remove',
+    title: t('jobsDetail.removeJobTitle'),
+    message: t('jobsDetail.removeJobMessage', { title: job.value.title }),
+    confirmLabel: t('jobsDetail.removeConfirm'),
     danger: true,
   })
   if (!confirmed) return
@@ -539,7 +540,7 @@ async function removeJob() {
   }
 
   removeFavorite(job.value)
-  toastMessage.value = 'Job removed.'
+  toastMessage.value = t('jobsDetail.jobRemoved')
   setTimeout(async () => {
     toastMessage.value = null
     await navigateTo('/')
@@ -562,7 +563,7 @@ function applyToJob() {
           <NuxtLink
             to="/scraper"
             class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all duration-300 border border-slate-800 flex items-center justify-center shrink-0"
-            title="Back to Dashboard"
+            :title="t('jobsDetail.backToDashboard')"
           >
             <ArrowLeft :size="18" />
           </NuxtLink>
@@ -576,8 +577,8 @@ function applyToJob() {
             to="/scraper"
             class="text-xs font-bold text-slate-400 hover:text-indigo-400 flex items-center gap-1 transition-all duration-300"
           >
-            <span class="hidden sm:inline">Back to Jobs</span>
-            <span class="sm:hidden">Jobs</span>
+            <span class="hidden sm:inline">{{ t('jobsDetail.backToJobs') }}</span>
+            <span class="sm:hidden">{{ t('jobsDetail.jobsShort') }}</span>
           </NuxtLink>
         </div>
       </header>
@@ -589,10 +590,10 @@ function applyToJob() {
 
       <div v-else-if="fetchError || !job" class="flex-grow flex flex-col items-center justify-center text-center opacity-70">
         <AlertCircle class="text-red-400 mb-4 animate-pulse" :size="48" />
-        <h2 class="text-lg font-bold text-slate-200">Job Not Found</h2>
-        <p class="text-slate-400 text-sm mt-1 mb-6">The job you are looking for does not exist or has been removed.</p>
+        <h2 class="text-lg font-bold text-slate-200">{{ t('jobsDetail.notFound') }}</h2>
+        <p class="text-slate-400 text-sm mt-1 mb-6">{{ t('jobsDetail.notFoundMessage') }}</p>
         <NuxtLink to="/scraper" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all duration-300">
-          Return to Dashboard
+          {{ t('jobsDetail.returnToDashboard') }}
         </NuxtLink>
       </div>
 
@@ -640,7 +641,7 @@ function applyToJob() {
             :class="activeTab === 'description' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'"
             @click="activeTab = 'description'"
           >
-            Description
+            {{ t('jobsDetail.description') }}
           </button>
           <button
             type="button"
@@ -648,7 +649,7 @@ function applyToJob() {
             :class="activeTab === 'tailor' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'"
             @click="activeTab = 'tailor'"
           >
-            <FileText :size="14" /> AI Tailoring
+            <FileText :size="14" /> {{ t('jobsDetail.aiTailoring') }}
           </button>
           <button
             type="button"
@@ -656,7 +657,7 @@ function applyToJob() {
             :class="activeTab === 'application' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'"
             @click="activeTab = 'application'"
           >
-            <ClipboardList :size="14" /> Application Q&A
+            <ClipboardList :size="14" /> {{ t('jobsDetail.applicationQa') }}
           </button>
           <button
             v-if="hasTailored"
@@ -665,7 +666,7 @@ function applyToJob() {
             :class="activeTab === 'result' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/10' : 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-950/20'"
             @click="activeTab = 'result'"
           >
-            <CheckCircle :size="14" /> Tailored Results
+            <CheckCircle :size="14" /> {{ t('jobsDetail.tailoredResults') }}
           </button>
         </div>
 
@@ -675,8 +676,8 @@ function applyToJob() {
             <!-- Structured Review and Edit Mode header -->
             <div class="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
-                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Scrape Confirmation</h3>
-                <p class="text-xs text-slate-400">Review and edit extracted fields before generating tailored materials.</p>
+                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">{{ t('jobsDetail.scrapeConfirmation') }}</h3>
+                <p class="text-xs text-slate-400">{{ t('jobsDetail.scrapeConfirmationHelp') }}</p>
               </div>
               <button
                 type="button"
@@ -684,7 +685,7 @@ function applyToJob() {
                 class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:text-white transition duration-200 flex items-center gap-1.5 cursor-pointer"
               >
                 <span class="material-symbols-outlined text-[14px]">{{ isEditingJob ? 'close' : 'edit' }}</span>
-                {{ isEditingJob ? 'Cancel Edits' : 'Edit Fields' }}
+                {{ isEditingJob ? t('jobsDetail.cancelEdits') : t('jobsDetail.editFields') }}
               </button>
             </div>
 
@@ -692,7 +693,7 @@ function applyToJob() {
             <div v-if="isEditingJob" class="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Job Title</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.jobTitle') }}</label>
                   <input
                     v-model="editableJob.title"
                     type="text"
@@ -700,7 +701,7 @@ function applyToJob() {
                   />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Company Name</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.companyName') }}</label>
                   <input
                     v-model="editableJob.company"
                     type="text"
@@ -708,7 +709,7 @@ function applyToJob() {
                   />
                 </div>
                 <div class="flex flex-col">
-                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Location</label>
+                  <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.location') }}</label>
                   <input
                     v-model="editableJob.location"
                     type="text"
@@ -717,7 +718,7 @@ function applyToJob() {
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                   <div class="flex flex-col col-span-1">
-                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Currency</label>
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.currency') }}</label>
                     <input
                       v-model="editableJob.currency"
                       type="text"
@@ -725,7 +726,7 @@ function applyToJob() {
                     />
                   </div>
                   <div class="flex flex-col col-span-1">
-                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Min Salary</label>
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.minSalary') }}</label>
                     <input
                       v-model.number="editableJob.salaryMin"
                       type="number"
@@ -733,7 +734,7 @@ function applyToJob() {
                     />
                   </div>
                   <div class="flex flex-col col-span-1">
-                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Max Salary</label>
+                    <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.maxSalary') }}</label>
                     <input
                       v-model.number="editableJob.salaryMax"
                       type="number"
@@ -744,27 +745,27 @@ function applyToJob() {
               </div>
 
               <div class="flex flex-col">
-                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Responsibilities</label>
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.responsibilities') }}</label>
                 <textarea
                   v-model="editableJob.responsibilities"
                   rows="4"
                   class="bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
-                  placeholder="Summarize key responsibilities or duties here…"
+                  :placeholder="t('jobsDetail.responsibilitiesPlaceholder')"
                 />
               </div>
 
               <div class="flex flex-col">
-                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Requirements & Qualifications</label>
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.requirementsQualifications') }}</label>
                 <textarea
                   v-model="editableJob.requirements"
                   rows="4"
                   class="bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none focus:border-blue-400 resize-y"
-                  placeholder="Summarize required qualifications, tools, or education here…"
+                  :placeholder="t('jobsDetail.requirementsPlaceholder')"
                 />
               </div>
 
               <div class="flex flex-col">
-                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">Full Raw Description</label>
+                <label class="text-xs uppercase font-semibold text-slate-400 tracking-wider mb-1">{{ t('jobsDetail.fullRawDescription') }}</label>
                 <textarea
                   v-model="editableJob.description"
                   rows="6"
@@ -780,7 +781,7 @@ function applyToJob() {
                   class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50"
                 >
                   <span class="material-symbols-outlined text-[18px] animate-spin" v-if="savingJob">sync</span>
-                  {{ savingJob ? 'Saving Changes…' : 'Save Details' }}
+                  {{ savingJob ? t('jobsDetail.savingChanges') : t('jobsDetail.saveDetails') }}
                 </button>
               </div>
             </div>
@@ -794,9 +795,9 @@ function applyToJob() {
                     <span class="material-symbols-outlined text-[20px]">business_center</span>
                   </div>
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-500">Job Title & Company</p>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">{{ t('jobsDetail.cardJobTitleCompany') }}</p>
                     <p class="text-sm font-semibold text-white">{{ job.title }}</p>
-                    <p class="text-xs text-slate-400">{{ job.company || 'Unknown' }}</p>
+                    <p class="text-xs text-slate-400">{{ job.company || t('jobsDetail.unknown') }}</p>
                   </div>
                 </div>
 
@@ -805,8 +806,8 @@ function applyToJob() {
                     <span class="material-symbols-outlined text-[20px]">location_on</span>
                   </div>
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-500">Location</p>
-                    <p class="text-sm font-semibold text-white">{{ job.location || 'Remote / Unknown' }}</p>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">{{ t('jobsDetail.cardLocation') }}</p>
+                    <p class="text-sm font-semibold text-white">{{ job.location || t('jobsDetail.remoteUnknown') }}</p>
                   </div>
                 </div>
 
@@ -815,11 +816,11 @@ function applyToJob() {
                     <span class="material-symbols-outlined text-[20px]">payments</span>
                   </div>
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-500">Compensation</p>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">{{ t('jobsDetail.cardCompensation') }}</p>
                     <p class="text-sm font-semibold text-white" v-if="job.salaryMin || job.salaryMax">
                       {{ job.currency || '$' }}{{ job.salaryMin?.toLocaleString() || '0' }} - {{ job.salaryMax?.toLocaleString() || 'N/A' }}
                     </p>
-                    <p class="text-sm font-semibold text-slate-400" v-else>Not specified</p>
+                    <p class="text-sm font-semibold text-slate-400" v-else>{{ t('jobsDetail.notSpecified') }}</p>
                   </div>
                 </div>
               </div>
@@ -827,8 +828,8 @@ function applyToJob() {
               <!-- Open In Builders Shortcuts -->
               <div class="rounded-xl border border-blue-500/20 bg-blue-950/20 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h4 class="text-sm font-bold text-blue-300">Ready to build or tailor?</h4>
-                  <p class="text-xs text-blue-200/60">Take this verified job description into the professional document editors.</p>
+                  <h4 class="text-sm font-bold text-blue-300">{{ t('jobsDetail.readyToBuild') }}</h4>
+                  <p class="text-xs text-blue-200/60">{{ t('jobsDetail.readyToBuildHelp') }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <NuxtLink
@@ -836,14 +837,14 @@ function applyToJob() {
                     class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 transition duration-200 cursor-pointer shadow-[0_0_12px_rgba(37,99,235,0.25)]"
                   >
                     <LayoutTemplate :size="14" />
-                    Open Resume Builder
+                    {{ t('jobsDetail.openResumeBuilder') }}
                   </NuxtLink>
                   <NuxtLink
                     :to="builderCoverLetterPath()"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 flex items-center gap-1.5 transition duration-200 cursor-pointer"
                   >
                     <FileText :size="14" />
-                    Open Cover Letter Builder
+                    {{ t('jobsDetail.openCoverLetterBuilder') }}
                   </NuxtLink>
                 </div>
               </div>
@@ -854,10 +855,10 @@ function applyToJob() {
                 <div class="space-y-2 text-left">
                   <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[16px] text-blue-400">task_alt</span>
-                    Core Responsibilities
+                    {{ t('jobsDetail.coreResponsibilities') }}
                   </h4>
                   <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm min-h-[120px] whitespace-pre-wrap leading-relaxed">
-                    {{ job.responsibilities || 'No structured responsibilities extracted yet. Edit fields to add.' }}
+                    {{ job.responsibilities || t('jobsDetail.noResponsibilities') }}
                   </div>
                 </div>
 
@@ -865,10 +866,10 @@ function applyToJob() {
                 <div class="space-y-2 text-left">
                   <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[16px] text-emerald-400">verified</span>
-                    Key Requirements
+                    {{ t('jobsDetail.keyRequirements') }}
                   </h4>
                   <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm min-h-[120px] whitespace-pre-wrap leading-relaxed">
-                    {{ job.requirements || 'No structured requirements extracted yet. Edit fields to add.' }}
+                    {{ job.requirements || t('jobsDetail.noRequirements') }}
                   </div>
                 </div>
               </div>
@@ -877,10 +878,10 @@ function applyToJob() {
               <div class="space-y-2 text-left">
                 <h4 class="text-xs uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
                   <span class="material-symbols-outlined text-[16px] text-slate-400 font-bold">description</span>
-                  Full Scraped Posting
+                  {{ t('jobsDetail.fullScrapedPosting') }}
                 </h4>
                 <div class="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-sm text-slate-400 leading-relaxed max-h-[300px] overflow-y-auto whitespace-pre-wrap">
-                  {{ job.description || 'No description available.' }}
+                  {{ job.description || t('jobsDetail.noDescription') }}
                 </div>
               </div>
             </div>
@@ -900,9 +901,9 @@ function applyToJob() {
           <div v-else-if="activeTab === 'tailor'" class="space-y-6 max-w-4xl mx-auto pb-6">
             <div class="rounded-2xl border border-blue-500/25 bg-blue-950/25 p-4 space-y-3">
               <div>
-                <p class="font-bold text-blue-300 text-xs uppercase tracking-widest mb-1">Prefer the visual builder?</p>
+                <p class="font-bold text-blue-300 text-xs uppercase tracking-widest mb-1">{{ t('jobsDetail.preferVisualBuilder') }}</p>
                 <p class="text-xs text-slate-400">
-                  Open the resume builder with this job’s scraped description and your uploaded CV prefilled.
+                  {{ t('jobsDetail.preferVisualBuilderHelp') }}
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -911,25 +912,25 @@ function applyToJob() {
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-blue-500/40 bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1.5 transition-all"
                 >
                   <LayoutTemplate :size="14" />
-                  Open resume builder
+                  {{ t('jobsDetail.openResumeBuilderShort') }}
                 </NuxtLink>
                 <NuxtLink
                   :to="builderCoverLetterPath()"
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-950/40 text-indigo-200 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 transition-all"
                 >
-                  Cover letter builder
+                  {{ t('jobsDetail.coverLetterBuilder') }}
                 </NuxtLink>
                 <NuxtLink
                   :to="builderPortfolioPath()"
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
                 >
-                  Portfolio
+                  {{ t('jobsDetail.portfolio') }}
                 </NuxtLink>
               </div>
             </div>
 
             <p class="text-sm text-slate-400">
-              Pick a CV format (live preview on the right), then upload or paste your materials.
+              {{ t('jobsDetail.pickCvFormat') }}
             </p>
 
             <CvFormatPicker v-model="cvFormat" />
@@ -947,7 +948,7 @@ function applyToJob() {
                   :class="{ 'opacity-50 pointer-events-none': !!uploading || !!removing }"
                 >
                   <Upload :size="14" />
-                  {{ uploading === 'resume' ? 'Uploading CV...' : 'Upload CV' }}
+                  {{ uploading === 'resume' ? t('jobsDetail.uploadingCv') : t('jobsDetail.uploadCv') }}
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt,.md,application/pdf,text/plain"
@@ -966,10 +967,10 @@ function applyToJob() {
                   <Trash2 :size="12" />
                   {{
                     removing === 'resume'
-                      ? 'Removing...'
+                      ? t('jobsDetail.removing')
                       : resumeDoc
-                        ? 'Remove uploaded CV'
-                        : 'Clear CV text'
+                        ? t('jobsDetail.removeUploadedCv')
+                        : t('jobsDetail.clearCvText')
                   }}
                 </button>
               </div>
@@ -979,7 +980,7 @@ function applyToJob() {
                   :class="{ 'opacity-50 pointer-events-none': !!uploading || !!removing }"
                 >
                   <Upload :size="14" />
-                  {{ uploading === 'cover_letter' ? 'Uploading...' : 'Upload Cover Letter' }}
+                  {{ uploading === 'cover_letter' ? t('jobsDetail.uploading') : t('jobsDetail.uploadCoverLetter') }}
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt,.md,application/pdf,text/plain"
@@ -998,10 +999,10 @@ function applyToJob() {
                   <Trash2 :size="12" />
                   {{
                     removing === 'cover_letter'
-                      ? 'Removing...'
+                      ? t('jobsDetail.removing')
                       : coverLetterDoc
-                        ? 'Remove uploaded cover letter'
-                        : 'Clear cover letter text'
+                        ? t('jobsDetail.removeUploadedCoverLetter')
+                        : t('jobsDetail.clearCoverLetterText')
                   }}
                 </button>
               </div>
@@ -1009,13 +1010,13 @@ function applyToJob() {
 
             <label class="flex items-center gap-2 text-xs text-slate-400">
               <input v-model="useSavedDocuments" type="checkbox" class="rounded border-slate-700" />
-              Fall back to saved documents from the database when fields are empty
+              {{ t('jobsDetail.fallbackSavedDocs') }}
             </label>
 
              <!-- Tailoring Personality Preset Selector -->
             <div class="space-y-2 text-left">
               <label class="text-xs font-bold uppercase tracking-widest text-slate-500 block">
-                Tailoring Personality / Preset
+                {{ t('jobsDetail.tailoringPreset') }}
               </label>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
@@ -1023,56 +1024,56 @@ function applyToJob() {
                   @click="tailoringPreset = 'ats-first'"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'ats-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
                 >
-                  ATS-First
+                  {{ t('jobsDetail.presetAtsFirst') }}
                 </button>
                 <button
                   type="button"
                   @click="tailoringPreset = 'impact-first'"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'impact-first' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
                 >
-                  Impact/Metrics
+                  {{ t('jobsDetail.presetImpactFirst') }}
                 </button>
                 <button
                   type="button"
                   @click="tailoringPreset = 'leadership'"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'leadership' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
                 >
-                  Leadership
+                  {{ t('jobsDetail.presetLeadership') }}
                 </button>
                 <button
                   type="button"
                   @click="tailoringPreset = 'tech-expert'"
                   :class="['px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer', tailoringPreset === 'tech-expert' ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600']"
                 >
-                  Tech Expert
+                  {{ t('jobsDetail.presetTechExpert') }}
                 </button>
               </div>
               <p class="text-[10px] text-slate-500">
-                <span v-if="tailoringPreset === 'ats-first'">Optimized for parsing and strict keyword density. Uses objective phrasing.</span>
-                <span v-if="tailoringPreset === 'impact-first'">Places high-impact quantitative achievements, percentages, and metrics first.</span>
-                <span v-if="tailoringPreset === 'leadership'">Showcases management, mentorship, communication, and project ownership.</span>
-                <span v-if="tailoringPreset === 'tech-expert'">Focuses on engineering depth, architecture, and tool mastery.</span>
+                <span v-if="tailoringPreset === 'ats-first'">{{ t('jobsDetail.presetAtsFirstHelp') }}</span>
+                <span v-if="tailoringPreset === 'impact-first'">{{ t('jobsDetail.presetImpactFirstHelp') }}</span>
+                <span v-if="tailoringPreset === 'leadership'">{{ t('jobsDetail.presetLeadershipHelp') }}</span>
+                <span v-if="tailoringPreset === 'tech-expert'">{{ t('jobsDetail.presetTechExpertHelp') }}</span>
               </p>
             </div>
 
             <div class="space-y-2">
               <label class="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Your Resume (Text)
+                {{ t('jobsDetail.yourResumeText') }}
               </label>
               <textarea
                 v-model="resumeText"
-                placeholder="Paste or upload your resume..."
+                :placeholder="t('jobsDetail.resumePlaceholder')"
                 class="w-full h-48 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
               />
             </div>
 
             <div class="space-y-2">
               <label class="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Your Cover Letter (Text)
+                {{ t('jobsDetail.yourCoverLetterText') }}
               </label>
               <textarea
                 v-model="coverLetterText"
-                placeholder="Paste or upload your cover letter..."
+                :placeholder="t('jobsDetail.coverLetterPlaceholder')"
                 class="w-full h-32 bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
               />
             </div>
@@ -1093,7 +1094,7 @@ function applyToJob() {
               >
                 <Loader2 v-if="isTailoring" class="animate-spin" :size="18" />
                 <FileText v-else :size="18" />
-                {{ isTailoring ? 'Generating Materials...' : 'Generate Tailored Materials' }}
+                {{ isTailoring ? t('jobsDetail.generatingMaterials') : t('jobsDetail.generateTailoredMaterials') }}
               </button>
             </div>
           </div>
@@ -1109,7 +1110,7 @@ function applyToJob() {
                 >
                   <Loader2 v-if="saving === 'job'" class="animate-spin" :size="14" />
                   <Bookmark v-else :size="14" />
-                  Save for this job
+                  {{ t('jobsDetail.saveForJob') }}
                 </button>
                 <button
                   type="button"
@@ -1119,30 +1120,30 @@ function applyToJob() {
                 >
                   <Loader2 v-if="saving === 'both'" class="animate-spin" :size="14" />
                   <Save v-else :size="14" />
-                  Save to documents
+                  {{ t('jobsDetail.saveToDocuments') }}
                 </button>
                 <NuxtLink
                   :to="builderResumePath()"
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-indigo-500/40 bg-indigo-600 text-white hover:bg-indigo-500 flex items-center gap-1.5 transition-all"
                 >
                   <LayoutTemplate :size="14" />
-                  Open resume builder
+                  {{ t('jobsDetail.openResumeBuilderShort') }}
                 </NuxtLink>
                 <NuxtLink
                   :to="builderCoverLetterPath()"
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
                 >
-                  Cover letter builder
+                  {{ t('jobsDetail.coverLetterBuilder') }}
                 </NuxtLink>
                 <NuxtLink
                   :to="builderPortfolioPath()"
                   class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-600 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
                 >
-                  Portfolio
+                  {{ t('jobsDetail.portfolio') }}
                 </NuxtLink>
               </div>
               <p class="text-[11px] text-slate-500">
-                Format: {{ selectedFormat.name }} · Opens in preview by default
+                {{ t('jobsDetail.formatPreview', { format: selectedFormat.name }) }}
               </p>
             </div>
 
@@ -1166,7 +1167,7 @@ function applyToJob() {
                 class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
                 @click="downloadResume('md')"
               >
-                <Download :size="14" /> Resume (.md)
+                <Download :size="14" /> {{ t('jobsDetail.resumeMd') }}
               </button>
               <button
                 v-if="tailoredCoverLetter"
@@ -1174,7 +1175,7 @@ function applyToJob() {
                 class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 bg-slate-900 text-slate-200 hover:border-blue-500 flex items-center gap-1.5 transition-all"
                 @click="downloadCoverLetter('md')"
               >
-                <Download :size="14" /> Cover Letter (.md)
+                <Download :size="14" /> {{ t('jobsDetail.coverLetterMd') }}
               </button>
               <button
                 v-if="tailoredResume"
@@ -1182,7 +1183,7 @@ function applyToJob() {
                 class="px-3 py-2 rounded-xl text-xs font-bold border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 hover:bg-emerald-600 hover:text-white flex items-center gap-1.5 transition-all"
                 @click="downloadResumePdf"
               >
-                <Download :size="14" /> Resume PDF
+                <Download :size="14" /> {{ t('jobsDetail.resumePdf') }}
               </button>
               <button
                 v-if="tailoredCoverLetter"
@@ -1190,7 +1191,7 @@ function applyToJob() {
                 class="px-3 py-2 rounded-xl text-xs font-bold border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 hover:bg-emerald-600 hover:text-white flex items-center gap-1.5 transition-all"
                 @click="downloadCoverLetterPdf"
               >
-                <Download :size="14" /> Cover Letter PDF
+                <Download :size="14" /> {{ t('jobsDetail.coverLetterPdf') }}
               </button>
               <button
                 v-if="hasTailored"
@@ -1198,22 +1199,23 @@ function applyToJob() {
                 class="px-3 py-2 rounded-xl text-xs font-bold border border-emerald-500/30 bg-emerald-950/30 text-emerald-400 hover:bg-emerald-600 hover:text-white flex items-center gap-1.5 transition-all"
                 @click="downloadAll"
               >
-                <Download :size="14" /> Download all (.md)
+                <Download :size="14" /> {{ t('jobsDetail.downloadAllMd') }}
               </button>
             </div>
 
             <div
               class="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4 text-sm text-slate-300"
             >
-              Preview shows how the documents look. Switch to Edit to change text, then
-              <strong>Save for this job</strong> so the materials stay with this saved role.
+              {{ t('jobsDetail.previewHintBefore') }}
+              <strong>{{ t('jobsDetail.saveForJob') }}</strong>
+              {{ t('jobsDetail.previewHintAfter') }}
             </div>
 
             <TailoredDocEditor
               v-if="tailoredCoverLetter"
               v-model="tailoredCoverLetter"
               v-model:editing="editingCoverLetter"
-              title="Tailored Cover Letter"
+              :title="t('jobsDetail.tailoredCoverLetter')"
               min-height-class="min-h-[16rem]"
             >
               <template #actions>
@@ -1225,7 +1227,7 @@ function applyToJob() {
                 >
                   <Loader2 v-if="saving === 'cover_letter'" class="animate-spin" :size="12" />
                   <Save v-else :size="12" />
-                  Save
+                  {{ t('jobsDetail.save') }}
                 </button>
               </template>
             </TailoredDocEditor>
@@ -1234,7 +1236,7 @@ function applyToJob() {
               v-if="tailoredResume"
               v-model="tailoredResume"
               v-model:editing="editingResume"
-              title="Tailored Resume"
+              :title="t('jobsDetail.tailoredResume')"
               min-height-class="min-h-[20rem]"
               :format-id="cvFormat"
             >
@@ -1247,7 +1249,7 @@ function applyToJob() {
                 >
                   <Loader2 v-if="saving === 'resume'" class="animate-spin" :size="12" />
                   <Save v-else :size="12" />
-                  Save
+                  {{ t('jobsDetail.save') }}
                 </button>
               </template>
             </TailoredDocEditor>
@@ -1261,7 +1263,7 @@ function applyToJob() {
             class="px-5 py-2.5 rounded-xl font-bold text-sm border border-red-500/20 bg-red-950/20 text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center gap-2"
             @click="removeJob"
           >
-            <Trash2 :size="16" /> Remove
+            <Trash2 :size="16" /> {{ t('jobsDetail.remove') }}
           </button>
           <button
             type="button"
@@ -1274,14 +1276,14 @@ function applyToJob() {
             @click="handleToggleFavorite"
           >
             <Bookmark :size="16" :class="isFavorite ? 'fill-current' : ''" />
-            {{ isFavorite ? 'Saved' : 'Save Role' }}
+            {{ isFavorite ? t('jobsDetail.saved') : t('jobsDetail.saveRole') }}
           </button>
           <button
             type="button"
             class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
             @click="applyToJob"
           >
-            Apply on company site <ExternalLink :size="16" />
+            {{ t('jobsDetail.applyOnSite') }} <ExternalLink :size="16" />
           </button>
         </div>
       </div>

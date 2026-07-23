@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n()
 const { showBanner, dismissBanner } = useJobflowExtension()
 </script>
 
@@ -18,10 +19,10 @@ const { showBanner, dismissBanner } = useJobflowExtension()
       </span>
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold" style="color: var(--app-fg)">
-          Capture job descriptions with the Chrome extension
+          {{ t('extension.bannerTitle') }}
         </p>
         <p class="text-[12px] mt-1 leading-relaxed" style="color: var(--app-muted)">
-          Skip copy-paste — grab the JD from Greenhouse, Lever, LinkedIn, and more, then open a tailored draft in JobFlow.
+          {{ t('extension.bannerBody') }}
         </p>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -31,14 +32,14 @@ const { showBanner, dismissBanner } = useJobflowExtension()
             style="background: var(--app-accent); color: #fff"
           >
             <span class="material-symbols-outlined text-[14px]">extension</span>
-            Add extension
+            {{ t('extension.addExtension') }}
           </NuxtLink>
           <button
             type="button"
             class="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer"
             style="color: var(--app-muted)"
-            aria-label="Dismiss"
-            title="Dismiss"
+            :aria-label="t('extension.dismiss')"
+            :title="t('extension.dismiss')"
             @click="dismissBanner"
           >
             <span class="material-symbols-outlined text-[18px]">close</span>

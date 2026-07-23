@@ -60,6 +60,10 @@ async function onSubmit() {
     <h1 class="text-2xl font-bold text-[color:var(--app-fg)] mb-1">{{ t('account.title') }}</h1>
     <p class="text-sm text-[color:var(--app-muted)] mb-8">
       {{ t('account.signedInAs') }} <span class="text-[color:var(--app-fg)]">{{ sessionUser?.email }}</span>
+      ·
+      <NuxtLink to="/account/billing" class="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+        {{ t('account.billingLink') }}
+      </NuxtLink>
     </p>
 
     <section>

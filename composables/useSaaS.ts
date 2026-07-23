@@ -170,7 +170,7 @@ export function useSaaS() {
     if (!isAuthenticated.value) return 'Sign in and upgrade to Pro to run the scraper.'
     if (!isPro.value) return 'A Pro subscription is required to scrape jobs.'
     if (creditsRemaining.value <= 0) {
-      return 'Out of credits. Upgrade or wait for your next billing cycle to scrape again.'
+      return 'Out of credits. Top up on Billing & credits, or wait for your next billing cycle.'
     }
     return ''
   }
@@ -179,7 +179,9 @@ export function useSaaS() {
     if (isAdmin.value) return ''
     if (!isAuthenticated.value) return 'Sign in and upgrade to Pro to use AI features.'
     if (!isPro.value) return 'A Pro subscription is required to use AI features.'
-    if (creditsRemaining.value <= 0) return 'Out of credits. Upgrade or wait for your next billing cycle.'
+    if (creditsRemaining.value <= 0) {
+      return 'Out of credits. Top up on Billing & credits, or wait for your next billing cycle.'
+    }
     return ''
   }
 
@@ -191,6 +193,7 @@ export function useSaaS() {
       await clear()
       data.value = null
       error.value = null
+      await navigateTo('/')
     }
   }
 

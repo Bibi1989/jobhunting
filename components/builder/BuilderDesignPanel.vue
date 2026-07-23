@@ -25,6 +25,8 @@ const emit = defineEmits<{
   'update:modelValue': [BuilderResumeData]
 }>()
 
+const { t } = useI18n()
+
 const showHeaderControls = computed(() => props.showHeaderControls !== false)
 
 function ensureDesign(): BuilderDesignSettings {
@@ -172,9 +174,9 @@ function resizeDataUrl(dataUrl: string, maxEdge: number): Promise<string> {
   })
 }
 
-const accentChecks: { key: keyof BuilderAccentTargets; label: string }[] = [
-  { key: 'name', label: 'Name' },
-  { key: 'jobTitle', label: 'Job title' },
+const accentChecks = computed((): { key: keyof BuilderAccentTargets; label: string }[] => [
+  { key: 'name', label: t('builderDesign.name') },
+  { key: 'jobTitle', label: t('builderDesign.jobTitle') },
   { key: 'headings', label: 'Headings' },
   { key: 'headingsLine', label: 'Headings line' },
   { key: 'headerBackground', label: 'Header background' },
@@ -183,7 +185,7 @@ const accentChecks: { key: keyof BuilderAccentTargets; label: string }[] = [
   { key: 'dates', label: 'Dates' },
   { key: 'entrySubtitle', label: 'Entry subtitle' },
   { key: 'linkIcons', label: 'Link icons' },
-]
+])
 
 const colorRows: { field: ColorField; label: string }[] = [
   { field: 'headerColor', label: 'Header background' },
@@ -246,7 +248,7 @@ function swatchStyle(swatch: string | null) {
   <div class="space-y-8 pt-2 text-left">
     <!-- Font family dropdown (Google Fonts) -->
     <section class="space-y-3">
-      <h3 class="font-bold text-lg text-white">Font family</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.fontFamily') }}</h3>
       <select
         class="w-full rounded-xl border border-white/15 bg-slate-900/80 px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-400 cursor-pointer"
         :value="design.fontFamily || 'Inter'"
@@ -264,13 +266,13 @@ function swatchStyle(swatch: string | null) {
 
     <!-- Header text alignment -->
     <section class="space-y-3">
-      <h3 class="font-bold text-lg text-white">Header text alignment</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.headerAlign') }}</h3>
       <div class="grid grid-cols-3 gap-2">
         <button
           v-for="opt in ([
-            { id: 'left', icon: 'format_align_left', label: 'Left' },
-            { id: 'center', icon: 'format_align_center', label: 'Center' },
-            { id: 'right', icon: 'format_align_right', label: 'Right' },
+            { id: 'left', icon: 'format_align_left', labelKey: 'builderDesign.alignLeft' },
+            { id: 'center', icon: 'format_align_center', labelKey: 'builderDesign.alignCenter' },
+            { id: 'right', icon: 'format_align_right', labelKey: 'builderDesign.alignRight' },
           ] as const)"
           :key="`header-${opt.id}`"
           type="button"
@@ -281,20 +283,20 @@ function swatchStyle(swatch: string | null) {
           @click="setHeaderAlign(opt.id)"
         >
           <span class="material-symbols-outlined text-[22px]">{{ opt.icon }}</span>
-          <span class="text-xs font-semibold">{{ opt.label }}</span>
+          <span class="text-xs font-semibold">{{ t(opt.labelKey) }}</span>
         </button>
       </div>
     </section>
 
     <!-- Section title alignment -->
     <section class="space-y-3">
-      <h3 class="font-bold text-lg text-white">Section title alignment</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.sectionAlign') }}</h3>
       <div class="grid grid-cols-3 gap-2">
         <button
           v-for="opt in ([
-            { id: 'left', icon: 'format_align_left', label: 'Left' },
-            { id: 'center', icon: 'format_align_center', label: 'Center' },
-            { id: 'right', icon: 'format_align_right', label: 'Right' },
+            { id: 'left', icon: 'format_align_left', labelKey: 'builderDesign.alignLeft' },
+            { id: 'center', icon: 'format_align_center', labelKey: 'builderDesign.alignCenter' },
+            { id: 'right', icon: 'format_align_right', labelKey: 'builderDesign.alignRight' },
           ] as const)"
           :key="`section-${opt.id}`"
           type="button"
@@ -305,14 +307,14 @@ function swatchStyle(swatch: string | null) {
           @click="setSectionTitleAlign(opt.id)"
         >
           <span class="material-symbols-outlined text-[22px]">{{ opt.icon }}</span>
-          <span class="text-xs font-semibold">{{ opt.label }}</span>
+          <span class="text-xs font-semibold">{{ t(opt.labelKey) }}</span>
         </button>
       </div>
     </section>
 
     <!-- Colors: swatch rows matching screenshot -->
     <section class="space-y-5">
-      <h3 class="font-bold text-lg text-white">Colors</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.colors') }}</h3>
 
       <div
         v-for="row in colorRows"
@@ -330,7 +332,7 @@ function swatchStyle(swatch: string | null) {
               ? 'border-indigo-300 ring-2 ring-indigo-400/50 ring-offset-2 ring-offset-slate-950'
               : 'border-white/15 hover:border-white/40'"
             :style="swatchStyle(swatch)"
-            :title="swatch || 'None'"
+            :title="swatch || t('builderDesign.customColor')"
             @click="selectColor(row.field, swatch)"
           >
             <span
@@ -340,7 +342,7 @@ function swatchStyle(swatch: string | null) {
           </button>
           <label
             class="relative h-8 w-8 rounded-full border border-white/15 overflow-hidden cursor-pointer shrink-0"
-            title="Custom color"
+            :title="t('builderDesign.customColor')"
             style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red)"
           >
             <input
@@ -356,7 +358,7 @@ function swatchStyle(swatch: string | null) {
 
     <!-- Accent palette + apply targets -->
     <section class="space-y-3">
-      <h3 class="font-bold text-lg text-white">Accent color</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.accentColor') }}</h3>
       <div class="flex flex-wrap gap-2.5">
         <button
           v-for="(swatch, idx) in DESIGN_COLOR_SWATCHES"
@@ -367,7 +369,7 @@ function swatchStyle(swatch: string | null) {
             ? 'border-indigo-300 ring-2 ring-indigo-400/50 ring-offset-2 ring-offset-slate-950'
             : 'border-white/15 hover:border-white/40'"
           :style="swatchStyle(swatch)"
-          :title="swatch || 'None'"
+          :title="swatch || t('builderDesign.customColor')"
           @click="selectColor('accentColor', swatch)"
         >
           <span
@@ -377,7 +379,7 @@ function swatchStyle(swatch: string | null) {
         </button>
         <label
           class="relative h-8 w-8 rounded-full border border-white/15 overflow-hidden cursor-pointer shrink-0"
-          title="Custom color"
+          :title="t('builderDesign.customColor')"
           style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red)"
         >
           <input
@@ -390,7 +392,7 @@ function swatchStyle(swatch: string | null) {
       </div>
 
       <div>
-        <h4 class="font-semibold text-sm text-indigo-200 mb-3">Apply Accent Color</h4>
+        <h4 class="font-semibold text-sm text-indigo-200 mb-3">{{ t('builderDesign.applyAccent') }}</h4>
         <div class="grid grid-cols-2 gap-x-4 gap-y-2">
           <label
             v-for="item in accentChecks"
@@ -411,10 +413,10 @@ function swatchStyle(swatch: string | null) {
 
     <!-- Typography sizes -->
     <section class="space-y-4">
-      <h3 class="font-bold text-lg text-white">Font sizes</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.fontSizes') }}</h3>
       <label class="block space-y-1.5">
         <div class="flex items-center justify-between text-[11px]">
-          <span class="font-semibold uppercase tracking-wider text-slate-400">Name</span>
+          <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.name') }}</span>
           <span class="text-slate-300 tabular-nums">{{ design.nameFontSize ?? 22 }} pt</span>
         </div>
         <input
@@ -429,7 +431,7 @@ function swatchStyle(swatch: string | null) {
       </label>
       <label class="block space-y-1.5">
         <div class="flex items-center justify-between text-[11px]">
-          <span class="font-semibold uppercase tracking-wider text-slate-400">Job title</span>
+          <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.jobTitle') }}</span>
           <span class="text-slate-300 tabular-nums">{{ design.jobTitleFontSize ?? 11 }} pt</span>
         </div>
         <input
@@ -444,7 +446,7 @@ function swatchStyle(swatch: string | null) {
       </label>
       <label class="block space-y-1.5">
         <div class="flex items-center justify-between text-[11px]">
-          <span class="font-semibold uppercase tracking-wider text-slate-400">Section headers</span>
+          <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.sectionHeaders') }}</span>
           <span class="text-slate-300 tabular-nums">{{ design.sectionTitleFontSize ?? 11 }} pt</span>
         </div>
         <input
@@ -459,7 +461,7 @@ function swatchStyle(swatch: string | null) {
       </label>
       <label class="block space-y-1.5">
         <div class="flex items-center justify-between text-[11px]">
-          <span class="font-semibold uppercase tracking-wider text-slate-400">Body text</span>
+          <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.bodyText') }}</span>
           <span class="text-slate-300 tabular-nums">{{ (design.bodyFontSize ?? modelValue.fontSize ?? 9.5).toFixed(1) }} pt</span>
         </div>
         <input
@@ -476,8 +478,8 @@ function swatchStyle(swatch: string | null) {
 
     <!-- Profile photo -->
     <section class="space-y-3">
-      <h3 class="font-bold text-lg text-white">Profile photo</h3>
-      <p class="text-xs text-blue-200/60">Hidden by default. Upload to show in the header (all templates).</p>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.profilePhoto') }}</h3>
+      <p class="text-xs text-blue-200/60">{{ t('builderDesign.photoHelp') }}</p>
       <div class="flex flex-wrap items-center gap-3">
         <div
           v-if="modelValue.personalInfo.photoDataUrl && design.showPhoto"
@@ -500,7 +502,7 @@ function swatchStyle(swatch: string | null) {
           class="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 cursor-pointer"
           @click="photoInput?.click()"
         >
-          {{ modelValue.personalInfo.photoDataUrl ? 'Replace photo' : 'Upload photo' }}
+          {{ modelValue.personalInfo.photoDataUrl ? t('builderDesign.replacePhoto') : t('builderDesign.uploadPhoto') }}
         </button>
         <button
           v-if="modelValue.personalInfo.photoDataUrl"
@@ -523,7 +525,7 @@ function swatchStyle(swatch: string | null) {
         </label>
         <label class="block space-y-1.5">
           <div class="flex items-center justify-between text-[11px]">
-            <span class="font-semibold uppercase tracking-wider text-slate-400">Photo size</span>
+            <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.photoSize') }}</span>
             <span class="text-slate-300 tabular-nums">{{ design.photoSize ?? 56 }} pt</span>
           </div>
           <input
@@ -552,7 +554,7 @@ function swatchStyle(swatch: string | null) {
         </div>
         <label v-if="design.photoShape === 'rounded'" class="block space-y-1.5">
           <div class="flex items-center justify-between text-[11px]">
-            <span class="font-semibold uppercase tracking-wider text-slate-400">Corner radius</span>
+            <span class="font-semibold uppercase tracking-wider text-slate-400">{{ t('builderDesign.cornerRadius') }}</span>
             <span class="text-slate-300 tabular-nums">{{ design.photoBorderRadius ?? 25 }}%</span>
           </div>
           <input
@@ -570,10 +572,10 @@ function swatchStyle(swatch: string | null) {
 
     <!-- Header details / icons -->
     <section v-if="showHeaderControls" class="space-y-5">
-      <h3 class="font-bold text-lg text-white">Header details</h3>
+      <h3 class="font-bold text-lg text-white">{{ t('builderDesign.headerDetails') }}</h3>
 
       <div class="space-y-2">
-        <p class="text-xs font-semibold text-slate-300">Details Arrangement</p>
+        <p class="text-xs font-semibold text-slate-300">{{ t('builderDesign.detailsArrangement') }}</p>
         <div class="grid grid-cols-3 gap-2">
           <button
             type="button"
@@ -618,7 +620,7 @@ function swatchStyle(swatch: string | null) {
               : 'border-white/10 bg-white/5 text-slate-400'"
             @click="setDetailsSeparator('icon')"
           >
-            <span class="material-symbols-outlined text-[16px]">sentiment_satisfied</span> Icon
+            <span class="material-symbols-outlined text-[16px]">sentiment_satisfied</span> {{ t('builderDesign.sepIcon') }}
           </button>
           <button
             type="button"
@@ -628,7 +630,7 @@ function swatchStyle(swatch: string | null) {
               : 'border-white/10 bg-white/5 text-slate-400'"
             @click="setDetailsSeparator('bullet')"
           >
-            • Bullet
+            {{ t('builderDesign.sepBullet') }}
           </button>
           <button
             type="button"
@@ -638,13 +640,13 @@ function swatchStyle(swatch: string | null) {
               : 'border-white/10 bg-white/5 text-slate-400'"
             @click="setDetailsSeparator('bar')"
           >
-            | Bar
+            {{ t('builderDesign.sepBar') }}
           </button>
         </div>
       </div>
 
       <div class="space-y-2">
-        <p class="text-xs font-semibold text-slate-300">Icon Style</p>
+        <p class="text-xs font-semibold text-slate-300">{{ t('builderDesign.iconStyle') }}</p>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="style in iconStyles"

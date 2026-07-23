@@ -23,6 +23,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+const { t } = useI18n()
+
 const rootRef = ref<HTMLElement | null>(null)
 const focused = ref(false)
 const empty = ref(true)
@@ -177,7 +179,7 @@ function escapeText(text: string) {
       >
         U
       </button>
-      <span class="bullet-rich__hint">Select text, then format · Enter for new bullet</span>
+      <span class="bullet-rich__hint">{{ t('builderUi.bulletEditorHint') }}</span>
     </div>
     <div class="bullet-rich__body" :style="{ minHeight: `${Math.max(rows, 4) * 1.55}rem` }">
       <ul

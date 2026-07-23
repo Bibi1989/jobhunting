@@ -1,8 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 
 const RESET_TTL_MS = 60 * 60 * 1000
-const GENERIC_MESSAGE =
-  'If an account exists for that email, you will receive password reset instructions shortly.'
+const SENT_MESSAGE = 'Password reset instructions have been sent to your email.'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function hashResetToken(token: string): string {
@@ -19,7 +18,10 @@ export default defineEventHandler(async (event) => {
 
   const user = await getUserByEmail(email)
   if (!user) {
-    return { ok: true, message: GENERIC_MESSAGE }
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'No account found with that email address.',
+    })
   }
 
   const rawToken = randomBytes(32).toString('hex')
@@ -46,7 +48,11 @@ export default defineEventHandler(async (event) => {
 
   if (!emailResult.sent) {
     console.warn('[auth/forgot-password] email not sent:', emailResult.reason, resetUrl)
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Could not send the reset email. Please try again later.',
+    })
   }
 
-  return { ok: true, message: GENERIC_MESSAGE }
+  return { ok: true, message: SENT_MESSAGE }
 })

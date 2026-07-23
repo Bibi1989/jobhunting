@@ -3,6 +3,8 @@ import { UploadCloud, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucid
 import type { UserDocumentSummary } from '~/shared/types/job'
 import { scoreLocalAts, type LocalAtsResult } from '~/utils/localAtsScore'
 
+const { t } = useI18n()
+
 const resumeDoc = ref<UserDocumentSummary | null>(null)
 const resumeText = ref('')
 const jobDescription = ref('')
@@ -37,7 +39,7 @@ function runLocalAnalysis() {
 
   const text = resumeText.value.trim()
   if (!text) {
-    error.value = 'Paste your resume text (or upload a resume while signed in).'
+    error.value = t('atsChecker.errorNoResume')
     return
   }
 
@@ -46,7 +48,7 @@ function runLocalAnalysis() {
     analysisResult.value = scoreLocalAts(text, jobDescription.value)
   } catch (err: unknown) {
     const e = err as { message?: string }
-    error.value = e.message || 'Failed to analyze resume.'
+    error.value = e.message || t('atsChecker.errorAnalyzeFailed')
   } finally {
     loading.value = false
   }
@@ -59,7 +61,7 @@ function runLocalAnalysis() {
       <div class="mb-10 flex items-center justify-between">
         <AppLogo />
         <NuxtLink to="/" class="text-sm font-semibold text-slate-400 hover:text-white transition-colors">
-          Back to Home
+          {{ t('atsChecker.backHome') }}
         </NuxtLink>
       </div>
 
@@ -72,10 +74,10 @@ function runLocalAnalysis() {
           </div>
 
           <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-4">
-            Keyword ATS Checker
+            {{ t('atsChecker.title') }}
           </h1>
           <p class="text-slate-400 max-w-xl mx-auto mb-10">
-            Free local keyword coverage — paste a job description and your resume to see which skills match. No AI credits required.
+            {{ t('atsChecker.subtitleFree') }}
           </p>
 
           <div class="w-full max-w-3xl bg-slate-900/60 border border-slate-800/80 rounded-3xl p-8 mb-8 text-left space-y-5">
@@ -86,30 +88,30 @@ function runLocalAnalysis() {
                 @uploaded="loadDocuments"
                 @removed="loadDocuments"
               />
-              <p class="text-xs text-slate-500 mt-2">Uploaded resume text is prefilled below when available.</p>
+              <p class="text-xs text-slate-500 mt-2">{{ t('atsChecker.prefilledHelp') }}</p>
             </div>
 
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Job description (optional)
+                {{ t('atsChecker.jobDescOptional') }}
               </label>
               <textarea
                 v-model="jobDescription"
                 rows="5"
                 class="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                placeholder="Paste the target job description for better keyword matching…"
+                :placeholder="t('atsChecker.jobDescPlaceholder')"
               />
             </div>
 
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Resume text
+                {{ t('atsChecker.resumeText') }}
               </label>
               <textarea
                 v-model="resumeText"
                 rows="8"
                 class="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                placeholder="Paste your resume text here…"
+                :placeholder="t('atsChecker.resumeTextPlaceholder')"
               />
             </div>
 
@@ -121,7 +123,7 @@ function runLocalAnalysis() {
             >
               <Loader2 v-if="loading" class="animate-spin" :size="20" />
               <UploadCloud v-else :size="20" />
-              {{ loading ? 'Scoring…' : 'Run keyword ATS check' }}
+              {{ loading ? t('atsChecker.scoring') : t('atsChecker.runCheck') }}
             </button>
           </div>
 
@@ -131,16 +133,16 @@ function runLocalAnalysis() {
           >
             <div class="flex items-center gap-2 mb-2">
               <Sparkles class="text-amber-400" :size="18" />
-              <p class="text-sm font-semibold text-amber-100">Want deeper AI ATS feedback?</p>
+              <p class="text-sm font-semibold text-amber-100">{{ t('atsChecker.proUpsellTitle') }}</p>
             </div>
             <p class="text-xs text-slate-400 mb-4">
-              Pro unlocks Gemini-powered structure analysis, rewrite suggestions, and ATS fix in the resume builder.
+              {{ t('atsChecker.proUpsellBody') }}
             </p>
             <NuxtLink
               to="/pricing"
               class="inline-flex px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-bold transition-all"
             >
-              Upgrade to Pro
+              {{ t('common.upgradeToPro') }}
             </NuxtLink>
           </div>
           <div
@@ -148,8 +150,8 @@ function runLocalAnalysis() {
             class="w-full max-w-3xl mb-8 rounded-2xl border border-indigo-500/25 bg-indigo-950/30 px-6 py-5 text-left"
           >
             <p class="text-sm text-slate-300">
-              For full AI ATS analysis and one-click fixes, open a resume in the
-              <NuxtLink to="/builder" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">builder</NuxtLink>.
+              {{ t('atsChecker.proBuilderHint') }}
+              <NuxtLink to="/builder" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">{{ t('atsChecker.builderLink') }}</NuxtLink>.
             </p>
           </div>
 
@@ -162,10 +164,10 @@ function runLocalAnalysis() {
             <h3 class="text-xl font-bold text-white mb-8 flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <Sparkles class="text-indigo-400" :size="20" />
-                Keyword coverage
+                {{ t('atsChecker.keywordCoverage') }}
               </span>
               <span class="text-sm font-medium text-slate-400">
-                {{ analysisResult.matched }}/{{ analysisResult.total || '—' }} matched
+                {{ t('atsChecker.matchedCount', { matched: analysisResult.matched, total: analysisResult.total || '—' }) }}
               </span>
             </h3>
 
@@ -187,13 +189,13 @@ function runLocalAnalysis() {
                 </svg>
                 <div class="flex flex-col items-center">
                   <span class="text-3xl font-extrabold text-white">{{ analysisResult.score }}</span>
-                  <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Score</span>
+                  <span class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{{ t('atsChecker.score') }}</span>
                 </div>
               </div>
             </div>
 
             <div v-if="analysisResult.keywords.length" class="mb-8">
-              <h4 class="text-sm font-bold text-slate-300 mb-3">Keywords</h4>
+              <h4 class="text-sm font-bold text-slate-300 mb-3">{{ t('atsChecker.keywords') }}</h4>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="k in analysisResult.keywords"
@@ -211,7 +213,7 @@ function runLocalAnalysis() {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5">
                 <h4 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
-                  <CheckCircle2 :size="16" /> Strengths
+                  <CheckCircle2 :size="16" /> {{ t('atsChecker.strengths') }}
                 </h4>
                 <ul class="text-sm text-slate-300 space-y-2 list-disc pl-4 marker:text-emerald-500">
                   <li v-for="s in analysisResult.strengths" :key="s">{{ s }}</li>
@@ -220,7 +222,7 @@ function runLocalAnalysis() {
 
               <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
                 <h4 class="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
-                  <AlertCircle :size="16" /> Areas to Improve
+                  <AlertCircle :size="16" /> {{ t('atsChecker.areasImprove') }}
                 </h4>
                 <ul class="text-sm text-slate-300 space-y-2 list-disc pl-4 marker:text-amber-500">
                   <li v-for="i in analysisResult.improvements" :key="i">{{ i }}</li>
@@ -230,7 +232,7 @@ function runLocalAnalysis() {
 
             <div class="mt-8 flex justify-center">
               <button type="button" class="text-sm font-semibold text-slate-400 hover:text-white transition-colors" @click="analysisResult = null">
-                Run another check
+                {{ t('atsChecker.runAnother') }}
               </button>
             </div>
           </div>

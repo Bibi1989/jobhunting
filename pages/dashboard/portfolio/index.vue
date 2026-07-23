@@ -12,6 +12,7 @@ import { loadBuilderJobPrefill } from '~/utils/builderJobPrefill'
 
 definePageMeta({ layout: 'dashboard' })
 
+const { t, locale } = useI18n()
 const { isPro, isAdmin, creditsRemaining, aiBlockedMessage, refreshCredits } = useSaaS()
 const toast = useAppToast()
 
@@ -269,9 +270,11 @@ async function copyDomainHelp(id: string) {
 }
 
 const formatDate = (s: string) =>
-  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(
-    new Date(s),
-  )
+  new Intl.DateTimeFormat(locale.value === 'de' ? 'de-DE' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(s))
 
 function templateName(slug: string) {
   return PORTFOLIO_TEMPLATES.find((t) => t.slug === slug)?.name ?? slug
@@ -291,10 +294,9 @@ function primaryContactHref(data: PortfolioProfileData) {
 <template>
   <div class="px-6 py-10 max-w-7xl mx-auto">
     <header class="mb-8">
-      <h1 class="font-serif text-4xl text-app-fg mb-2">AI Portfolio Builder</h1>
+      <h1 class="font-serif text-4xl text-app-fg mb-2">{{ t('portfolioPage.title') }}</h1>
       <p class="text-app-muted max-w-3xl">
-        Generate a live portfolio from your CV, publish it, and host it on your own domain.
-        Saved portfolios stay here so you can open or share them anytime.
+        {{ t('portfolioPage.subtitle') }}
       </p>
       <div class="flex flex-wrap items-center gap-2 mt-6">
         <button
@@ -303,24 +305,24 @@ function primaryContactHref(data: PortfolioProfileData) {
           :class="activeTab === 'saved' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
           @click="activeTab = 'saved'"
         >
-          Saved
+          {{ t('portfolioPage.saved') }}
         </button>
         <button
           type="button"
           class="rounded-lg px-3 py-2 text-sm font-semibold transition"
           :class="activeTab === 'create' ? 'bg-blue-500 text-white' : 'border border-white/15 text-blue-100 hover:bg-white/5'"
           :disabled="!canCreateAnotherPortfolio"
-          :title="!canCreateAnotherPortfolio ? 'Free plan allows 1 portfolio. Upgrade to Pro.' : undefined"
+          :title="!canCreateAnotherPortfolio ? t('portfolioPage.freeLimitTitle') : undefined"
           @click="activeTab = 'create'"
         >
-          Create new
+          {{ t('portfolioPage.createNew') }}
         </button>
         <NuxtLink
           v-if="!canCreateAnotherPortfolio"
           to="/pricing"
           class="text-xs font-semibold text-indigo-300 hover:text-indigo-200 underline underline-offset-2"
         >
-          Upgrade for unlimited
+          {{ t('portfolioPage.upgradeUnlimited') }}
         </NuxtLink>
       </div>
       <div class="w-full h-px bg-white/10 mt-6"></div>
@@ -329,15 +331,15 @@ function primaryContactHref(data: PortfolioProfileData) {
     <!-- Create flow first when on Create new -->
     <div v-show="activeTab === 'create'" class="relative mb-12">
       <div v-if="!canCreateAnotherPortfolio" class="rounded-2xl border border-amber-500/30 bg-amber-950/40 px-6 py-8 text-center mb-6">
-        <h3 class="text-lg font-bold text-white">Portfolio limit reached</h3>
+        <h3 class="text-lg font-bold text-white">{{ t('portfolioPage.limitTitle') }}</h3>
         <p class="mt-2 text-sm text-blue-200/70">
-          Free plan allows 1 portfolio. Edit your existing one, or upgrade to Pro for unlimited portfolios and all templates.
+          {{ t('portfolioPage.limitBody') }}
         </p>
         <NuxtLink
           to="/pricing"
           class="mt-4 inline-block rounded-xl bg-blue-500 hover:bg-blue-400 px-6 py-3 font-semibold text-white transition"
         >
-          Upgrade to Pro
+          {{ t('portfolioPage.upgradeToPro') }}
         </NuxtLink>
       </div>
       <div v-else class="space-y-12">
@@ -358,10 +360,10 @@ function primaryContactHref(data: PortfolioProfileData) {
             </p>
           </div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-3">
-            1 · Choose a template
+            {{ t('portfolioPage.stepTemplate') }}
           </h2>
           <p v-if="!unlocked" class="text-xs text-blue-200/50 mb-3">
-            Free includes the Visionary template. Upgrade to Pro for all designs and AI generation.
+            {{ t('portfolioPage.freeTemplateHint') }}
           </p>
           <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <div
@@ -392,12 +394,12 @@ function primaryContactHref(data: PortfolioProfileData) {
                     class="text-[11px] font-semibold rounded-md px-2 py-1 bg-white/90 text-slate-900 hover:bg-white"
                     @click.stop="previewSlug = template.slug"
                   >
-                    Full preview
+                    {{ t('portfolioPage.fullPreview') }}
                   </button>
                   <span
                     v-if="!unlocked && template.slug !== DEFAULT_TEMPLATE_SLUG"
                     class="text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5 bg-amber-500/90 text-slate-950"
-                  >Pro</span>
+                  >{{ t('builderUi.pro') }}</span>
                   <span
                     v-else-if="selectedTemplate === template.slug"
                     class="material-symbols-outlined text-blue-400 text-xl"
@@ -422,15 +424,15 @@ function primaryContactHref(data: PortfolioProfileData) {
             :disabled="creatingBlank"
             @click="createBlankPortfolio"
           >
-            {{ creatingBlank ? 'Creating…' : 'Start blank portfolio' }}
+            {{ creatingBlank ? t('portfolioPage.creating') : t('portfolioPage.startBlank') }}
           </button>
-          <p class="text-sm text-blue-200/60">Edit content yourself — no AI credits required.</p>
+          <p class="text-sm text-blue-200/60">{{ t('portfolioPage.blankHelp') }}</p>
         </section>
 
         <section class="relative rounded-2xl border border-white/10 bg-white/[0.02] p-6">
           <div :class="unlocked ? '' : 'pointer-events-none select-none blur-sm opacity-50'" :aria-hidden="!unlocked">
             <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-3">
-              Or generate with AI (Pro)
+              {{ t('portfolioPage.orGenerateAi') }}
             </h2>
             <div
               class="rounded-2xl border-2 border-dashed p-10 text-center transition mb-4"
@@ -447,8 +449,8 @@ function primaryContactHref(data: PortfolioProfileData) {
               <span class="material-symbols-outlined text-4xl text-blue-300">upload_file</span>
               <p v-if="selectedFile" class="text-white font-medium mt-2">{{ selectedFile.name }}</p>
               <template v-else>
-                <p class="text-white font-medium mt-2">Drop your CV or cover letter here</p>
-                <p class="text-blue-200/50 text-sm mt-1">or click to browse — PDF, DOCX, or TXT (max 3 pages)</p>
+                <p class="text-white font-medium mt-2">{{ t('portfolioPage.dropCvHere') }}</p>
+                <p class="text-blue-200/50 text-sm mt-1">{{ t('portfolioPage.orBrowse') }}</p>
               </template>
             </div>
             <div class="flex flex-wrap items-center gap-4">
@@ -458,14 +460,14 @@ function primaryContactHref(data: PortfolioProfileData) {
                 :disabled="generating || !selectedFile"
                 @click="generate"
               >
-                {{ generating ? 'Generating…' : 'Generate Portfolio (Costs 20 Credits)' }}
+                {{ generating ? t('portfolioPage.generating') : t('portfolioPage.generate') }}
               </button>
-              <p class="text-sm text-blue-200/60">You have {{ creditsRemaining }} credits.</p>
+              <p class="text-sm text-blue-200/60">{{ t('portfolioPage.youHaveCredits', { n: creditsRemaining }) }}</p>
             </div>
             <section v-if="result" id="preview" class="scroll-mt-24 mt-8">
               <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60">
-                  Preview &amp; publish — {{ templateName(selectedTemplate) }}
+                  {{ t('portfolioPage.previewPublish', { name: templateName(selectedTemplate) }) }}
                 </h2>
                 <div class="flex flex-wrap items-center gap-2">
                   <a
@@ -474,7 +476,7 @@ function primaryContactHref(data: PortfolioProfileData) {
                     :target="primaryContactHref(result).startsWith('http') ? '_blank' : undefined"
                     rel="noopener"
                   >
-                    Test contact CTA
+                    {{ t('portfolioPage.testContact') }}
                   </a>
                   <button
                     type="button"
@@ -482,7 +484,7 @@ function primaryContactHref(data: PortfolioProfileData) {
                     :disabled="saving"
                     @click="save"
                   >
-                    {{ saving ? 'Publishing…' : 'Save & Publish' }}
+                    {{ saving ? t('portfolioPage.publishing') : t('portfolioPage.savePublish') }}
                   </button>
                 </div>
               </div>
@@ -494,15 +496,15 @@ function primaryContactHref(data: PortfolioProfileData) {
           <div v-if="!unlocked" class="absolute inset-0 flex items-center justify-center p-6">
             <div class="text-center rounded-2xl border border-white/10 bg-slate-950/90 backdrop-blur px-6 py-8 max-w-md">
               <span class="material-symbols-outlined text-4xl text-blue-300 mb-3">stars</span>
-              <h3 class="text-lg font-bold text-white">AI portfolio generation is Pro</h3>
+              <h3 class="text-lg font-bold text-white">{{ t('portfolioPage.aiProTitle') }}</h3>
               <p class="mt-2 text-sm text-blue-200/60">
-                {{ aiBlockedMessage() || 'Start a blank portfolio above, or upgrade for AI fill from your CV.' }}
+                {{ aiBlockedMessage() || t('portfolioPage.aiProFallback') }}
               </p>
               <NuxtLink
                 to="/pricing"
                 class="mt-4 inline-block rounded-xl bg-blue-500 hover:bg-blue-400 px-6 py-3 font-semibold text-white transition"
               >
-                Upgrade to Pro
+                {{ t('portfolioPage.upgradeToPro') }}
               </NuxtLink>
             </div>
           </div>
@@ -519,11 +521,15 @@ function primaryContactHref(data: PortfolioProfileData) {
       <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
         <div>
           <h2 class="text-sm font-semibold uppercase tracking-widest text-blue-200/60 mb-1">
-            My published portfolios
+            {{ t('portfolioPage.myPublished') }}
           </h2>
           <p class="text-sm text-blue-200/50">
-            {{ saved?.portfolios?.length || 0 }} published ·
-            {{ saved?.portfolios?.filter((p) => p.isFavorite).length || 0 }} favorites
+            {{
+              t('portfolioPage.publishedStats', {
+                published: saved?.portfolios?.length || 0,
+                favorites: saved?.portfolios?.filter((p) => p.isFavorite).length || 0,
+              })
+            }}
           </p>
         </div>
         <button
@@ -535,7 +541,7 @@ function primaryContactHref(data: PortfolioProfileData) {
           @click="showFavoritesOnly = !showFavoritesOnly"
         >
           <span class="material-symbols-outlined text-[16px]">star</span>
-          {{ showFavoritesOnly ? 'Favorites only' : 'Show favorites' }}
+          {{ showFavoritesOnly ? t('portfolioPage.favoritesOnly') : t('portfolioPage.showFavorites') }}
         </button>
       </div>
 
@@ -543,14 +549,14 @@ function primaryContactHref(data: PortfolioProfileData) {
         v-if="!visiblePortfolios.length"
         class="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-5 py-8 text-blue-200/60"
       >
-        {{ showFavoritesOnly ? 'No favorite portfolios yet.' : 'Nothing published yet.' }}
+        {{ showFavoritesOnly ? t('portfolioPage.noFavorites') : t('portfolioPage.nothingPublished') }}
         <button
           v-if="!showFavoritesOnly && activeTab !== 'create'"
           type="button"
           class="text-blue-300 hover:text-white underline underline-offset-4 ml-1"
           @click="activeTab = 'create'"
         >
-          Create your first portfolio
+          {{ t('portfolioPage.createFirst') }}
         </button>
       </p>
 
@@ -595,7 +601,7 @@ function primaryContactHref(data: PortfolioProfileData) {
               :to="`/dashboard/portfolio/${p.id}`"
               class="flex-1 min-w-[6rem] inline-flex items-center justify-center gap-1 rounded-lg bg-blue-500 hover:bg-blue-400 px-3 py-2 text-sm font-semibold text-white transition"
             >
-              <span class="material-symbols-outlined text-[16px]">edit</span> Edit
+              <span class="material-symbols-outlined text-[16px]">edit</span> {{ t('portfolioPage.edit') }}
             </NuxtLink>
             <a
               :href="`/p/${p.id}`"
@@ -603,14 +609,14 @@ function primaryContactHref(data: PortfolioProfileData) {
               rel="noopener"
               class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
             >
-              View live
+              {{ t('portfolioPage.viewLive') }}
             </a>
             <button
               type="button"
               class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-2 text-sm font-semibold text-blue-100 transition"
               @click="copyLink(p.id)"
             >
-              Copy link
+              {{ t('portfolioPage.copyLink') }}
             </button>
             <button
               type="button"
@@ -618,7 +624,7 @@ function primaryContactHref(data: PortfolioProfileData) {
               title="Copy domain hosting instructions"
               @click="copyDomainHelp(p.id)"
             >
-              Domain
+              {{ t('portfolioPage.domain') }}
             </button>
           </div>
         </article>
@@ -627,14 +633,14 @@ function primaryContactHref(data: PortfolioProfileData) {
       <div class="mt-6 rounded-2xl border border-white/10 bg-blue-500/5 p-5 text-sm text-blue-100/80">
         <p class="font-semibold text-white mb-1 flex items-center gap-2">
           <span class="material-symbols-outlined text-blue-300">public</span>
-          Host on your own domain
+          {{ t('portfolioPage.hostTitle') }}
         </p>
         <p>
-          Every published portfolio is live at
-          <code class="text-blue-200">{{ origin || 'https://your-app' }}/p/&lt;id&gt;</code>
-          with no dashboard chrome. Point your domain at this app (CNAME or reverse proxy) and share
-          <code class="text-blue-200">yourdomain.com/p/&lt;id&gt;</code>.
-          Use the Domain button on any card to copy step-by-step instructions.
+          {{
+            t('portfolioPage.hostBody', {
+              url: `${origin || 'https://your-app'}/p/[id]`,
+            })
+          }}
         </p>
       </div>
     </section>
@@ -646,21 +652,21 @@ function primaryContactHref(data: PortfolioProfileData) {
         @click.self="previewSlug = null"
       >
         <div class="flex items-center justify-between px-6 h-14 bg-slate-900 border-b border-white/10 shrink-0">
-          <p class="font-semibold text-white">{{ templateName(previewSlug) }} — interactive preview</p>
+          <p class="font-semibold text-white">{{ t('portfolioPage.interactivePreview', { name: templateName(previewSlug) }) }}</p>
           <div class="flex items-center gap-2">
             <button
               type="button"
               class="rounded-lg bg-blue-500 hover:bg-blue-400 px-4 py-1.5 text-sm font-semibold text-white"
               @click="selectedTemplate = previewSlug!; previewSlug = null; activeTab = 'create'"
             >
-              Use this template
+              {{ t('portfolioPage.useThisTemplate') }}
             </button>
             <button
               type="button"
               class="rounded-lg border border-white/15 hover:bg-white/5 px-3 py-1.5 text-sm text-blue-100"
               @click="previewSlug = null"
             >
-              Close
+              {{ t('portfolioPage.close') }}
             </button>
           </div>
         </div>

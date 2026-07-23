@@ -5,10 +5,13 @@
  */
 import type { BuilderCustomSection } from '~/shared/types/builder'
 import {
+  isCustomSectionId,
   moveSection,
-  sectionLabel,
+  parseCustomSectionId,
   type ResumeSectionId,
 } from '~/shared/pdf/schema'
+
+const { t } = useI18n()
 
 const order = defineModel<ResumeSectionId[]>({ required: true })
 
@@ -48,14 +51,35 @@ function onDragEnd() {
   dragIndex.value = null
   overIndex.value = null
 }
+
+const knownSectionIds = new Set<ResumeSectionId>([
+  'summary',
+  'experience',
+  'projects',
+  'education',
+  'skills',
+  'achievements',
+])
+
+function localizedSectionLabel(id: ResumeSectionId): string {
+  if (isCustomSectionId(id)) {
+    const customId = parseCustomSectionId(id)
+    const found = (props.customSections || []).find((s) => s.id === customId)
+    return found?.title || t('builderSections.custom')
+  }
+  if (knownSectionIds.has(id)) {
+    return t(`builderSections.${id}`)
+  }
+  return t('builderSections.custom')
+}
 </script>
 
 <template>
   <div class="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
     <div class="px-4 py-3 border-b border-white/10">
-      <h2 class="text-sm font-semibold text-white">Section order</h2>
+      <h2 class="text-sm font-semibold text-white">{{ t('builderSections.sectionOrder') }}</h2>
       <p class="text-xs text-slate-400 mt-0.5">
-        Drag the handle or use the arrows — preview and PDF download both follow this order.
+        {{ t('builderSections.dragHelp') }}
       </p>
     </div>
     <TransitionGroup
@@ -77,16 +101,16 @@ function onDragEnd() {
         @drop.prevent="onDrop(index)"
         @dragend="onDragEnd"
       >
-        <span class="material-symbols-outlined text-slate-500 text-[18px] cursor-grab active:cursor-grabbing" title="Drag to reorder">drag_indicator</span>
+        <span class="material-symbols-outlined text-slate-500 text-[18px] cursor-grab active:cursor-grabbing" :title="t('builderSections.dragToReorder')">drag_indicator</span>
         <span class="flex-1 text-sm text-slate-200 truncate">
-          {{ sectionLabel(id, customSections || []) }}
+          {{ localizedSectionLabel(id) }}
         </span>
         <div class="flex items-center gap-1">
           <button
             type="button"
             class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors"
             :disabled="index === 0"
-            aria-label="Move section up"
+            :aria-label="t('builderSections.moveUp')"
             @click="move(index, -1)"
           >
             <span class="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
@@ -95,7 +119,7 @@ function onDragEnd() {
             type="button"
             class="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors"
             :disabled="index === order.length - 1"
-            aria-label="Move section down"
+            :aria-label="t('builderSections.moveDown')"
             @click="move(index, 1)"
           >
             <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>

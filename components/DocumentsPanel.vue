@@ -2,6 +2,8 @@
 import { Upload, Loader2, Trash2, FileCheck } from 'lucide-vue-next'
 import type { UserDocumentSummary } from '~/shared/types/job'
 
+const { t } = useI18n()
+
 defineProps<{
   resume: UserDocumentSummary | null
   coverLetter: UserDocumentSummary | null
@@ -38,7 +40,7 @@ async function onFileChange(event: Event, type: 'resume' | 'cover_letter') {
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
     error.value =
-      fetchError.data?.statusMessage || fetchError.message || 'Upload failed'
+      fetchError.data?.statusMessage || fetchError.message || t('documents.uploadFailed')
   } finally {
     uploading.value = null
     input.value = ''
@@ -47,11 +49,11 @@ async function onFileChange(event: Event, type: 'resume' | 'cover_letter') {
 
 async function removeDocument(type: 'resume' | 'cover_letter') {
   const { confirm } = useAppConfirm()
-  const label = type === 'resume' ? 'resume / CV' : 'cover letter'
+  const label = type === 'resume' ? t('documents.labelResume') : t('documents.labelCoverLetter')
   const confirmed = await confirm({
-    title: `Remove ${label}`,
-    message: `Delete your uploaded ${label}? This cannot be undone.`,
-    confirmLabel: 'Delete',
+    title: t('documents.removeConfirmTitle', { type: label }),
+    message: t('documents.removeConfirmMessage', { type: label }),
+    confirmLabel: t('common.delete'),
     danger: true,
   })
   if (!confirmed) return
@@ -68,7 +70,7 @@ async function removeDocument(type: 'resume' | 'cover_letter') {
   } catch (err: unknown) {
     const fetchError = err as { data?: { statusMessage?: string }; message?: string }
     error.value =
-      fetchError.data?.statusMessage || fetchError.message || 'Remove failed'
+      fetchError.data?.statusMessage || fetchError.message || t('documents.removeFailed')
   } finally {
     removing.value = null
   }
@@ -79,8 +81,8 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
   return {
     busy,
     label: busy
-      ? (removing.value === type ? 'Removing…' : 'Uploading…')
-      : doc?.originalName || 'Upload PDF, DOCX or TXT (max 3 pages)',
+      ? (removing.value === type ? t('documents.removing') : t('documents.uploading'))
+      : doc?.originalName || t('documents.uploadHelpMax'),
     hasDoc: !!doc,
   }
 }
@@ -90,18 +92,17 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
   <div class="w-full min-w-0 space-y-4">
     <div>
       <h3 class="text-xs font-bold uppercase text-indigo-400 tracking-widest select-none">
-        Your Documents
+        {{ t('documents.title') }}
       </h3>
       <p class="mt-2 text-[11px] text-slate-500 leading-relaxed select-none">
-        Upload a CV and cover letter (PDF, DOCX, or TXT) to auto-fill details and customize materials.
-        Max 3 pages per file.
+        {{ t('documents.introHelp') }}
       </p>
     </div>
 
     <div class="space-y-4 min-w-0">
       <!-- Resume -->
       <div class="min-w-0">
-        <span class="text-[11px] text-slate-400 font-bold mb-2 block select-none">Resume / CV</span>
+        <span class="text-[11px] text-slate-400 font-bold mb-2 block select-none">{{ t('documents.resumeCv') }}</span>
         <div class="flex items-stretch gap-2 min-w-0">
           <label
             class="min-w-0 flex-1 flex items-center gap-2.5 px-3 py-2.5 bg-slate-950/40 border rounded-xl text-xs cursor-pointer transition-all duration-300 select-none group"
@@ -126,13 +127,13 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
               v-if="!resume && !rowState('resume', resume).busy"
               class="shrink-0 text-[10px] text-indigo-400 font-bold uppercase tracking-wider"
             >
-              Browse
+              {{ t('documents.browse') }}
             </span>
           </label>
           <button
             v-if="resume"
             type="button"
-            title="Remove CV"
+            :title="t('documents.removeCvTitle')"
             class="shrink-0 p-2.5 rounded-xl border border-slate-850 text-slate-400 hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 disabled:opacity-50"
             :disabled="!!uploading || !!removing"
             @click="removeDocument('resume')"
@@ -144,7 +145,7 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
 
       <!-- Cover letter -->
       <div class="min-w-0">
-        <span class="text-[11px] text-slate-400 font-bold mb-2 block select-none">Cover Letter</span>
+        <span class="text-[11px] text-slate-400 font-bold mb-2 block select-none">{{ t('documents.coverLetter') }}</span>
         <div class="flex items-stretch gap-2 min-w-0">
           <label
             class="min-w-0 flex-1 flex items-center gap-2.5 px-3 py-2.5 bg-slate-950/40 border rounded-xl text-xs cursor-pointer transition-all duration-300 select-none group"
@@ -169,13 +170,13 @@ function rowState(type: 'resume' | 'cover_letter', doc: UserDocumentSummary | nu
               v-if="!coverLetter && !rowState('cover_letter', coverLetter).busy"
               class="shrink-0 text-[10px] text-indigo-400 font-bold uppercase tracking-wider"
             >
-              Browse
+              {{ t('documents.browse') }}
             </span>
           </label>
           <button
             v-if="coverLetter"
             type="button"
-            title="Remove cover letter"
+            :title="t('documents.removeCoverTitle')"
             class="shrink-0 p-2.5 rounded-xl border border-slate-850 text-slate-400 hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 disabled:opacity-50"
             :disabled="!!uploading || !!removing"
             @click="removeDocument('cover_letter')"

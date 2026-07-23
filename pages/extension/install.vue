@@ -10,8 +10,10 @@ definePageMeta({
   layout: false,
 })
 
+const { t } = useI18n()
+
 useHead({
-  title: 'Add JobFlow for Chrome',
+  title: () => t('extension.installTitle'),
 })
 
 const config = useRuntimeConfig()
@@ -22,11 +24,11 @@ const storeUrl = computed(() =>
 )
 const hasStoreListing = computed(() => /^https?:\/\//i.test(storeUrl.value))
 
-const steps = [
-  'Open chrome://extensions and turn on Developer mode',
-  'Click “Load unpacked” and choose the JobFlow extension/ folder from this repo',
-  'Come back to this tab — detection updates automatically when the extension is present',
-]
+const steps = computed(() => [
+  t('extension.step1'),
+  t('extension.step2'),
+  t('extension.step3'),
+])
 
 function addToChrome() {
   if (!hasStoreListing.value) return
@@ -54,7 +56,7 @@ onBeforeUnmount(() => {
         style="color: var(--app-muted)"
       >
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-        Back
+        {{ t('nav.back') }}
       </NuxtLink>
 
       <div
@@ -76,13 +78,13 @@ onBeforeUnmount(() => {
           class="text-[11px] font-bold uppercase tracking-[0.2em] mb-2"
           style="color: var(--app-accent)"
         >
-          JobFlow for Chrome
+          {{ t('extension.brandChrome') }}
         </p>
         <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight" style="color: var(--app-fg)">
-          Capture jobs in one click
+          {{ t('extension.headline') }}
         </h1>
         <p class="mt-3 text-sm leading-relaxed" style="color: var(--app-muted)">
-          Grab the job description from Greenhouse, Lever, LinkedIn, and more — then open a tailored resume draft in JobFlow.
+          {{ t('extension.subtitle') }}
         </p>
 
         <div
@@ -90,7 +92,7 @@ onBeforeUnmount(() => {
           class="mt-8 text-sm"
           style="color: var(--app-muted)"
         >
-          Checking for extension…
+          {{ t('extension.checking') }}
         </div>
 
         <div
@@ -102,7 +104,7 @@ onBeforeUnmount(() => {
             color: var(--app-fg);
           "
         >
-          Extension detected in this browser. You’re all set.
+          {{ t('extension.detected') }}
         </div>
 
         <template v-else>
@@ -117,10 +119,10 @@ onBeforeUnmount(() => {
               <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
               <circle cx="12" cy="12" r="4.5" fill="currentColor"/>
             </svg>
-            Add to Chrome
+            {{ t('extension.addToChrome') }}
           </button>
           <p v-if="hasStoreListing" class="mt-3 text-[11px]" style="color: var(--app-muted)">
-            Opens the Chrome Web Store — click Add to Chrome there to install.
+            {{ t('extension.addToChromeHint') }}
           </p>
 
           <div v-else class="mt-8 text-left">
@@ -128,7 +130,7 @@ onBeforeUnmount(() => {
               class="text-xs font-semibold uppercase tracking-wider mb-3"
               style="color: var(--app-muted)"
             >
-              Install (developer / unpacked)
+              {{ t('extension.devInstallTitle') }}
             </p>
             <ol
               class="space-y-2 text-sm list-decimal pl-5 leading-relaxed"
@@ -137,9 +139,7 @@ onBeforeUnmount(() => {
               <li v-for="(step, i) in steps" :key="i">{{ step }}</li>
             </ol>
             <p class="mt-4 text-[11px] leading-relaxed" style="color: var(--app-muted)">
-              After you publish to the Chrome Web Store, set
-              <code style="color: var(--app-fg)">NUXT_PUBLIC_CHROME_EXTENSION_STORE_URL</code>
-              so this page shows a one-click Add to Chrome button.
+              {{ t('extension.devInstallHint') }}
             </p>
           </div>
         </template>

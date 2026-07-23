@@ -115,14 +115,14 @@ const features = computed(() => [
         <p>© 2026 JobFlow</p>
         <div class="flex items-center gap-6 flex-wrap justify-center">
           <NuxtLink to="/privacy" class="hover:text-[color:var(--app-fg)] transition-colors">
-            Privacy
+            {{ t('nav.privacy') }}
           </NuxtLink>
           <a
             href="/docs/BUSINESS_PLAN.pdf"
             download="JobFlow-Business-Plan.pdf"
             class="hover:text-[color:var(--app-fg)] transition-colors"
           >
-            Business Plan (PDF)
+            {{ t('home.businessPlan') }}
           </a>
         </div>
       </div>

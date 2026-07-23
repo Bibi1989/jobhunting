@@ -12,6 +12,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
 }>()
 
+const { t } = useI18n()
+
 const formRef = ref<{ initForm: () => Promise<void> } | null>(null)
 
 watch(
@@ -38,7 +40,7 @@ function close() {
       <button
         type="button"
         class="absolute inset-0 bg-slate-950/75 backdrop-blur-sm cursor-pointer"
-        aria-label="Dismiss"
+        :aria-label="t('extension.dismiss')"
         @click="close"
       />
 
@@ -53,8 +55,8 @@ function close() {
               <Mail :size="20" />
             </div>
             <div>
-              <h2 id="apply-email-modal-title" class="text-lg font-bold text-white">Apply via Email</h2>
-              <p class="text-xs text-slate-400">Quick send from your current resume.</p>
+              <h2 id="apply-email-modal-title" class="text-lg font-bold text-white">{{ t('applyEmail.title') }}</h2>
+              <p class="text-xs text-slate-400">{{ t('applyEmail.subtitle') }}</p>
             </div>
           </div>
 

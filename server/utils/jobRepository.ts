@@ -177,6 +177,11 @@ export async function deleteJob(input: { userId: string; id?: string; url?: stri
   return false
 }
 
+export async function deleteAllJobs(userId: string): Promise<number> {
+  const result = await query(`DELETE FROM jobs WHERE user_id = $1 RETURNING id`, [userId])
+  return result.rowCount || 0
+}
+
 export function mapJobRow(row: {
   id: string
   user_id?: string

@@ -11,6 +11,7 @@ const emit = defineEmits<{
   edit: [template: ApplyEmailTemplate]
 }>()
 
+const { t, locale } = useI18n()
 const { sessionUser } = useSaaS()
 const toast = useAppToast()
 const { confirm } = useAppConfirm()
@@ -26,7 +27,7 @@ onMounted(reload)
 defineExpose({ reload })
 
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale.value === 'de' ? 'de-DE' : 'en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -35,14 +36,14 @@ function formatDate(iso: string) {
 
 async function removeTemplate(tpl: ApplyEmailTemplate) {
   const ok = await confirm({
-    title: 'Delete saved email',
-    message: `Remove "${tpl.name}"? This cannot be undone.`,
-    confirmLabel: 'Delete',
+    title: t('applyEmail.deleteTitle'),
+    message: t('applyEmail.deleteMessage', { name: tpl.name }),
+    confirmLabel: t('applyEmail.deleteConfirm'),
     danger: true,
   })
   if (!ok) return
   templates.value = deleteApplyEmailTemplate(tpl.id, sessionUser.value?.id)
-  toast.success('Saved email deleted')
+  toast.success(t('applyEmail.deleted'))
 }
 </script>
 
@@ -52,9 +53,9 @@ async function removeTemplate(tpl: ApplyEmailTemplate) {
       <div class="w-12 h-12 rounded-xl bg-slate-800/80 text-slate-400 flex items-center justify-center mx-auto mb-4">
         <Mail :size="22" />
       </div>
-      <p class="text-sm text-slate-300 font-semibold mb-1">No saved emails yet</p>
+      <p class="text-sm text-slate-300 font-semibold mb-1">{{ t('applyEmail.noSavedYet') }}</p>
       <p class="text-xs text-slate-500 max-w-sm mx-auto">
-        Compose an application email on the Compose tab, then save it here for reuse.
+        {{ t('applyEmail.noSavedHelp') }}
       </p>
     </div>
 
@@ -68,8 +69,8 @@ async function removeTemplate(tpl: ApplyEmailTemplate) {
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold text-white truncate">{{ tpl.name }}</h3>
             <p v-if="tpl.jobTitle" class="text-xs text-emerald-400/90 mt-0.5 truncate">{{ tpl.jobTitle }}</p>
-            <p class="text-xs text-slate-400 mt-1 truncate">Subject: {{ tpl.subject || '—' }}</p>
-            <p class="text-[10px] text-slate-500 mt-2">Updated {{ formatDate(tpl.updatedAt) }}</p>
+            <p class="text-xs text-slate-400 mt-1 truncate">{{ t('applyEmail.subjectLabel', { subject: tpl.subject || '—' }) }}</p>
+            <p class="text-[10px] text-slate-500 mt-2">{{ t('applyEmail.updated', { date: formatDate(tpl.updatedAt) }) }}</p>
           </div>
           <div class="flex flex-wrap gap-2 shrink-0">
             <button
@@ -78,7 +79,7 @@ async function removeTemplate(tpl: ApplyEmailTemplate) {
               @click="emit('use', tpl)"
             >
               <Play :size="12" />
-              Use
+              {{ t('applyEmail.use') }}
             </button>
             <button
               type="button"
@@ -86,12 +87,12 @@ async function removeTemplate(tpl: ApplyEmailTemplate) {
               @click="emit('edit', tpl)"
             >
               <Pencil :size="12" />
-              Edit
+              {{ t('applyEmail.edit') }}
             </button>
             <button
               type="button"
               class="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-500/40 text-xs cursor-pointer"
-              title="Delete"
+              :title="t('applyEmail.delete')"
               @click="removeTemplate(tpl)"
             >
               <Trash2 :size="14" />

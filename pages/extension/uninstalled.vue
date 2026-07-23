@@ -9,7 +9,9 @@ definePageMeta({
   layout: false,
 })
 
-useHead({ title: 'Extension removed' })
+const { t } = useI18n()
+
+useHead({ title: () => t('extension.removedTitle') })
 
 onMounted(() => {
   clearJobflowExtensionFlags()
@@ -29,16 +31,18 @@ onMounted(() => {
     <span class="material-symbols-outlined text-4xl" style="color: var(--app-accent)" aria-hidden="true">
       extension_off
     </span>
-    <h1 class="text-xl font-semibold" style="color: var(--app-fg)">JobFlow extension removed</h1>
+    <h1 class="text-xl font-semibold" style="color: var(--app-fg)">
+      {{ t('extension.removedHeading') }}
+    </h1>
     <p class="max-w-md text-sm leading-relaxed" style="color: var(--app-muted)">
-      Install flags were cleared. The install banner will show again on Apply and Target Role when you next open JobFlow.
+      {{ t('extension.removedBody') }}
     </p>
     <NuxtLink
       to="/apply"
       class="mt-2 inline-flex items-center rounded-lg text-sm font-semibold px-4 py-2 transition-opacity hover:opacity-90"
       style="background: var(--app-accent); color: #fff"
     >
-      Back to Apply
+      {{ t('extension.backToApply') }}
     </NuxtLink>
   </div>
 </template>
