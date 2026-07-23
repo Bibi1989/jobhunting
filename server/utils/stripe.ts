@@ -157,6 +157,62 @@ function monthlyEuroCents(): number {
   return PRO_EUR_CENTS_MONTHLY
 }
 
+export type ProDisplayInterval = {
+  unitAmountCents: number
+  fullAmountCents: number
+  equivMonthlyCents: number
+  discountPercent: number
+  intervalCount: number
+}
+
+export type ProDisplayPricing = {
+  currency: 'eur'
+  monthlyCents: number
+  month: ProDisplayInterval
+  semiannual: ProDisplayInterval
+  year: ProDisplayInterval
+}
+
+/**
+ * Public display amounts derived from STRIPE_PRICE_PRO_* env
+ * (same resolution as Checkout). Prefer EUR amounts in env; Price ids fall
+ * back to the discounted schedule from the monthly amount / default.
+ */
+export function getProDisplayPricing(): ProDisplayPricing {
+  const monthly = monthlyEuroCents()
+
+  const build = (interval: BillingInterval): ProDisplayInterval => {
+    const schedule = proAmountForInterval(interval, monthly)
+    const dedicatedRaw =
+      interval === 'semiannual'
+        ? envStripe('priceSemi')
+        : interval === 'year'
+          ? envStripe('priceYear')
+          : envStripe('priceMonth')
+    const dedicated = parseEuroAmountOrPriceId(dedicatedRaw)
+    const unitAmount =
+      dedicated?.kind === 'amount' && dedicated.cents >= 50
+        ? dedicated.cents
+        : schedule.unitAmount
+    const months = schedule.intervalCount * (schedule.stripeInterval === 'year' ? 12 : 1)
+    return {
+      unitAmountCents: unitAmount,
+      fullAmountCents: schedule.fullAmount,
+      equivMonthlyCents: Math.round(unitAmount / Math.max(1, months)),
+      discountPercent: schedule.discountPercent,
+      intervalCount: schedule.intervalCount,
+    }
+  }
+
+  return {
+    currency: 'eur',
+    monthlyCents: monthly,
+    month: build('month'),
+    semiannual: build('semiannual'),
+    year: build('year'),
+  }
+}
+
 /**
  * Build Checkout line item in EUR.
  * Prefers Dashboard Price ids when set; otherwise uses price_data with cycle discounts

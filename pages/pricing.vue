@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { loadStripe, type StripeEmbeddedCheckout } from '@stripe/stripe-js'
-import type { BillingInterval } from '~/server/utils/stripe'
+import type { BillingInterval, ProDisplayPricing } from '~/server/utils/stripe'
 import { createEmbeddedCheckout } from '~/utils/stripeEmbedded'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const {
   loggedIn,
@@ -15,40 +15,36 @@ const {
 type IntervalOption = {
   id: BillingInterval
   labelKey: string
-  priceKey: string
   billedKey: string
-  equivKey: string
-  saveKey?: string
-  fullPriceKey?: string
+  showFullPrice?: boolean
+  showSave?: boolean
 }
 
 const intervals: IntervalOption[] = [
   {
     id: 'month',
     labelKey: 'pricing.intervalMonthly',
-    priceKey: 'pricing.priceMonthly',
     billedKey: 'pricing.billedMonthly',
-    equivKey: 'pricing.equivMonthly',
   },
   {
     id: 'semiannual',
     labelKey: 'pricing.intervalSemiannual',
-    priceKey: 'pricing.priceSemiannual',
     billedKey: 'pricing.billedSemiannual',
-    equivKey: 'pricing.equivSemiannual',
-    saveKey: 'pricing.saveSemiannual',
-    fullPriceKey: 'pricing.fullPriceSemiannual',
+    showFullPrice: true,
+    showSave: true,
   },
   {
     id: 'year',
     labelKey: 'pricing.intervalYearly',
-    priceKey: 'pricing.priceYearly',
     billedKey: 'pricing.billedYearly',
-    equivKey: 'pricing.equivYearly',
-    saveKey: 'pricing.saveYearly',
-    fullPriceKey: 'pricing.fullPriceYearly',
+    showFullPrice: true,
+    showSave: true,
   },
 ]
+
+const { data: proPrices } = await useFetch<ProDisplayPricing>('/api/billing/prices', {
+  key: 'pro-display-prices',
+})
 
 const selectedInterval = ref<BillingInterval>('month')
 const loadingCheckout = ref(false)
@@ -60,6 +56,42 @@ const checkoutMountEl = ref<HTMLElement | null>(null)
 let embeddedCheckout: StripeEmbeddedCheckout | null = null
 
 const selectedMeta = computed(() => intervals.find((i) => i.id === selectedInterval.value)!)
+
+const selectedPrice = computed(() => {
+  const board = proPrices.value
+  if (!board) return null
+  if (selectedInterval.value === 'semiannual') return board.semiannual
+  if (selectedInterval.value === 'year') return board.year
+  return board.month
+})
+
+function formatEuro(cents: number): string {
+  const loc = locale.value === 'de' ? 'de-DE' : 'en-US'
+  return new Intl.NumberFormat(loc, {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(cents / 100)
+}
+
+const displayPrice = computed(() =>
+  selectedPrice.value ? formatEuro(selectedPrice.value.unitAmountCents) : '—',
+)
+const displayFullPrice = computed(() => {
+  const p = selectedPrice.value
+  if (!p || !selectedMeta.value.showFullPrice) return null
+  if (p.fullAmountCents <= p.unitAmountCents) return null
+  return formatEuro(p.fullAmountCents)
+})
+const displayEquiv = computed(() => {
+  const p = selectedPrice.value
+  if (!p) return ''
+  return t('pricing.equivPerMonth', { price: formatEuro(p.equivMonthlyCents) })
+})
+const displaySave = computed(() => {
+  const p = selectedPrice.value
+  if (!p?.discountPercent || !selectedMeta.value.showSave) return null
+  return t('pricing.savePercent', { n: p.discountPercent })
+})
 
 onMounted(async () => {
   if (route.query.checkout === 'success') {
@@ -205,7 +237,7 @@ async function startCheckout() {
           >
             {{ t(opt.labelKey) }}
             <span
-              v-if="opt.saveKey"
+              v-if="opt.showSave && proPrices"
               class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md"
               :class="
                 selectedInterval === opt.id
@@ -213,7 +245,14 @@ async function startCheckout() {
                   : 'bg-emerald-500/15 text-emerald-400'
               "
             >
-              {{ t(opt.saveKey) }}
+              {{
+                t('pricing.savePercent', {
+                  n:
+                    opt.id === 'semiannual'
+                      ? proPrices.semiannual.discountPercent
+                      : proPrices.year.discountPercent,
+                })
+              }}
             </span>
           </button>
         </div>
@@ -255,19 +294,19 @@ async function startCheckout() {
           </div>
           <h2 class="text-xl font-bold text-[color:var(--app-fg)]">{{ t('pricing.pro') }}</h2>
           <p class="mt-5 flex items-baseline gap-2 flex-wrap">
-            <span class="text-4xl font-extrabold text-[color:var(--app-fg)]">{{ t(selectedMeta.priceKey) }}</span>
+            <span class="text-4xl font-extrabold text-[color:var(--app-fg)]">{{ displayPrice }}</span>
             <span
-              v-if="selectedMeta.fullPriceKey"
+              v-if="displayFullPrice"
               class="text-sm text-[color:var(--app-muted)] line-through"
-            >{{ t(selectedMeta.fullPriceKey) }}</span>
+            >{{ displayFullPrice }}</span>
             <span class="text-sm font-semibold text-[color:var(--app-muted)]">{{ t(selectedMeta.billedKey) }}</span>
           </p>
-          <p class="mt-1 text-xs text-indigo-300/80">{{ t(selectedMeta.equivKey) }}</p>
+          <p class="mt-1 text-xs text-indigo-300/80">{{ displayEquiv }}</p>
           <p
-            v-if="selectedMeta.saveKey"
+            v-if="displaySave"
             class="mt-2 text-xs font-semibold text-emerald-400"
           >
-            {{ t(selectedMeta.saveKey) }}
+            {{ displaySave }}
           </p>
 
           <ul class="mt-8 space-y-3 text-sm text-[color:var(--app-fg)] flex-1">
